@@ -1,92 +1,129 @@
 import streamlit as st
-import os
-import json
 from groq import Groq
-import pathlib
+import os
 
-# --- 1. PFAD-ZENTRALE ---
-ROOT_DIR = pathlib.Path(__file__).parent.absolute()
-BASE_DIR = os.path.join(ROOT_DIR, "ORION_CORE")
-if not os.path.exists(BASE_DIR):
-    os.makedirs(BASE_DIR)
-MEMORY_FILE = os.path.join(BASE_DIR, "universal_memory.json")
+# --- ORION DESIGN & CONFIG ---
+st.set_page_config(page_title="ORION COMMANDER", page_icon="🪐", layout="centered")
 
-def load_memory():
-    if os.path.exists(MEMORY_FILE):
-        try:
-            with open(MEMORY_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except: pass
-    return {"wissen": [], "einstellungen": {"farbe": "#FF0000"}}
-
-def save_mem(content):
-    data = load_memory()
-    if content and content not in data["wissen"]:
-        data["wissen"].append(content)
-        with open(MEMORY_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
-        return True
-    return False
-
-# --- 2. HYBRID-APP DESIGN (Handy-Optimierung) ---
-st.set_page_config(page_title="ORION MOBILE", layout="wide")
-
-# Hier ballern wir das Design rein, damit es wie eine App wirkt
+# CSS für maximale Lesbarkeit auf dem Handy
 st.markdown("""
     <style>
-    /* Handy-Optimierung */
-    [data-testid="stSidebar"] { min-width: 250px; max-width: 250px; }
-    .main .block-container { padding: 1rem; }
-    .stChatFloatingInputContainer { bottom: 20px; }
-    /* Roter "Commander" Style */
-    .stApp { border-top: 6px solid #FF0000; background-color: #0e1117; }
-    h1, h2, h3 { color: #FF0000 !important; }
+    /* Haupt-Hintergrund */
+    .stApp {
+        background-color: #0e1117;
+    }
+
+    /* Chat-Nachrichten Boxen */
+    [data-testid="stChatMessage"] {
+        background-color: #1d2129 !important; 
+        border-radius: 15px;
+        margin-bottom: 15px;
+        border: 1px solid #3d4450;
+        padding: 15px;
+    }
+
+    /* ORIONS ANTWORT: Knallweiß und gut lesbar */
+    [data-testid="stChatMessageAssistant"] .stMarkdown p {
+        color: #FFFFFF !important;
+        font-size: 1.15rem !important;
+        font-weight: 400 !important;
+        line-height: 1.6 !important;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+
+    /* NUTZER NACHRICHT: Leicht abgesetzt */
+    [data-testid="stChatMessageUser"] .stMarkdown p {
+        color: #00f2ff !important; /* Ein cooles Cyber-Blau für dich */
+        font-size: 1.1rem !important;
+    }
+
+    /* Überschriften */
+    h1, h2, h3 {
+        color: #FF0000 !important;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-shadow: 2px 2px 5px #000000;
+    }
+
+    /* Eingabefeld fix für Mobile */
+    .stChatFloatingInputContainer {
+        background-color: #0e1117 !important;
+    }
+    
+    /* Buttons */
+    .stButton>button {
+        width: 100%;
+        background-color: #FF0000;
+        color: white;
+        border-radius: 10px;
+        border: none;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# API-Brücke
-api_key = os.getenv("Orions Power")
-client = Groq(api_key=api_key) if api_key else None
+# --- SYSTEM LOGIK ---
 
-# --- 3. MOBILE NAVIGATION ---
-st.sidebar.title("🪐 ORION MOBILE")
-# Auf dem Handy ist ein kompaktes Menü besser
-menu = st.sidebar.selectbox("Kommando-Ebene", ["Chat", "Gedächtnis", "System"])
+# API Key aus den Streamlit Cloud Secrets laden
+try:
+    api_key = st.secrets["Orions Power"]
+    client = Groq(api_key=api_key)
+except Exception:
+    st.error("Fehler: API Key 'Orions Power' nicht in den Secrets gefunden!")
+    st.stop()
 
-# --- 4. LOGIK ---
-mem_data = load_memory()
+st.title("🪐 ORION COMMANDER")
+st.subheader("Mobile Zentrale v17.5")
 
-if menu == "Chat":
-    st.subheader("🛡️ Strategischer Dialog")
-    if "messages" not in st.session_state: st.session_state.messages = []
+# Gedächtnis-Initialisierung (Session State)
+if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {"role": "system", "content": "Du bist ORION, eine loyale und hochintelligente KI. Deine Antworten sind präzise, hilfreich und haben einen Hauch von technischer Autorität. Dein Commander ist grimreaper99991."}
+    ]
 
-    for m in st.session_state.messages:
-        with st.chat_message(m["role"]): st.markdown(m["content"])
+# Chat-Verlauf anzeigen
+for message in st.session_state.messages:
+    if message["role"] != "system":
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
-    if prompt := st.chat_input("Befehle?"):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"): st.markdown(prompt)
+# User Input
+if prompt := st.chat_input("Befehl eingeben..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # KI Antwort generieren
+    with st.chat_message("assistant"):
+        response_placeholder = st.empty()
+        full_response = ""
         
-        ctx = "\n".join(mem_data["wissen"][-5:])
         try:
-            res = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[{"role": "system", "content": f"Du bist ORION. Wissen: {ctx}"}] + st.session_state.messages
-            ).choices[0].message.content
-            
-            with st.chat_message("assistant"): st.markdown(res)
-            st.session_state.messages.append({"role": "assistant", "content": res})
-            
-            if st.button("🐘 Ins Gehirn kopieren"):
-                if save_mem(res):
-                    st.success("Universal gespeichert!")
-        except Exception as e:
-            st.error(f"Fehler: {e}")
+            completion = client.chat.completions.create(
+                model="llama3-70b-8192",
+                messages=[
+                    {"role": m["role"], "content": m["content"]}
+                    for m in st.session_state.messages
+                ],
+                stream=True,
+            )
 
-elif menu == "Gedächtnis":
-    st.subheader("🐘 Archiv")
-    for i, w in enumerate(reversed(mem_data["wissen"])):
-        st.info(f"{w}")
+            for chunk in completion:
+                if chunk.choices[0].delta.content:
+                    full_response += chunk.choices[0].delta.content
+                    response_placeholder.markdown(full_response + "▌")
+            
+            response_placeholder.markdown(full_response)
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+            
+        except Exception as e:
+            st.error(f"Verbindungsfehler zur Basis: {e}")
+
+# --- FOOTER ---
+st.sidebar.markdown("---")
+if st.sidebar.button("Gedächtnis löschen"):
+    st.session_state.messages = [st.session_state.messages[0]]
+    st.rerun()
 
 elif menu == "System":
     st.write(f"Online auf: {os.getenv('COMPUTERNAME')}")
