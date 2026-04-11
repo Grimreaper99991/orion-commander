@@ -124,9 +124,3 @@ st.sidebar.markdown("---")
 if st.sidebar.button("Gedächtnis löschen"):
     st.session_state.messages = [st.session_state.messages[0]]
     st.rerun()
-
-elif menu == "System":
-    st.write(f"Online auf: {os.getenv('COMPUTERNAME')}")
-    if st.button("Logout / Reset"):
-        st.session_state.messages = []
-        st.rerun()
