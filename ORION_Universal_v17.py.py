@@ -1,100 +1,71 @@
 import streamlit as st
 from groq import Groq
 
-# --- ORION OS v19: COMMANDER DASHBOARD ---
+# --- ORION OS v19.5: MULTI-TOOL DASHBOARD ---
 st.set_page_config(page_title="ORION OS", page_icon="🪐", layout="wide")
 
 # --- CYBER-TECH DESIGN (CSS) ---
 st.markdown("""
     <style>
-    /* Haupt-Hintergrund */
     .stApp { background-color: #000000 !important; }
-    
-    /* Glas-Effekt für Navigation & Chat */
-    [data-testid="stSidebar"] {
-        background-color: #050505 !important;
-        border-right: 2px solid #FF0000;
-    }
-    
-    /* Kacheln & Chat-Bubbles */
-    [data-testid="stChatMessage"] {
-        background-color: rgba(26, 26, 26, 0.8) !important; 
-        border: 1px solid #333333;
-        border-left: 5px solid #FF0000;
-        border-radius: 10px;
-        margin-bottom: 10px;
-    }
-
-    /* Schrift-Styling */
+    [data-testid="stSidebar"] { background-color: #050505 !important; border-right: 2px solid #FF0000; }
     p, span, label { color: #FFFFFF !important; font-family: 'Courier New', monospace; }
-    
-    /* Metrics / Dashboard-Kacheln */
     [data-testid="stMetricValue"] { color: #FFFFFF !important; font-size: 2rem !important; }
-    [data-testid="stMetricLabel"] { color: #FF0000 !important; text-transform: uppercase; }
-
-    /* Buttons */
-    .stButton>button {
-        width: 100%;
-        background-color: #1a1a1a;
-        color: #FF0000;
-        border: 1px solid #FF0000;
-        transition: 0.3s;
-    }
+    [data-testid="stMetricLabel"] { color: #FF0000 !important; }
+    .stButton>button { width: 100%; background-color: #1a1a1a; color: #FF0000; border: 1px solid #FF0000; }
     .stButton>button:hover { background-color: #FF0000; color: #FFFFFF; box-shadow: 0 0 10px #FF0000; }
+    /* Styling für Notizblock */
+    .stTextArea textarea { background-color: #111111 !important; color: #FFFFFF !important; border: 1px solid #333333 !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- CLOUD API INITIALISIERUNG ---
+# --- API INITIALISIERUNG ---
 try:
     api_key = st.secrets["Orions Power"]
     client = Groq(api_key=api_key)
-except Exception:
-    st.error("⚠️ System-Error: 'Orions Power' Secret fehlt!")
+except:
+    st.error("⚠️ System-Error: API-Key fehlt!")
     st.stop()
 
 # --- NAVIGATION (SIDEBAR) ---
 with st.sidebar:
     st.title("🪐 ORION OS")
     st.markdown("---")
-    page = st.radio("NAVIGATION", ["🏠 CORE CHAT", "📊 SYSTEM STATUS", "📂 ARCHIVE"])
+    # Erweiterte Navigation
+    page = st.radio("ZENTRALE", [
+        "🏠 CORE CHAT", 
+        "📝 NOTIZBLOCK", 
+        "🎵 MEDIA PLAYER", 
+        "🌐 WEB-LINKS",
+        "📊 SYSTEM STATUS"
+    ])
     st.markdown("---")
     
     st.subheader("⚡ QUICK ACTIONS")
-    if st.button("📝 Analyse Code"):
-        st.session_state.temp_prompt = "Bitte analysiere meinen aktuellen Code."
-    if st.button("🧹 Clear Logs"):
-        st.session_state.messages = [{"role": "system", "content": "Du bist ORION OS. Status: Bereit."}]
+    if st.button("🧹 Reset Chat"):
+        st.session_state.messages = [{"role": "system", "content": "ORION OS v19.5 Online."}]
         st.rerun()
 
-# --- HAUPT-DASHBOARD ---
-if page == "🏠 CORE CHAT":
-    # Obere Status-Leiste
-    col1, col2, col3 = st.columns(3)
-    col1.metric("OS-STATUS", "ONLINE", "v19.0")
-    col2.metric("CONNECTION", "ENCRYPTED", "⚡ Groq")
-    col3.metric("MEMORY", "ELEPHANT", "Active")
-    
-    st.markdown("---")
+# --- LOGIK DER SEITEN ---
 
-    # Chat-Historie
+if page == "🏠 CORE CHAT":
+    st.title("🪐 CORE COMMAND")
+    # Metric Bar
+    c1, c2, c3 = st.columns(3)
+    c1.metric("STATUS", "ONLINE")
+    c2.metric("USER", "superman9999")
+    c3.metric("OS", "v19.5")
+    
     if "messages" not in st.session_state:
-        st.session_state.messages = [{"role": "system", "content": "Willkommen im Core, Commander superman9999. Wie gehen wir vor?"}]
+        st.session_state.messages = [{"role": "system", "content": "Bereit für Befehle, Commander."}]
 
     for msg in st.session_state.messages:
         if msg["role"] != "system":
-            with st.chat_message(msg["role"]):
-                st.markdown(msg["content"])
+            with st.chat_message(msg["role"]): st.markdown(msg["content"])
 
-    # Input-Logik
-    prompt = st.chat_input("Befehl eingeben...")
-    if "temp_prompt" in st.session_state:
-        prompt = st.session_state.temp_prompt
-        del st.session_state.temp_prompt
-
-    if prompt:
+    if prompt := st.chat_input("Befehl..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"): st.markdown(prompt)
-
         with st.chat_message("assistant"):
             full_res = ""
             placeholder = st.empty()
@@ -110,13 +81,45 @@ if page == "🏠 CORE CHAT":
             placeholder.markdown(full_res)
             st.session_state.messages.append({"role": "assistant", "content": full_res})
 
-elif page == "📊 SYSTEM STATUS":
-    st.header("⚙️ System-Diagnose")
-    st.write("Alle Triebwerke laufen im optimalen Bereich.")
-    st.progress(100, text="Cloud-Sync abgeschlossen")
-    st.json({"Model": "Llama-3.3-70B", "Provider": "Groq", "User": "superman9999", "Memory-Mode": "Elephant"})
+elif page == "📝 NOTIZBLOCK":
+    st.header("📝 Digitaler Notizblock")
+    if "user_notes" not in st.session_state:
+        st.session_state.user_notes = ""
+    
+    # Textbereich für Notizen
+    notes = st.text_area("Deine Gedanken / Entwürfe:", value=st.session_state.user_notes, height=400)
+    st.session_state.user_notes = notes
+    st.success("Notizen werden automatisch in der Sitzung gespeichert!")
 
-elif page == "📂 ARCHIVE":
-    st.header("📂 Daten-Archiv")
-    st.info("Hier werden zukünftige Protokolle und deine Schreiben (z.B. für den Klientenrat) abgelegt.")
-    st.code("Speisesaal-Optimierung v1.0 - STATUS: Entwurf")
+elif page == "🎵 MEDIA PLAYER":
+    st.header("🎵 Media Player")
+    st.info("Du kannst hier MP3-Dateien oder URLs abspielen.")
+    # Beispiel für eine hochgeladene Datei oder URL
+    audio_url = st.text_input("Audio-URL eingeben (MP3):", placeholder="https://www.beispiel.de/musik.mp3")
+    if audio_url:
+        st.audio(audio_url)
+    st.markdown("---")
+    st.write("Lokale MP3-Dateien können direkt hier hochgeladen werden:")
+    uploaded_file = st.file_uploader("Datei wählen", type=["mp3"])
+    if uploaded_file is not None:
+        st.audio(uploaded_file)
+
+elif page == "🌐 WEB-LINKS":
+    st.header("🌐 Schnell-Verknüpfungen")
+    st.write("Hier sind deine direkten Tunnel ins Netz:")
+    
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.link_button("🔍 Google Suche", "https://www.google.com")
+        st.link_button("📺 YouTube", "https://www.youtube.com")
+    with col_b:
+        st.link_button("📧 Gmail", "https://mail.google.com")
+        st.link_button("🐙 GitHub", "https://github.com")
+    
+    st.markdown("---")
+    st.info("Hinweis: Echte Browser-Fenster innerhalb der App werden oft von Google/YouTube aus Sicherheitsgründen blockiert. Die Link-Buttons öffnen sie direkt in einem neuen Tab – so wie es am Handy am besten funktioniert.")
+
+elif page == "📊 SYSTEM STATUS":
+    st.header("⚙️ Diagnose")
+    st.progress(100, text="Cloud-Verbindung stabil")
+    st.json({"Build": "19.5", "Mobile-Optimized": True, "Audio-Engine": "Streamlit Native"})
