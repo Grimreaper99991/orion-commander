@@ -1,1 +1,1 @@
-WAITING
+start mspaint
