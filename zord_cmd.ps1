@@ -1,1 +1,1 @@
-start wmplayer
+start notepad
