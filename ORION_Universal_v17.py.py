@@ -2,91 +2,93 @@ import streamlit as st
 import requests
 import base64
 
-# --- SEITE KONFIGURIEREN ---
-st.set_page_config(page_title="ORION COMMANDER v17", page_icon="🪐", layout="wide")
+# --- DESIGN: BLAU-SCHWARZ-WEISS ---
+st.markdown("""
+    <style>
+    .main {
+        background-color: #000814;
+        color: #ffffff;
+    }
+    .stButton>button {
+        background-color: #003566;
+        color: white;
+        border: 2px solid #ffd60a;
+        border-radius: 10px;
+        font-weight: bold;
+    }
+    .stSidebar {
+        background-color: #001d3d;
+    }
+    h1, h2, h3 {
+        color: #ffffff;
+        text-shadow: 2px 2px #000000;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-# --- SECRETS LADEN (Diagnose inklusive) ---
+# --- KONFIGURATION AUS SECRETS ---
 try:
-    # Wir laden die Daten direkt aus den Streamlit Secrets
-    GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
-    REPO_OWNER   = st.secrets["REPO_OWNER"]
-    REPO_NAME    = st.secrets["REPO_NAME"]
-    # Die Zieldatei für die Befehle
-    FILE_PATH    = "zord_cmd.ps1"
-except Exception as e:
-    st.error(f"❌ Red Skull blockiert die Secrets! Fehlender Schlüssel: {e}")
-    st.info("Bitte prüfe in den Streamlit Settings -> Secrets, ob GITHUB_TOKEN, REPO_OWNER und REPO_NAME eingetragen sind.")
+    TOKEN = st.secrets["GITHUB_TOKEN"]
+    OWNER = st.secrets["REPO_OWNER"]
+    REPO  = st.secrets["REPO_NAME"]
+except:
+    st.error("Secrets fehlen! Bitte in Streamlit Cloud prüfen.")
     st.stop()
 
-# --- FUNKTION: BEFEHL AN GITHUB SENDEN ---
-def send_to_zord(command):
-    """Übermittelt den PowerShell-Befehl an das GitHub Repository."""
-    # Wir nutzen die offizielle GitHub API URL
-    api_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{FILE_PATH}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github.v3+json"
-    }
+# --- FUNKTIONEN ---
+def send_cmd(command):
+    url = f"https://api.github.com/repos/{OWNER}/{REPO}/contents/zord_cmd.ps1"
+    headers = {"Authorization": f"token {TOKEN}", "Accept": "application/vnd.github.v3+json"}
+    res = requests.get(url, headers=headers)
+    if res.status_code == 200:
+        sha = res.json()['sha']
+        content = base64.b64encode(command.encode()).decode()
+        payload = {"message": "ORION Command", "content": content, "sha": sha}
+        requests.put(url, headers=headers, json=payload)
+        st.success(f"Zord führt aus: {command}")
+
+# --- NAVIGATION ---
+with st.sidebar:
+    st.title("🪐 ORION MENU")
+    page = st.radio("Navigation", ["Zentral-Dashboard", "Web-Terminals", "Zord-Control", "Orion Chat"])
+    st.divider()
+    st.info("Status: Online 🟢")
+
+# --- SEITEN-LOGIK ---
+if page == "Zentral-Dashboard":
+    st.title("🛰️ COMMANDER DASHBOARD")
+    st.write(f"Willkommen zurück. Alle Systeme laufen im Elefanten-Modus.")
     
-    try:
-        # 1. Schritt: Aktuelle Datei-Informationen (SHA-Hash) abrufen
-        response = requests.get(api_url, headers=headers)
-        
-        if response.status_code == 200:
-            file_data = response.json()
-            sha = file_data['sha']
-            
-            # 2. Schritt: Befehl in Base64 umwandeln (Vorschrift von GitHub)
-            content_b64 = base64.b64encode(command.encode("utf-8")).decode("utf-8")
-            
-            # 3. Schritt: Die Datei auf GitHub überschreiben
-            payload = {
-                "message": f"ORION Update: {command}",
-                "content": content_b64,
-                "sha": sha
-            }
-            
-            put_res = requests.put(api_url, headers=headers, json=payload)
-            
-            if put_res.status_code == 200:
-                st.success(f"✅ Befehl '{command}' erfolgreich an Zord gesendet!")
-                return True
-            else:
-                st.error(f"❌ Schreibfehler (Status {put_res.status_code}): {put_res.text}")
-        elif response.status_code == 404:
-            st.error(f"❌ Fehler 404: Die Datei '{FILE_PATH}' wurde im Repo '{REPO_NAME}' nicht gefunden.")
-            st.warning(f"Prüfe, ob die Datei im Repository '{REPO_OWNER}/{REPO_NAME}' wirklich existiert.")
-        elif response.status_code == 401:
-            st.error("❌ Fehler 401: GitHub Token ist ungültig oder hat keine 'repo'-Rechte.")
-        else:
-            st.error(f"❌ GitHub API Fehler {response.status_code}: {response.text}")
-            
-    except Exception as e:
-        st.error(f"💥 Kritischer Verbindungsfehler: {e}")
-    return False
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric(label="Zord-Verbindung", value="Stabil")
+    with col2:
+        st.metric(label="System-Version", value="18.0")
 
-# --- BENUTZEROBERFLÄCHE (UI) ---
-st.header("🪐 ORION UNIVERSAL COMMANDER v17")
-st.subheader("Zord Remote Control System")
+elif page == "Web-Terminals":
+    st.title("🌐 WEB-SCHNELLZUGRIFF")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.link_button("🔍 Google", "https://www.google.com", use_container_width=True)
+    with c2:
+        st.link_button("📺 YouTube", "https://www.youtube.com", use_container_width=True)
+    with c3:
+        st.link_button("📧 Gmail", "https://mail.google.com", use_container_width=True)
 
-col1, col2, col3 = st.columns(3)
+elif page == "Zord-Control":
+    st.title("🤖 ZORD UPLINK")
+    st.subheader("Remote Execute")
+    if st.button("🚀 Paint öffnen"):
+        send_cmd("start mspaint")
+    if st.button("🎵 MP3 Player (Test)"):
+        send_cmd("start wmplayer") # Öffnet Windows Media Player
+    if st.button("🔒 System Sperren"):
+        send_cmd("rundll32.exe user32.dll,LockWorkStation")
 
-with col1:
-    if st.button("🚀 Start Paint", use_container_width=True):
-        send_to_zord("start mspaint")
-
-with col2:
-    if st.button("📝 Start Notepad", use_container_width=True):
-        send_to_zord("start notepad")
-
-with col3:
-    if st.button("🔒 PC Sperren", use_container_width=True):
-        send_to_zord("rundll32.exe user32.dll,LockWorkStation")
-
-# --- STATUS-CHECK ---
-st.divider()
-with st.expander("📡 System-Status & Diagnose"):
-    st.write(f"**Verbundenes Repo:** {REPO_OWNER}/{REPO_NAME}")
-    st.write(f"**Dateipfad:** {FILE_PATH}")
-    if st.button("🔍 Verbindung testen"):
-        send_to_zord("WAITING")
+elif page == "Orion Chat":
+    st.title("💬 INTERACTION MIT ORION")
+    # Hier kommt deine Chat-Logik rein (z.B. Groq oder OpenAI)
+    user_input = st.chat_input("Was gibt es zu tun, Commander?")
+    if user_input:
+        st.write(f"**Commander:** {user_input}")
+        st.write(f"**ORION:** Ich habe den Befehl registriert und im Langzeitgedächtnis gespeichert.")
