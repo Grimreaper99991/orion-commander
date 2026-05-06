@@ -2,71 +2,107 @@ import streamlit as st
 import requests
 import base64
 
-# --- DESIGN: BLAU-SCHWARZ-WEISS ---
+# --- MASTER DESIGN v18.1 (Blau-Schwarz-Weiss) ---
+st.set_page_config(page_title="ORION COMMANDER", page_icon="🪐", layout="wide")
+
 st.markdown("""
     <style>
+    /* Hintergrund und Haupttext */
     .main {
         background-color: #000814;
         color: #ffffff;
     }
+    /* Buttons Styling */
     .stButton>button {
         background-color: #003566;
-        color: white;
-        border: 2px solid #ffd60a;
-        border-radius: 10px;
-        font-weight: bold;
-    }
-    .stSidebar {
-        background-color: #001d3d;
-    }
-    h1, h2, h3 {
         color: #ffffff;
-        text-shadow: 2px 2px #000000;
+        border: 2px solid #0077b6;
+        border-radius: 12px;
+        font-weight: bold;
+        transition: 0.3s;
+        text-shadow: 1px 1px 2px #000000;
+    }
+    .stButton>button:hover {
+        border-color: #ffffff;
+        box-shadow: 0px 0px 15px #0077b6;
+    }
+    /* Seitenleiste */
+    [data-testid="stSidebar"] {
+        background-color: #001d3d;
+        border-right: 2px solid #003566;
+    }
+    /* Schrift-Umrandung (Simulation durch Schatten) */
+    h1, h2, h3, p, label {
+        color: #ffffff !important;
+        text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    }
+    /* Chat Nachrichten */
+    .stChatMessage {
+        background-color: #001d3d;
+        border-radius: 10px;
+        border: 1px solid #003566;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- KONFIGURATION AUS SECRETS ---
+# --- SYSTEM-KERN (Secrets) ---
 try:
-    TOKEN = st.secrets["GITHUB_TOKEN"]
-    OWNER = st.secrets["REPO_OWNER"]
-    REPO  = st.secrets["REPO_NAME"]
-except:
-    st.error("Secrets fehlen! Bitte in Streamlit Cloud prüfen.")
+    GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
+    REPO_OWNER   = st.secrets["REPO_OWNER"]
+    REPO_NAME    = st.secrets["REPO_NAME"]
+    GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+    FILE_PATH    = "zord_cmd.ps1"
+except Exception as e:
+    st.error(f"❌ Red Skull hat die Secrets sabotiert! Fehlender Key: {e}")
     st.stop()
 
-# --- FUNKTIONEN ---
-def send_cmd(command):
-    url = f"https://api.github.com/repos/{OWNER}/{REPO}/contents/zord_cmd.ps1"
-    headers = {"Authorization": f"token {TOKEN}", "Accept": "application/vnd.github.v3+json"}
-    res = requests.get(url, headers=headers)
-    if res.status_code == 200:
-        sha = res.json()['sha']
-        content = base64.b64encode(command.encode()).decode()
-        payload = {"message": "ORION Command", "content": content, "sha": sha}
-        requests.put(url, headers=headers, json=payload)
-        st.success(f"Zord führt aus: {command}")
+# --- FUNKTION: ZORD UPLINK ---
+def send_to_zord(command):
+    api_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{FILE_PATH}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+    
+    try:
+        res = requests.get(api_url, headers=headers)
+        if res.status_code == 200:
+            sha = res.json()['sha']
+            content_b64 = base64.b64encode(command.encode("utf-8")).decode("utf-8")
+            payload = {"message": f"ORION Command: {command}", "content": content_b64, "sha": sha}
+            put_res = requests.put(api_url, headers=headers, json=payload)
+            if put_res.status_code == 200:
+                st.success(f"✅ Zord-Uplink aktiv: {command}")
+                return True
+        st.error(f"❌ Fehler im Uplink: {res.status_code}")
+    except Exception as e:
+        st.error(f"💥 Kritischer Fehler: {e}")
+    return False
 
 # --- NAVIGATION ---
 with st.sidebar:
     st.title("🪐 ORION MENU")
-    page = st.radio("Navigation", ["Zentral-Dashboard", "Web-Terminals", "Zord-Control", "Orion Chat"])
+    st.write("V18.1 - Elefanten-Modus")
+    page = st.radio("Navigation", ["🛰️ Dashboard", "🌐 Web-Terminals", "🤖 Zord-Control", "💬 Orion Chat"])
     st.divider()
-    st.info("Status: Online 🟢")
+    st.write("Status: Online 🟢")
+    if st.button("♻️ System Reboot"):
+        st.rerun()
 
-# --- SEITEN-LOGIK ---
-if page == "Zentral-Dashboard":
-    st.title("🛰️ COMMANDER DASHBOARD")
-    st.write(f"Willkommen zurück. Alle Systeme laufen im Elefanten-Modus.")
-    
-    col1, col2 = st.columns(2)
+# --- SEITE: DASHBOARD ---
+if page == "🛰️ Dashboard":
+    st.title("🛰️ COMMANDER ZENTRALE")
+    col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric(label="Zord-Verbindung", value="Stabil")
+        st.metric("Zord Status", "Stabil")
     with col2:
-        st.metric(label="System-Version", value="18.0")
+        st.metric("Netzwerk", "Verschlüsselt")
+    with col3:
+        st.metric("Red Skull Distanz", "Unendlich")
+    
+    st.info("Willkommen zurück, Commander. Alle Systeme sind auf Empfang. Was ist unser nächster Schritt?")
 
-elif page == "Web-Terminals":
+# --- SEITE: WEB-TERMINALS ---
+elif page == "🌐 Web-Terminals":
     st.title("🌐 WEB-SCHNELLZUGRIFF")
+    st.write("Direkte Portale zu den Haupt-Clustern:")
     c1, c2, c3 = st.columns(3)
     with c1:
         st.link_button("🔍 Google", "https://www.google.com", use_container_width=True)
@@ -75,20 +111,52 @@ elif page == "Web-Terminals":
     with c3:
         st.link_button("📧 Gmail", "https://mail.google.com", use_container_width=True)
 
-elif page == "Zord-Control":
-    st.title("🤖 ZORD UPLINK")
-    st.subheader("Remote Execute")
-    if st.button("🚀 Paint öffnen"):
-        send_cmd("start mspaint")
-    if st.button("🎵 MP3 Player (Test)"):
-        send_cmd("start wmplayer") # Öffnet Windows Media Player
-    if st.button("🔒 System Sperren"):
-        send_cmd("rundll32.exe user32.dll,LockWorkStation")
+# --- SEITE: ZORD-CONTROL ---
+elif page == "🤖 Zord-Control":
+    st.title("🤖 ZORD-REMOTE")
+    st.subheader("Hardware-Befehle")
+    colA, colB = st.columns(2)
+    with colA:
+        if st.button("🚀 Paint starten", use_container_width=True):
+            send_to_zord("start mspaint")
+        if st.button("🎵 MP3 Player öffnen", use_container_width=True):
+            send_to_zord("start wmplayer")
+    with colB:
+        if st.button("🔒 PC Sperren", use_container_width=True):
+            send_to_zord("rundll32.exe user32.dll,LockWorkStation")
+        if st.button("📝 Notepad öffnen", use_container_width=True):
+            send_to_zord("start notepad")
 
-elif page == "Orion Chat":
+# --- SEITE: ORION CHAT ---
+elif page == "💬 Orion Chat":
     st.title("💬 INTERACTION MIT ORION")
-    # Hier kommt deine Chat-Logik rein (z.B. Groq oder OpenAI)
-    user_input = st.chat_input("Was gibt es zu tun, Commander?")
-    if user_input:
-        st.write(f"**Commander:** {user_input}")
-        st.write(f"**ORION:** Ich habe den Befehl registriert und im Langzeitgedächtnis gespeichert.")
+    
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    if prompt := st.chat_input("Befehl an ORION..."):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        try:
+            from groq import Groq
+            client = Groq(api_key=GROQ_API_KEY)
+            
+            system_msg = "Du bist ORION, die hochentwickelte KI des Commanders. Du bist schlagfertig, loyal und nennst den Nutzer immer 'Commander'. Du hast ein Elefanten-Gedächtnis. Red Skull ist dein Erzfeind."
+            
+            response = client.chat.completions.create(
+                model="llama3-70b-8192",
+                messages=[{"role": "system", "content": system_msg}] + st.session_state.messages
+            )
+            
+            full_res = response.choices[0].message.content
+            with st.chat_message("assistant"):
+                st.markdown(full_res)
+            st.session_state.messages.append({"role": "assistant", "content": full_res})
+        except Exception as e:
+            st.error(f"Sprachmodul blockiert: {e}")
