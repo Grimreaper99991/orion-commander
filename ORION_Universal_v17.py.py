@@ -2,28 +2,33 @@ import streamlit as st
 import requests
 import base64
 
-# --- MASTER DESIGN v18.5 (Ultimate White-Nav & Cloud-Notes) ---
+# --- MASTER DESIGN v18.6 (Total Visibility & Deep-Chat-Fix) ---
 st.set_page_config(page_title="ORION COMMANDER", page_icon="🪐", layout="wide")
 
 st.markdown("""
     <style>
     /* Hintergrund der Hauptseite */
-    .main { background-color: #000814; color: #ffffff; }
+    .main { background-color: #000814; color: #ffffff !important; }
     
-    /* SIDEBAR NAVIGATION WEISS-FIX (SUPERNOVA) */
-    /* Dies erzwingt Weiß für alle Textelemente in der Sidebar, inklusive Radio-Buttons */
+    /* 1. SIDEBAR WEISS-FIX: Alles in der Sidebar muss weiß sein */
     [data-testid="stSidebar"] * {
         color: #ffffff !important;
-        text-shadow: 2px 2px 4px #000000 !important;
+        text-shadow: 1px 1px 2px #000000 !important;
     }
 
-    /* Spezifischer Fix für die Radio-Button Texte */
-    div[data-testid="stWidgetLabel"] p {
+    /* 2. CHAT WEISS-FIX: Erzwingt Weiß für alle Nachrichten-Inhalte */
+    [data-testid="stChatMessage"] * {
         color: #ffffff !important;
-        font-weight: bold !important;
+        text-shadow: 1px 1px 2px #000000 !important;
     }
     
-    .st-emotion-cache-6qob1r { /* Interner Streamlit-Klasse für Radio-Texte */
+    /* Spezifisch für den Text innerhalb der Chat-Blasen */
+    .stChatMessage [data-testid="stMarkdownContainer"] p {
+        color: #ffffff !important;
+    }
+
+    /* 3. ALLGEMEINER TEXT-FIX: Falls irgendwo noch Schwarz auftaucht */
+    .stMarkdown p, .stMarkdown li, .stMarkdown span {
         color: #ffffff !important;
     }
 
@@ -36,14 +41,9 @@ st.markdown("""
         text-shadow: 1px 1px 2px #000000;
     }
 
-    /* Sidebar-Bereich allgemein */
-    [data-testid="stSidebar"] { 
-        background-color: #001d3d; 
-        border-right: 2px solid #003566; 
-    }
-
-    /* Chat-Bereich */
-    .stChatMessage { background-color: #001d3d; border: 1px solid #003566; }
+    /* Sidebar-Bereich & Chat-Blasen Hintergrund */
+    [data-testid="stSidebar"] { background-color: #001d3d; border-right: 2px solid #003566; }
+    .stChatMessage { background-color: #001d3d !important; border: 1px solid #003566 !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -57,18 +57,14 @@ except Exception as e:
     st.error(f"Sicherheits-Fehler: {e}")
     st.stop()
 
-# --- GITHUB CLOUD STORAGE FUNKTIONEN ---
+# --- GITHUB CLOUD STORAGE ---
 def manage_github_file(file_name, content=None, mode="read"):
     url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{file_name}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
-    
     res = requests.get(url, headers=headers)
     sha = res.json()['sha'] if res.status_code == 200 else None
-
     if mode == "read":
-        if res.status_code == 200:
-            return base64.b64decode(res.json()['content']).decode("utf-8")
-        return ""
+        return base64.b64decode(res.json()['content']).decode("utf-8") if res.status_code == 200 else ""
     elif mode == "write":
         content_b64 = base64.b64encode(content.encode("utf-8")).decode("utf-8")
         payload = {"message": f"ORION Update {file_name}", "content": content_b64}
@@ -76,15 +72,9 @@ def manage_github_file(file_name, content=None, mode="read"):
         requests.put(url, headers=headers, json=payload)
         return True
 
-# --- ZORD UPLINK ---
-def send_to_zord(command):
-    manage_github_file("zord_cmd.ps1", command, mode="write")
-    st.success(f"✅ Zord-Uplink: {command}")
-
 # --- NAVIGATION ---
 with st.sidebar:
     st.title("🪐 ORION MENU")
-    # Das Menü, das jetzt strahlend weiß sein muss:
     page = st.radio("Navigation", ["🛰️ Dashboard", "🌐 Web-Terminals", "📝 Cloud-Notizen", "🤖 Zord-Control", "💬 Orion Chat"])
     st.divider()
     st.write("Status: Online 🟢")
@@ -92,7 +82,7 @@ with st.sidebar:
 # --- SEITEN-LOGIK ---
 if page == "🛰️ Dashboard":
     st.title("🛰️ COMMANDER ZENTRALE")
-    st.info("System-Update v18.5: Navigations-Farben wurden auf maximale Helligkeit korrigiert.")
+    st.info("System-Update v18.6: Deep-Chat-Visibility-Fix aktiviert.")
 
 elif page == "🌐 Web-Terminals":
     st.title("🌐 WEB-SCHNELLZUGRIFF")
@@ -112,8 +102,8 @@ elif page == "📝 Cloud-Notizen":
 
 elif page == "🤖 Zord-Control":
     st.title("🤖 ZORD-REMOTE")
-    if st.button("🚀 Paint starten"): send_to_zord("start mspaint")
-    if st.button("🔒 PC Sperren"): send_to_zord("rundll32.exe user32.dll,LockWorkStation")
+    if st.button("🚀 Paint starten"): manage_github_file("zord_cmd.ps1", "start mspaint", mode="write")
+    if st.button("🔒 PC Sperren"): manage_github_file("zord_cmd.ps1", "rundll32.exe user32.dll,LockWorkStation", mode="write")
 
 elif page == "💬 Orion Chat":
     st.title("💬 INTERACTION MIT ORION")
@@ -129,7 +119,7 @@ elif page == "💬 Orion Chat":
             client = Groq(api_key=GROQ_API_KEY)
             response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
-                messages=[{"role": "system", "content": "Du bist ORION. Sei schlagfertig und loyal."}] + st.session_state.messages
+                messages=[{"role": "system", "content": "Du bist ORION. Sei schlagfertig und loyal. Antworte immer so, dass der Commander dich perfekt lesen kann."}] + st.session_state.messages
             )
             full_res = response.choices[0].message.content
             with st.chat_message("assistant"): st.markdown(full_res)
