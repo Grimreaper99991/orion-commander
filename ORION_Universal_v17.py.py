@@ -2,30 +2,32 @@ import streamlit as st
 import requests
 import base64
 
-# --- MASTER DESIGN v18.4 (Cloud-Notes & High-Contrast Fix) ---
+# --- MASTER DESIGN v18.5 (Ultimate White-Nav & Cloud-Notes) ---
 st.set_page_config(page_title="ORION COMMANDER", page_icon="🪐", layout="wide")
 
 st.markdown("""
     <style>
+    /* Hintergrund der Hauptseite */
     .main { background-color: #000814; color: #ffffff; }
     
-    /* Globaler Text-Fix für maximale Lesbarkeit */
-    .stMarkdown, .stMarkdown p, .stMarkdown li, .stMarkdown span, label, .stSelectbox label {
+    /* SIDEBAR NAVIGATION WEISS-FIX (SUPERNOVA) */
+    /* Dies erzwingt Weiß für alle Textelemente in der Sidebar, inklusive Radio-Buttons */
+    [data-testid="stSidebar"] * {
         color: #ffffff !important;
-        text-shadow: 2px 2px 4px #000000;
-        font-weight: 500;
-    }
-
-    /* Sidebar Navigation Weiss-Fix */
-    [data-testid="stSidebar"] .stMarkdown p, 
-    [data-testid="stSidebar"] label, 
-    [data-testid="stSidebar"] span,
-    [data-testid="stSidebar"] .stRadio label {
-        color: #ffffff !important;
-        font-size: 1.1rem !important;
         text-shadow: 2px 2px 4px #000000 !important;
     }
 
+    /* Spezifischer Fix für die Radio-Button Texte */
+    div[data-testid="stWidgetLabel"] p {
+        color: #ffffff !important;
+        font-weight: bold !important;
+    }
+    
+    .st-emotion-cache-6qob1r { /* Interner Streamlit-Klasse für Radio-Texte */
+        color: #ffffff !important;
+    }
+
+    /* Buttons Design */
     .stButton>button {
         background-color: #003566;
         color: #ffffff !important;
@@ -34,7 +36,13 @@ st.markdown("""
         text-shadow: 1px 1px 2px #000000;
     }
 
-    [data-testid="stSidebar"] { background-color: #001d3d; border-right: 2px solid #003566; }
+    /* Sidebar-Bereich allgemein */
+    [data-testid="stSidebar"] { 
+        background-color: #001d3d; 
+        border-right: 2px solid #003566; 
+    }
+
+    /* Chat-Bereich */
     .stChatMessage { background-color: #001d3d; border: 1px solid #003566; }
     </style>
     """, unsafe_allow_html=True)
@@ -76,16 +84,16 @@ def send_to_zord(command):
 # --- NAVIGATION ---
 with st.sidebar:
     st.title("🪐 ORION MENU")
+    # Das Menü, das jetzt strahlend weiß sein muss:
     page = st.radio("Navigation", ["🛰️ Dashboard", "🌐 Web-Terminals", "📝 Cloud-Notizen", "🤖 Zord-Control", "💬 Orion Chat"])
     st.divider()
     st.write("Status: Online 🟢")
 
-# --- SEITE: DASHBOARD ---
+# --- SEITEN-LOGIK ---
 if page == "🛰️ Dashboard":
     st.title("🛰️ COMMANDER ZENTRALE")
-    st.info("Willkommen zurück. Alle Navigations-Elemente sind nun auf High-Contrast Weiß gestellt.")
+    st.info("System-Update v18.5: Navigations-Farben wurden auf maximale Helligkeit korrigiert.")
 
-# --- SEITE: WEB-TERMINALS ---
 elif page == "🌐 Web-Terminals":
     st.title("🌐 WEB-SCHNELLZUGRIFF")
     c1, c2, c3, c4 = st.columns(4)
@@ -94,26 +102,19 @@ elif page == "🌐 Web-Terminals":
     with c3: st.link_button("📧 Gmail", "https://mail.google.com", use_container_width=True)
     with c4: st.link_button("💻 Chip.de", "https://www.chip.de", use_container_width=True)
 
-# --- SEITE: CLOUD-NOTIZEN ---
 elif page == "📝 Cloud-Notizen":
     st.title("📝 ORION CLOUD-STORAGE")
-    st.subheader("Deine Notizen auf GitHub")
-    
-    # Laden
     current_notes = manage_github_file("notizen.txt", mode="read")
     new_notes = st.text_area("Schreibe hier deine Gedanken...", value=current_notes, height=300)
-    
     if st.button("💾 In Cloud speichern"):
         if manage_github_file("notizen.txt", content=new_notes, mode="write"):
-            st.success("Notizen sicher in der Cloud verwahrt! (GitHub)")
+            st.success("Notizen sicher auf GitHub verwahrt!")
 
-# --- SEITE: ZORD-CONTROL ---
 elif page == "🤖 Zord-Control":
     st.title("🤖 ZORD-REMOTE")
     if st.button("🚀 Paint starten"): send_to_zord("start mspaint")
     if st.button("🔒 PC Sperren"): send_to_zord("rundll32.exe user32.dll,LockWorkStation")
 
-# --- SEITE: ORION CHAT ---
 elif page == "💬 Orion Chat":
     st.title("💬 INTERACTION MIT ORION")
     if "messages" not in st.session_state: st.session_state.messages = []
