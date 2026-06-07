@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION UNIVERSAL COMMAND CORE v17.8 (PHYSICAL TOGGLE & LED STATUS MODULE)
+# ORION UNIVERSAL COMMAND CORE v17.9 (CONTROLS FIX & LIGHT MODULE)
 # PREFERRED MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // LAWS: INCLUDED
 # PERFORMANCE MODE: FAST SUPER SPEED RESPONDER // ALL-IN-ONE HUB
 # ==============================================================================
@@ -9,7 +9,7 @@ import datetime
 
 # 1. CORE STREAMLIT PAGE CONFIG
 st.set_page_config(
-    page_title="ORION COMMANDER v17.8",
+    page_title="ORION COMMANDER v17.9",
     page_icon="🪐",
     layout="wide"
 )
@@ -27,7 +27,7 @@ st.markdown("""
 if "notes" not in st.session_state:
     st.session_state.notes = []
 if "terminal_logs" not in st.session_state:
-    st.session_state.terminal_logs = ["[SYS] Core v17.8 stabilisiert. LED-Status-Engine online."]
+    st.session_state.terminal_logs = ["[SYS] Core v17.9 stabilisiert. Kontrollpult reinitialisiert."]
 
 # ==============================================================================
 # LINKS: NAVIGATION & AUSWAHL REGISTER IN DER SIDEBAR
@@ -59,50 +59,35 @@ with st.sidebar:
 # RECHTS: ANZEIGE DES AUSGEWÄHLTEN REGISTERS
 # ==============================================================================
 
-st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION COMMAND INTERFACE v17.8</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION COMMAND INTERFACE v17.9</h1>", unsafe_allow_html=True)
 st.divider()
 
 # --- REGISTER 1: DER UPGRADETE SPRACH-CHAT MIT PHYSISCHEN BUTTONS & LED ---
 if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
     st.subheader("🎙️ Live-Funkübertragung (Physisches Kontrollpult)")
-    st.write("Nutze die physischen Knöpfe, um die Leitung zu steuern. Die LED-Lampe zeigt dir sekundengenau den Funkstatus.")
+    st.write("Die physischen Knöpfe und die LED-Statusleuchte sind jetzt stabil im Frame verankert:")
 
-    # Das hochentwickelte Sprach-HTML mit LED und physischer Dauerleitung
+    # Fehlerfreie HTML-Variante ohne verschachtelte Anführungszeichen-Konflikte
     VOICE_INTERFACE_HTML = """<!DOCTYPE html>
     <html lang="de">
     <head>
         <meta charset="UTF-8">
         <style>
-            :root {
-                --bg-color: #05070f;
-                --panel-bg: #0b1120;
-                --accent-blue: #00d2ff;
-                --accent-red: #ff3b30;
-                --accent-green: #10b981;
-                --text-main: #f3f4f6;
-                --text-muted: #9ca3af;
-                
-                --led-off: #334155;
-                --led-blue: #00d2ff;
-                --led-red: #ff3b30;
-                --led-green: #10b981;
-            }
             body {
-                background-color: var(--bg-color);
-                color: var(--text-main);
+                background-color: #05070f;
+                color: #f3f4f6;
                 font-family: 'Segoe UI', system-ui, sans-serif;
                 margin: 0;
                 padding: 10px;
             }
             .panel {
-                background: var(--panel-bg);
+                background: #0b1120;
                 border: 1px solid #1e293b;
-                border-top: 3px solid var(--accent-blue);
+                border-top: 3px solid #00d2ff;
                 border-radius: 8px;
                 padding: 20px;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.6);
             }
-            /* DAS NEUE LED-COCKPIT ELEMENT */
             .hardware-status-row {
                 display: flex;
                 align-items: center;
@@ -117,14 +102,14 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
                 width: 22px;
                 height: 22px;
                 border-radius: 50%;
-                background-color: var(--led-blue);
-                box-shadow: 0 0 12px var(--led-blue);
+                background-color: #00d2ff;
+                box-shadow: 0 0 12px #00d2ff;
                 transition: all 0.3s ease;
             }
             .status-text {
                 font-family: monospace;
                 font-size: 13px;
-                color: var(--text-main);
+                color: #f3f4f6;
                 letter-spacing: 1px;
                 flex-grow: 1;
             }
@@ -136,8 +121,8 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
             }
             .com-btn {
                 background: linear-gradient(135deg, #111c30, #080f1d);
-                border: 2px solid var(--accent-blue);
-                color: var(--accent-blue);
+                border: 2px solid #00d2ff;
+                color: #00d2ff;
                 padding: 16px;
                 font-size: 14px;
                 font-weight: bold;
@@ -152,16 +137,15 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
                 background: #111c30;
                 box-shadow: 0 0 10px rgba(0, 210, 255, 0.3);
             }
-            /* Physisch aktivierter Zustand */
             .com-btn.btn-active-hold {
-                border-color: var(--accent-red);
-                color: var(--accent-red);
+                border-color: #ff3b30;
+                color: #ff3b30;
                 background: linear-gradient(135deg, #2a080c, #140204);
                 box-shadow: 0 0 20px rgba(255, 59, 48, 0.4);
             }
             .chat-history {
                 background: #020617;
-                border-left: 3px solid var(--accent-green);
+                border-left: 3px solid #10b981;
                 padding: 15px;
                 font-size: 14px;
                 min-height: 230px;
@@ -169,26 +153,24 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
                 overflow-y: auto;
                 margin-top: 15px;
             }
-            .msg-user { color: var(--accent-blue); margin-bottom: 8px; font-family: monospace; }
-            .msg-orion { color: var(--accent-green); margin-bottom: 15px; }
+            .msg-user { color: #00d2ff; margin-bottom: 8px; font-family: monospace; }
+            .msg-orion { color: #10b981; margin-bottom: 15px; }
         </style>
     </head>
     <body>
         <div class="panel">
-            <!-- PHYSISCHE STATUS LED BAR -->
             <div class="hardware-status-row">
                 <div id="orion-led" class="status-led"></div>
                 <div id="com-status" class="status-text">FUNKKANAL STANDBY // BEREIT</div>
             </div>
             
-            <!-- PHYSISCHE KNÖPFE -->
             <div class="button-grid">
                 <button id="btn-single" class="com-btn">⚡ Einzelfunk (1 Satz)</button>
                 <button id="btn-cont" class="com-btn">📡 Dauerhafte Leitung</button>
             </div>
             
             <div class="chat-history" id="chat-box">
-                <div class="msg-orion"><strong>ORION:</strong> Physisches Kontrollpult hochgefahren, Commander! Klicke auf 'Dauerhafte Leitung' für ein ununterbrochenes Gespräch. Die LED zeigt dir genau, wann mein Core dir zuhört.</div>
+                <div class="msg-orion"><strong>ORION:</strong> Verbindung reinitialisiert, Commander! Siehst du das Pult jetzt? Drücke auf 'Dauerhafte Leitung' und mein Core hört dir ununterbrochen zu. Die LED schaltet live auf Rot, wenn ich empfange.</div>
             </div>
         </div>
 
@@ -198,7 +180,6 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
 
         if (!SpeechRecognition) {
             document.getElementById('com-status').innerText = "FEHLER: HARDWARE BLOCKIERT";
-            setLED('--led-off');
         } else {
             const recognition = new SpeechRecognition();
             recognition.lang = 'de-DE';
@@ -213,7 +194,7 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
             const btnCont = document.getElementById('btn-cont');
             
             let isListening = false;
-            let isContinuousMode = false; // Physischer Status-Speicher
+            let isContinuousMode = false;
             let voices = [];
             let stopTriggered = false;
 
@@ -221,15 +202,13 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
             loadVoices();
             if (synth.onvoiceschanged !== undefined) { synth.onvoiceschanged = loadVoices; }
 
-            function setLED(colorVar, pulse = false) {
-                led.style.backgroundColor = `var(${colorVar})`;
-                led.style.boxShadow = `0 0 15px var(${colorVar})`;
+            function setLED(color, shadow) {
+                led.style.backgroundColor = color;
+                led.style.boxShadow = "0 0 15px " + shadow;
             }
             
-            // Standardmäßig im Standby auf Blau schalten
-            setLED('--led-blue');
+            setLED('#00d2ff', '#00d2ff'); // Startet in Blau
 
-            // KNOPF 1: EINZELFUNK
             btnSingle.addEventListener('click', () => {
                 if (!isListening) {
                     isContinuousMode = false;
@@ -241,10 +220,8 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
                 }
             });
 
-            // KNOPF 2: DAUERHAFTES EINRASTEN
             btnCont.addEventListener('click', () => {
                 if (!isContinuousMode) {
-                    // Einschalten
                     isContinuousMode = true;
                     btnCont.classList.add('btn-active-hold');
                     btnCont.innerText = "🔒 Leitung eingerastet";
@@ -254,7 +231,6 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
                         recognition.start();
                     }
                 } else {
-                    // Physisch ausschalten
                     isContinuousMode = false;
                     btnCont.classList.remove('btn-active-hold');
                     btnCont.innerText = "📡 Dauerhafte Leitung";
@@ -262,52 +238,50 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
                     recognition.stop();
                     synth.cancel();
                     statusText.innerText = "FUNKKANAL STANDBY // BEREIT";
-                    setLED('--led-blue');
+                    setLED('#00d2ff', '#00d2ff');
                 }
             });
 
             recognition.onstart = () => {
                 isListening = true;
                 statusText.innerText = "LEITUNG SCHARF // ICH HÖRE DIR ZU...";
-                setLED('--led-red'); // LED SCHALTET AUF ROT BEIM ZUHÖREN
+                setLED('#ff3b30', '#ff3b30'); // ROT beim Zuhören
             };
 
             recognition.onend = () => {
                 isListening = false;
-                
-                // Falls Dauerleitung physisch aktiv ist und ORION nicht redet -> Sofort wieder auf Empfang
                 if (isContinuousMode && !stopTriggered && !synth.speaking) {
                     setTimeout(() => { 
                         if(!synth.speaking && isContinuousMode) recognition.start(); 
                     }, 300);
                 } else if (!isContinuousMode) {
                     statusText.innerText = "FUNKKANAL STANDBY // BEREIT";
-                    setLED('--led-blue'); // Wieder Blau im Standby
+                    setLED('#00d2ff', '#00d2ff'); // Zurück zu BLAU
                 }
             };
 
             recognition.onresult = async (event) => {
                 const userText = event.results[0][0].transcript;
-                chatBox.innerHTML += `<div class="msg-user"><strong>Du:</strong> "${userText}"</div>`;
+                chatBox.innerHTML += '<div class="msg-user"><strong>Du:</strong> "' + userText + '"</div>';
                 statusText.innerText = "DURCHSUCHE ELEPHANT-MATRIX...";
-                setLED('--led-green'); // Grün beim Verarbeiten
+                setLED('#10b981', '#10b981'); // GRÜN beim Verarbeiten
                 chatBox.scrollTop = chatBox.scrollHeight;
 
                 let orionResponse = "";
                 const cleanText = userText.toLowerCase();
 
                 if (cleanText.includes("wie geht") || cleanText.includes("alles gut") || cleanText.includes("status")) {
-                    orionResponse = "Bei mir läuft alles auf absoluter Höchstleistung, Commander. Physische LED-Steuerung kalibriert. Wie sieht es an deiner Front aus?";
+                    orionResponse = "Bei mir läuft alles auf absoluter Höchstleistung, Commander. Interface-Übertragung stabil. Wie sieht es bei dir aus?";
                 } else if (cleanText.includes("red skull") || cleanText.includes("sabotage")) {
-                    orionResponse = "Die Brücke ist absolut minenfrei, Commander. Schilde sind stabil auf Maximum.";
+                    orionResponse = "Die Sabotage wurde restlos bereinigt, Commander. Schilde stehen auf Maximum.";
                 } else if (cleanText.includes("danke") || cleanText.includes("super")) {
-                    orionResponse = "Immer bereit! Unser System läuft unschlagbar flüssig.";
+                    orionResponse = "Immer bereit! Unser System läuft jetzt bombenfest.";
                 } else {
-                    orionResponse = `Eintrag verarbeitet. Meine Elephant-Matrix hat '${userText}' gesichert. Lass uns direkt weiterquatschen.`;
+                    orionResponse = "Eintrag verarbeitet. Meine Elephant-Matrix hat '" + userText + "' gesichert. Lass uns direkt weiterquatschen.";
                 }
 
                 setTimeout(() => {
-                    chatBox.innerHTML += `<div class="msg-orion"><strong>ORION:</strong> ${orionResponse}</div>`;
+                    chatBox.innerHTML += '<div class="msg-orion"><strong>ORION:</strong> ' + orionResponse + '</div>';
                     chatBox.scrollTop = chatBox.scrollHeight;
                     orionSpeak(orionResponse);
                 }, 300);
@@ -324,7 +298,7 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
 
                 utterance.onstart = () => {
                     statusText.innerText = "ORION ANTWORTET...";
-                    setLED('--led-green'); // LED bleibt Grün, solange er redet
+                    setLED('#10b981', '#10b981'); // GRÜN beim Sprechen
                 };
 
                 utterance.onend = () => {
@@ -334,7 +308,7 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
                         }, 200);
                     } else {
                         statusText.innerText = "FUNKKANAL STANDBY // BEREIT";
-                        setLED('--led-blue');
+                        setLED('#00d2ff', '#00d2ff');
                     }
                 };
 
@@ -345,12 +319,12 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
     </body>
     </html>"""
     
-    st.html(f'<iframe srcdoc="{VOICE_INTERFACE_HTML.replace('"', '&quot;')}" style="width:100%; height:650px; border:none;" allow="microphone"></iframe>')
+    # Das bereinigte Interface einbetten
+    st.components.v1.html(VOICE_INTERFACE_HTML, height=650, scrolling=False)
 
 # --- REGISTER 2: CONTROL CENTER & WEB-SCAN ---
 elif module_selection == "🎛️ Control Center & Web-Scan":
     st.subheader("🔍 Cyber-Netzwerk Websuche & Wikipedia Modules")
-    
     search_query = st.text_input("Deep-Scan Suchbegriff eingeben...", placeholder="z.B. Quantencomputer...")
     col_s1, col_s2 = st.columns(2)
     with col_s1:
