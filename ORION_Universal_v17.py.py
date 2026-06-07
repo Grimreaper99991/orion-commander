@@ -223,7 +223,8 @@ DASHBOARD_UI = """<!DOCTYPE html>
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'de-DE';
             if (voices.length === 0) voices = synth.getVoices();
-            const deVoice = voices.find(v => v.lang.startsWith('de'));
+            const deVoice = voices.find(v => v.lang.startsWith('v'));
+            if (!deVoice) deVoice = voices.find(v => v.lang.startsWith('de'));
             if (deVoice) utterance.voice = deVoice;
             utterance.pitch = 0.85;
             synth.speak(utterance);
@@ -235,4 +236,5 @@ DASHBOARD_UI = """<!DOCTYPE html>
 </html>"""
 
 # 3. STREAMLIT EXECUTION ENGINE
-st.components.v1.html(DASHBOARD_UI, height=600, scroller=False)
+# 'scrolling=False' stellt sicher, dass Streamlit den Befehl fehlerfrei ausführt
+st.components.v1.html(DASHBOARD_UI, height=700, scrolling=False)
