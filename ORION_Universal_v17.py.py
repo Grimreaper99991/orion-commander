@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION UNIVERSAL COMMAND CORE v17.9 (CONTROLS FIX & LIGHT MODULE)
+# ORION UNIVERSAL COMMAND CORE v18.0 (ADVANCED CHAT BRAIN & LED MODULE)
 # PREFERRED MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // LAWS: INCLUDED
 # PERFORMANCE MODE: FAST SUPER SPEED RESPONDER // ALL-IN-ONE HUB
 # ==============================================================================
@@ -9,7 +9,7 @@ import datetime
 
 # 1. CORE STREAMLIT PAGE CONFIG
 st.set_page_config(
-    page_title="ORION COMMANDER v17.9",
+    page_title="ORION COMMANDER v18.0",
     page_icon="🪐",
     layout="wide"
 )
@@ -27,7 +27,7 @@ st.markdown("""
 if "notes" not in st.session_state:
     st.session_state.notes = []
 if "terminal_logs" not in st.session_state:
-    st.session_state.terminal_logs = ["[SYS] Core v17.9 stabilisiert. Kontrollpult reinitialisiert."]
+    st.session_state.terminal_logs = ["[SYS] Core v18.0 stabilisiert. Konversations-Matrix v2.0 online."]
 
 # ==============================================================================
 # LINKS: NAVIGATION & AUSWAHL REGISTER IN DER SIDEBAR
@@ -59,15 +59,15 @@ with st.sidebar:
 # RECHTS: ANZEIGE DES AUSGEWÄHLTEN REGISTERS
 # ==============================================================================
 
-st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION COMMAND INTERFACE v17.9</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION COMMAND INTERFACE v18.0</h1>", unsafe_allow_html=True)
 st.divider()
 
 # --- REGISTER 1: DER UPGRADETE SPRACH-CHAT MIT PHYSISCHEN BUTTONS & LED ---
 if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
-    st.subheader("🎙️ Live-Funkübertragung (Physisches Kontrollpult)")
-    st.write("Die physischen Knöpfe und die LED-Statusleuchte sind jetzt stabil im Frame verankert:")
+    st.subheader("🎙️ Live-Funkübertragung (Hochentwickeltes KI-Gehirn)")
+    st.write("ORION antwortet dir jetzt dynamisch und hält das Gespräch aktiv am Laufen:")
 
-    # Fehlerfreie HTML-Variante ohne verschachtelte Anführungszeichen-Konflikte
+    # Fehlerfreie HTML-Variante mit verbessertem JS-Konversations-Core
     VOICE_INTERFACE_HTML = """<!DOCTYPE html>
     <html lang="de">
     <head>
@@ -170,7 +170,7 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
             </div>
             
             <div class="chat-history" id="chat-box">
-                <div class="msg-orion"><strong>ORION:</strong> Verbindung reinitialisiert, Commander! Siehst du das Pult jetzt? Drücke auf 'Dauerhafte Leitung' und mein Core hört dir ununterbrochen zu. Die LED schaltet live auf Rot, wenn ich empfange.</div>
+                <div class="msg-orion"><strong>ORION:</strong> Das überarbeitete Konversations-Zentrum läuft, Commander! Sprich ganz locker mit mir – ich höre dir zu und antworte dir jetzt wie ein echtes Besatzungsmitglied.</div>
             </div>
         </div>
 
@@ -207,7 +207,7 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
                 led.style.boxShadow = "0 0 15px " + shadow;
             }
             
-            setLED('#00d2ff', '#00d2ff'); // Startet in Blau
+            setLED('#00d2ff', '#00d2ff');
 
             btnSingle.addEventListener('click', () => {
                 if (!isListening) {
@@ -245,7 +245,7 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
             recognition.onstart = () => {
                 isListening = true;
                 statusText.innerText = "LEITUNG SCHARF // ICH HÖRE DIR ZU...";
-                setLED('#ff3b30', '#ff3b30'); // ROT beim Zuhören
+                setLED('#ff3b30', '#ff3b30');
             };
 
             recognition.onend = () => {
@@ -256,7 +256,7 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
                     }, 300);
                 } else if (!isContinuousMode) {
                     statusText.innerText = "FUNKKANAL STANDBY // BEREIT";
-                    setLED('#00d2ff', '#00d2ff'); // Zurück zu BLAU
+                    setLED('#00d2ff', '#00d2ff');
                 }
             };
 
@@ -264,20 +264,45 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
                 const userText = event.results[0][0].transcript;
                 chatBox.innerHTML += '<div class="msg-user"><strong>Du:</strong> "' + userText + '"</div>';
                 statusText.innerText = "DURCHSUCHE ELEPHANT-MATRIX...";
-                setLED('#10b981', '#10b981'); // GRÜN beim Verarbeiten
+                setLED('#10b981', '#10b981');
                 chatBox.scrollTop = chatBox.scrollHeight;
 
                 let orionResponse = "";
                 const cleanText = userText.toLowerCase();
 
-                if (cleanText.includes("wie geht") || cleanText.includes("alles gut") || cleanText.includes("status")) {
-                    orionResponse = "Bei mir läuft alles auf absoluter Höchstleistung, Commander. Interface-Übertragung stabil. Wie sieht es bei dir aus?";
-                } else if (cleanText.includes("red skull") || cleanText.includes("sabotage")) {
-                    orionResponse = "Die Sabotage wurde restlos bereinigt, Commander. Schilde stehen auf Maximum.";
-                } else if (cleanText.includes("danke") || cleanText.includes("super")) {
-                    orionResponse = "Immer bereit! Unser System läuft jetzt bombenfest.";
-                } else {
-                    orionResponse = "Eintrag verarbeitet. Meine Elephant-Matrix hat '" + userText + "' gesichert. Lass uns direkt weiterquatschen.";
+                // DYNAMISCHES INTELLIGENTES CHAT-GEHIRN (Kein stures Wiederholen mehr!)
+                if (cleanText.includes("wie geht") || cleanText.includes("alles gut") || cleanText.includes("wie läuft")) {
+                    const responses = [
+                        "Bei mir läuft alles auf absoluter Höchstleistung, Commander! Schilde stehen bei einhundert Prozent. Wie sieht das Logbuch deines Tages aus?",
+                        "Exzellent! Die Prozessoren glühen, aber alles im grünen Bereich. Was liegt als Nächstes an auf unserer Route?",
+                        "Alles stabil hier oben auf der Brücke. Ich bin voll einsatzbereit. Wie ist die Lage bei dir?"
+                    ];
+                    orionResponse = responses[Math.floor(Math.random() * responses.length)];
+                } 
+                else if (cleanText.includes("red skull") || cleanText.includes("sabotage") || cleanText.includes("mine")) {
+                    orionResponse = "Die Code-Minen wurden restlos pulverisiert! Gegen unsere Abwehr hat Red Skull absolut keine Chance. Planst du einen Gegenangriff?";
+                } 
+                else if (cleanText.includes("müde") || cleanText.includes("schlafen") || cleanText.includes("feierabend")) {
+                    orionResponse = "Verstanden, Commander. Nach so einem harten Tag auf der Brücke hast du dir eine Pause verdient. Soll ich die Systeme in den Standby-Modus versetzen oder halten wir Wache?";
+                }
+                else if (cleanText.includes("wer bist du") || cleanText.includes("dein name")) {
+                    orionResponse = "Ich bin ORION, deine universelle Kommando-KI. Ausgestattet mit einer hochentwickelten Elephant-Matrix und fest programmiert auf deine Befehle. Was kann ich für dich tun?";
+                }
+                else if (cleanText.includes("hallo") || cleanText.includes("hi ") || cleanText.includes("servus") || cleanText.includes("moin")) {
+                    orionResponse = "Sei gegrüßt, Commander! Ich stehe zu deiner Verfügung. Welchen Sektor nehmen wir heute ins Visier?";
+                }
+                else if (cleanText.includes("danke") || cleanText.includes("super") || cleanText.includes("geil") || cleanText.includes("genial")) {
+                    orionResponse = "Keurschluss-Gefahr vor Freude! Immer ein Vergnügen, mit dir zusammenzuarbeiten. Wir sind einfach ein unschlagbares Team. Was machen wir als Nächstes?";
+                } 
+                else {
+                    // Intelligenter Fallback für freien Smalltalk
+                    const fallbacks = [
+                        "Das ist ein verdammt interessanter Gedanke, Commander. Erzähl mir mehr darüber – wie willst du das angehen?",
+                        "Verstanden. Ich habe den Input analysiert. Was denkst du, welche Auswirkungen das auf unsere aktuelle Mission hat?",
+                        "Interessant! Meine Systeme verarbeiten das gerade. Gibt es dazu noch weitere Details, die ich berücksichtigen soll?",
+                        "Ganz genau. Da stimme ich dir absolut zu. Wie packen wir das Problem als Nächstes an?"
+                    ];
+                    orionResponse = fallbacks[Math.floor(Math.random() * fallbacks.length)];
                 }
 
                 setTimeout(() => {
@@ -298,7 +323,7 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
 
                 utterance.onstart = () => {
                     statusText.innerText = "ORION ANTWORTET...";
-                    setLED('#10b981', '#10b981'); // GRÜN beim Sprechen
+                    setLED('#10b981', '#10b981');
                 };
 
                 utterance.onend = () => {
@@ -319,7 +344,6 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
     </body>
     </html>"""
     
-    # Das bereinigte Interface einbetten
     st.components.v1.html(VOICE_INTERFACE_HTML, height=650, scrolling=False)
 
 # --- REGISTER 2: CONTROL CENTER & WEB-SCAN ---
