@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION UNIVERSAL COMMAND CORE v17.5 (STREAMLIT CLOUD - MULTI-TAB EXPANSION)
+# ORION UNIVERSAL COMMAND CORE v17.6 (STREAMLIT CLOUD - MULTI-TAB EXPANSION)
 # PREFERRED MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // LAWS: INCLUDED
 # PERFORMANCE MODE: FAST SUPER SPEED RESPONDER // AUDIO & SYSTEM HUB
 # ==============================================================================
@@ -9,7 +9,7 @@ import datetime
 
 # 1. CORE STREAMLIT PAGE CONFIG (Felsenfestes Sci-Fi Layout)
 st.set_page_config(
-    page_title="ORION COMMANDER v17.5",
+    page_title="ORION COMMANDER v17.6",
     page_icon="🪐",
     layout="wide"
 )
@@ -35,7 +35,7 @@ st.markdown("""
 if "notes" not in st.session_state:
     st.session_state.notes = []
 if "terminal_logs" not in st.session_state:
-    st.session_state.terminal_logs = ["[SYS] Core v17.5 initialisiert. Alle Systeme nominal."]
+    st.session_state.terminal_logs = ["[SYS] Core v17.6 initialisiert. Alle Systeme nominal."]
 
 # ------------------------------------------------------------------------------
 # MULTI-TAB ARCHITEKTUR
@@ -48,9 +48,9 @@ tab_main, tab_voice = st.tabs(["🎛️ ORION CONTROL CENTER", "🎙️ ORION CO
 # ==============================================================================
 with tab_main:
     # Header-Bereich
-    st.markdown("<h1 style='text-align: center; color: #00d2ff; letter-spacing: 4px; margin-bottom: 0;'>ORION UNIVERSAL v17.5</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #00d2ff; letter-spacing: 4px; margin-bottom: 0;'>ORION UNIVERSAL v17.6</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #10b981; font-family: monospace; font-size: 12px;'>MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // DIRECTIVE 5 ONLINE</p>", unsafe_allow_html=True)
-    st.hr()
+    st.divider()  # Mine entschärft: st.divider() statt st.hr()
 
     # Grid-Layout für deine Werkzeuge
     col_left, col_right = st.columns([2, 1])
@@ -64,14 +64,14 @@ with tab_main:
             if st.button("🌐 Globalen Web-Scan starten", use_container_width=True):
                 if search_query:
                     st.info(f"Scanne Matrix nach: '{search_query}'... (Ergebnisse werden simuliert)")
-                    st.success(f"Eintrag gefunden! ORION v17.5 hat die Daten im Elephant-Memory gesichert.")
+                    st.success(f"Eintrag gefunden! ORION v17.6 hat die Daten im Elephant-Memory gesichert.")
                 else:
                     st.warning("Commander, bitte Suchbegriff einspeisen.")
         with col_s2:
             if st.button("📖 Wikipedia Sprach-Reader vorbereiten", use_container_width=True):
                 st.info("Sprachausgabe v9.4 bereit. Text wird für das Headset aufbereitet.")
 
-        st.hr()
+        st.divider()  # Mine entschärft: st.divider() statt st.hr()
 
         # FEATURE: NOTIZBUCH (DEINE PROTOKOLLE)
         st.markdown("<h3 style='color: #00d2ff;'>📝 Missions-Notizbuch</h3>", unsafe_allow_html=True)
@@ -95,7 +95,8 @@ with tab_main:
         cmd_input = st.text_input("Befehl eingeben...", placeholder="help, status, clear, shields up...", key="cmd_input")
         
         if cmd_input:
-            cmd = cmd_input.strip().toLowerCase() if hasattr(cmd_input, "toLowerCase") else cmd_input.strip().lower()
+            # Mine entschärft: Reines Python .lower() statt JavaScript .toLowerCase()
+            cmd = cmd_input.strip().lower()
             timestamp = datetime.datetime.now().strftime("%H:%M:%S")
             if cmd == "help":
                 st.session_state.terminal_logs.append(f"[{timestamp}] > {cmd_input}")
@@ -113,7 +114,7 @@ with tab_main:
                 st.session_state.terminal_logs.append(f"[{timestamp}] Befehl '{cmd_input}' an Core weitergeleitet.")
 
         # Terminal-Fenster ausgeben
-        terminal_box = "\\n".join(st.session_state.terminal_logs[-10:])
+        terminal_box = "\n".join(st.session_state.terminal_logs[-10:])
         st.text_area("Terminal Output", value=terminal_box, height=250, disabled=True)
 
         # SYSTEM DIREKTIVEN ANZEIGE
@@ -295,7 +296,7 @@ with tab_voice:
                 } else if (cleanText.includes("suche") || cleanText.includes("wikipedia") || cleanText.includes("wissen")) {
                     orionResponse = "Bereite die Deep-Scan Suchalgorithmen vor. Sag mir einfach, welchen Sektor im Web oder in Wikipedia ich filtern soll, und ich jage es durch den Audio-Reader.";
                 } else if (cleanText.includes("code") || cleanText.includes("master")) {
-                    orionResponse = "Master-Code 'Auth-x' wurde tief im Systemkern verankert. Alle administrativen Vorrechte sind exklusiv für dich freigeschaltet.";
+                    orionResponse = "Master-Code 'Auth-x' wurde tief im Systemkern verankert. Alle administrative Vorrechte sind exklusiv für dich freigeschaltet.";
                 } else if (cleanText.includes("danke") || cleanText.includes("super") || cleanText.includes("geil")) {
                     orionResponse = "Immer zu Diensten! Zusammen sind wir unschlagbar. Der Alltags-Scheiß hat hier oben Sendepause!";
                 } else {
@@ -318,7 +319,7 @@ with tab_voice:
                 if (deVoice) utterance.voice = deVoice;
                 utterance.pitch = 0.85; // Tiefe, sonore Stimme
                 synth.speak(utterance);
-                statusText.innerText = "ORION TRANSMITTET AUDIO...";
+                statusText.innerText = "ORION SPRICHT JETZT...";
             }
         }
     </script>
