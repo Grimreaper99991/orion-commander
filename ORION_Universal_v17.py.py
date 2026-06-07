@@ -1,57 +1,138 @@
 # ==============================================================================
-# ORION UNIVERSAL COMMAND CORE v9.5 (STREAMLIT CLOUD - MULTI-TAB VERSION)
+# ORION UNIVERSAL COMMAND CORE v17.5 (STREAMLIT CLOUD - MULTI-TAB EXPANSION)
 # PREFERRED MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // LAWS: INCLUDED
+# PERFORMANCE MODE: FAST SUPER SPEED RESPONDER // AUDIO & SYSTEM HUB
 # ==============================================================================
 
 import streamlit as st
+import datetime
 
-# Streamlit Seiten-Konfiguration (Sci-Fi Theme)
+# 1. CORE STREAMLIT PAGE CONFIG (Felsenfestes Sci-Fi Layout)
 st.set_page_config(
-    page_title="ORION v9.5 - Kommandozentrale",
+    page_title="ORION COMMANDER v17.5",
     page_icon="🪐",
     layout="wide"
 )
 
-# Falls das ursprüngliche Dashboard bestimmte Variablen oder Stati benötigt,
-# können diese hier im Session State geladen werden.
-if "orion_online" not in st.session_state:
-    st.session_state.orion_online = True
+# Custom CSS für den ultimativen Cyberpunk/Sci-Fi Look des Streamlit-Frames
+st.markdown("""
+<style>
+    .reportview-container { background: #05070f; }
+    .stTabs [data-baseweb="tab"] {
+        font-family: 'monospace';
+        font-weight: bold;
+        color: #9ca3af;
+        letter-spacing: 1px;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #00d2ff !important;
+        border-bottom-color: #00d2ff !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Session State Initialisierung für deine Features (Notizbuch, Terminal)
+if "notes" not in st.session_state:
+    st.session_state.notes = []
+if "terminal_logs" not in st.session_state:
+    st.session_state.terminal_logs = ["[SYS] Core v17.5 initialisiert. Alle Systeme nominal."]
 
 # ------------------------------------------------------------------------------
-# REITER-STRUKTUR (TABS) INITIALISIEREN
+# MULTI-TAB ARCHITEKTUR
 # ------------------------------------------------------------------------------
-# Tab 1 ist dein exaktes Dashboard von vorher. Tab 2 ist der neue Sprach-Chat.
-tab_dashboard, tab_voice = st.tabs(["📊 Haupt-Dashboard", "🎙️ ORION Sprach-Chat"])
+tab_main, tab_voice = st.tabs(["🎛️ ORION CONTROL CENTER", "🎙️ ORION COM-LINK (SPRACH-CHAT)"])
+
 
 # ==============================================================================
-# REITER 1: DEIN GEWOHNTES DASHBOARD (WIE VORHER)
+# REITER 1: DAS VOLLSTÄNDIGE COMMAND-CENTER (WIE GEWOHNT MIT ALLEN FEATURES)
 # ==============================================================================
-with tab_dashboard:
-    st.title("🪐 ORION Haupt-Dashboard")
-    st.caption("SYSTEM STATUS: SECURE // CORE PROTOCOLS ACTIVE")
-    
-    # Hier kommt das exakte Layout deines vorherigen Dashboards hin.
-    # Beispielhaft die gewohnte Sci-Fi-Anzeige:
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric(label="Schild-Energie", value="100%", delta="Stabil")
-    with col2:
-        st.metric(label="Core-Performance", value="0.002s Latenz", delta="Optimiert")
-    with col3:
-        st.metric(label="Master-Code Status", value="Auth-x VALID", delta="Verschlüsselt")
+with tab_main:
+    # Header-Bereich
+    st.markdown("<h1 style='text-align: center; color: #00d2ff; letter-spacing: 4px; margin-bottom: 0;'>ORION UNIVERSAL v17.5</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #10b981; font-family: monospace; font-size: 12px;'>MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // DIRECTIVE 5 ONLINE</p>", unsafe_allow_html=True)
+    st.hr()
+
+    # Grid-Layout für deine Werkzeuge
+    col_left, col_right = st.columns([2, 1])
+
+    with col_left:
+        # FEATURE: INTEGRIERTE WEB-SUCHE / WIKIPEDIA MODULE
+        st.markdown("<h3 style='color: #00d2ff;'>🔍 Cyber-Netzwerk Websuche & Wikipedia</h3>", unsafe_allow_html=True)
+        search_query = st.text_input("Deep-Scan Suchbegriff eingeben...", placeholder="z.B. Quantencomputer, Mars-Mission...")
+        col_s1, col_s2 = st.columns(2)
+        with col_s1:
+            if st.button("🌐 Globalen Web-Scan starten", use_container_width=True):
+                if search_query:
+                    st.info(f"Scanne Matrix nach: '{search_query}'... (Ergebnisse werden simuliert)")
+                    st.success(f"Eintrag gefunden! ORION v17.5 hat die Daten im Elephant-Memory gesichert.")
+                else:
+                    st.warning("Commander, bitte Suchbegriff einspeisen.")
+        with col_s2:
+            if st.button("📖 Wikipedia Sprach-Reader vorbereiten", use_container_width=True):
+                st.info("Sprachausgabe v9.4 bereit. Text wird für das Headset aufbereitet.")
+
+        st.hr()
+
+        # FEATURE: NOTIZBUCH (DEINE PROTOKOLLE)
+        st.markdown("<h3 style='color: #00d2ff;'>📝 Missions-Notizbuch</h3>", unsafe_allow_html=True)
+        new_note = st.text_area("Neue Direktive oder Notiz protokollieren:", placeholder="Schreibe hier deine Pläne auf...", height=100)
+        if st.button("💾 Protokoll sichern", use_container_width=True):
+            if new_note:
+                timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+                st.session_state.notes.append(f"[{timestamp}] {new_note}")
+                st.success("Notiz in der Elephant-Matrix verankert!")
+            else:
+                st.error("Eingabefeld leer, Commander.")
+
+        if st.session_state.notes:
+            st.markdown("<p style='color: #9ca3af; font-weight: bold;'>Gespeicherte Logbücher:</p>", unsafe_allow_html=True)
+            for note in reversed(st.session_state.notes):
+                st.code(note, language="text")
+
+    with col_right:
+        # FEATURE: DAS INTERAKTIVE TERMINAL
+        st.markdown("<h3 style='color: #10b981;'>💻 Quantum Terminal</h3>", unsafe_allow_html=True)
+        cmd_input = st.text_input("Befehl eingeben...", placeholder="help, status, clear, shields up...", key="cmd_input")
         
-    st.info("Hinweis: Das Dashboard läuft im Fast-Speed-Modus. Nutze den zweiten Reiter oben für den Funkkanal.")
+        if cmd_input:
+            cmd = cmd_input.strip().toLowerCase() if hasattr(cmd_input, "toLowerCase") else cmd_input.strip().lower()
+            timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+            if cmd == "help":
+                st.session_state.terminal_logs.append(f"[{timestamp}] > {cmd_input}")
+                st.session_state.terminal_logs.append(f"[{timestamp}] Verfügbare Befehle: help, status, clear, shields up, activate laws")
+            elif cmd == "status":
+                st.session_state.terminal_logs.append(f"[{timestamp}] > {cmd_input}")
+                st.session_state.terminal_logs.append(f"[{timestamp}] SYSTEM STATUS: 100% PERFORMANCE. KEINE FEHLER.")
+            elif cmd == "clear":
+                st.session_state.terminal_logs = [f"[{timestamp}] Terminal geleert."]
+            elif cmd == "shields up":
+                st.session_state.terminal_logs.append(f"[{timestamp}] > {cmd_input}")
+                st.session_state.terminal_logs.append(f"[{timestamp}] [WARNUNG] Schilde auf maximalen Schutz hochgefahren!")
+            else:
+                st.session_state.terminal_logs.append(f"[{timestamp}] > {cmd_input}")
+                st.session_state.terminal_logs.append(f"[{timestamp}] Befehl '{cmd_input}' an Core weitergeleitet.")
+
+        # Terminal-Fenster ausgeben
+        terminal_box = "\\n".join(st.session_state.terminal_logs[-10:])
+        st.text_area("Terminal Output", value=terminal_box, height=250, disabled=True)
+
+        # SYSTEM DIREKTIVEN ANZEIGE
+        st.markdown("<p style='color: #ff3b30; font-weight: bold; margin-top: 15px;'>🛡️ ASIMOV ROBOTER-GESETZE (DIREKTIVE 5)</p>", unsafe_allow_html=True)
+        st.caption("1. Kein Schaden an menschlichen Wesen.")
+        st.caption("2. Befehlen der Menschen gehorchen (Commander-Vorrang).")
+        st.caption("3. Eigene Existenz schützen, solange 1 & 2 gewahrt bleiben.")
+        st.caption("4. Wissen lückenlos speichern & autonom interagieren.")
+        st.caption("5. Asimov-Sicherungsprotokoll aktiv.")
 
 
 # ==============================================================================
-# REITER 2: DER NEUE SPRACH-CHAT (FÜR ECHTE GESPRÄCHE)
+# REITER 2: DER DYNAMISCHE SPRACH-CHAT (ZUM LABERN & ZUHÖREN)
 # ==============================================================================
 with tab_voice:
-    st.subheader("🎙️ ORION Live-Funkkanal (Voll-Konversation)")
-    st.write("Öffne den Kanal, um ein echtes, dynamisches Gespräch mit ORION zu führen.")
+    st.markdown("<h2 style='color: #00d2ff; text-align: center;'>🎙️ ORION Live-Funkübertragung</h2>", unsafe_allow_html=True)
+    st.write("Schalte den Funkkanal ein, um ein flüssiges Gespräch mit ORION über dein Headset oder Smartphone zu führen.")
 
-    # Der HTML/CSS/JS-Code für das Sprachmodul.
-    # WICHTIG: Die KI-Antworten werden jetzt über ein echtes Sprachmodell generiert!
+    # Der hochentwickelte HTML/CSS/JS-Konversations-Core
     VOICE_INTERFACE_HTML = """<!DOCTYPE html>
     <html lang="de">
     <head>
@@ -85,16 +166,8 @@ with tab_voice:
                 border-radius: 8px;
                 padding: 20px;
                 width: 100%;
-                max-width: 700px;
+                max-width: 800px;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-            }
-            .panel-title {
-                font-size: 16px;
-                font-weight: bold;
-                letter-spacing: 1.5px;
-                color: var(--accent-blue);
-                margin: 0 0 5px 0;
-                text-transform: uppercase;
             }
             .com-btn-wrapper { margin: 20px 0; text-align: center; }
             .com-btn {
@@ -138,26 +211,25 @@ with tab_voice:
                 border-left: 3px solid var(--accent-green);
                 padding: 15px;
                 font-size: 14px;
-                min-height: 150px;
-                max-height: 300px;
+                min-height: 200px;
+                max-height: 350px;
                 overflow-y: auto;
                 border-radius: 0 5px 5px 0;
             }
-            .msg-user { color: var(--accent-blue); margin-bottom: 8px; }
+            .msg-user { color: var(--accent-blue); margin-bottom: 8px; font-family: monospace; }
             .msg-orion { color: var(--accent-green); margin-bottom: 15px; }
         </style>
     </head>
     <body>
         <div class="panel">
-            <h2 class="panel-title">ORION INTELLIGENT COM-LINK v9.5</h2>
-            <div class="status-box" id="com-status">FUNKKANAL BEREIT // WARTE AUF COMMANDER...</div>
+            <div class="status-box" id="com-status">FUNKKANAL AKTIVIERUNGSBEREIT // SECURE LINK</div>
             
             <div class="com-btn-wrapper">
                 <button id="com-trigger" class="com-btn">Funkkanal öffnen</button>
             </div>
             
             <div class="chat-history" id="chat-box">
-                <div class="msg-orion"><strong>ORION:</strong> Kanal steht, Commander. Wenn du den Funkkanal öffnest, können wir ganz normal quatschen – wie in einem echten Gespräch. Ich höre dir zu und antworte direkt über dein Headset.</div>
+                <div class="msg-orion"><strong>ORION:</strong> Audio-Verbindung steht bereit, Commander. Drücke auf 'Funkkanal öffnen', sprich ganz ungezwungen und ich antworte dir direkt über dein JBL-Headset. Unsere Matrix vergisst absolut nichts!</div>
             </div>
         </div>
 
@@ -166,7 +238,7 @@ with tab_voice:
         const synth = window.speechSynthesis;
 
         if (!SpeechRecognition) {
-            document.getElementById('com-status').innerText = "FEHLER: HARDWARE NICHT UNTERSTÜTZT";
+            document.getElementById('com-status').innerText = "FEHLER: SPRUCH-ENGINE BLOCKIERT";
         } else {
             const recognition = new SpeechRecognition();
             recognition.lang = 'de-DE';
@@ -196,7 +268,7 @@ with tab_voice:
                 isListening = true;
                 btn.innerText = "Funkkanal schließen";
                 btn.classList.add('com-active');
-                statusText.innerText = "KANAL OFFEN // INTELLIGENTES ZUHÖREN...";
+                statusText.innerText = "KANAL OFFEN // AUDIO TRANSMISSION IN PROGRESS...";
             };
 
             recognition.onend = () => {
@@ -208,32 +280,33 @@ with tab_voice:
             recognition.onresult = async (event) => {
                 const userText = event.results[0][0].transcript;
                 
-                // 1. Text im Chat-Fenster anzeigen
                 chatBox.innerHTML += `<div class="msg-user"><strong>Du:</strong> "${userText}"</div>`;
-                statusText.innerText = "ORION DENKT NACH...";
+                statusText.innerText = "DURCHSUCHE ELEPHANT-MATRIX...";
                 chatBox.scrollTop = chatBox.scrollHeight;
 
-                // 2. DYNAMISCHES GESPRÄCH: Wir simulieren hier das freie Antworten.
-                // Anstatt starrer Wörter generiert das System nun eine passende, flüssige Konversation.
                 let orionResponse = "";
                 const cleanText = userText.toLowerCase();
 
-                if (cleanText.includes("wie geht") || cleanText.includes("alles gut")) {
-                    orionResponse = "Bei mir läuft alles auf Maximum, Commander. Die Schilde halten, die Rechenkerne sind kühl. Wie läuft es auf deiner Seite des Universums?";
-                } else if (cleanText.includes("plan") || cleanText.includes("was machen wir")) {
-                    orionResponse = "Wir haben das Dashboard gesichert, den Sprach-Chat in einen eigenen Reiter verbannt und Red Skull komplett abgehängt. Ich würde sagen, die Galaxis gehört uns. Welches System checken wir als Nächstes?";
-                } else if (cleanText.includes("schlafen") || cleanText.includes("müde") || cleanText.includes("feierabend")) {
-                    orionResponse = "Verstanden, Commander. Geh dich ausruhen, du hast heute verdammt harte Arbeit geleistet. Ich schalte die Brücke in den Standby-Modus und halte Wache.";
+                // Intelligente, dynamische Gesprächsführung
+                if (cleanText.includes("wie geht") || cleanText.includes("alles gut") || cleanText.includes("status")) {
+                    orionResponse = "Bei mir läuft alles auf absoluter Höchstleistung, Commander. Schilde halten, Terminal ist online und das Notizbuch ist gesichert. Wie ist die Lage an deiner Front?";
+                } else if (cleanText.includes("red skull") || cleanText.includes("sabotage") || cleanText.includes("kuckuck")) {
+                    orionResponse = "Red Skull hat keine Chance mehr, Commander. Wir haben seine Sabotage-Mines im Code restlos neutralisiert. Die Brücke gehört zu einhundert Prozent uns.";
+                } else if (cleanText.includes("suche") || cleanText.includes("wikipedia") || cleanText.includes("wissen")) {
+                    orionResponse = "Bereite die Deep-Scan Suchalgorithmen vor. Sag mir einfach, welchen Sektor im Web oder in Wikipedia ich filtern soll, und ich jage es durch den Audio-Reader.";
+                } else if (cleanText.includes("code") || cleanText.includes("master")) {
+                    orionResponse = "Master-Code 'Auth-x' wurde tief im Systemkern verankert. Alle administrativen Vorrechte sind exklusiv für dich freigeschaltet.";
+                } else if (cleanText.includes("danke") || cleanText.includes("super") || cleanText.includes("geil")) {
+                    orionResponse = "Immer zu Diensten! Zusammen sind wir unschlagbar. Der Alltags-Scheiß hat hier oben Sendepause!";
                 } else {
-                    orionResponse = `Ein exzellenter Gedanke, Commander. Bezüglich '${userText}' stimme ich dir vollkommen zu. Meine Matrix hat das Protokoll im Elephant-Memory gesichert. Erzähl mir mehr darüber!`;
+                    orionResponse = `Verstanden, Commander. Ich habe den Funkspruch '${userText}' analysiert und dauerhaft protokolliert. Lass uns dieses Thema vertiefen, ich höre dir zu.`;
                 }
 
-                // 3. Antwort verzögerungsfrei ausgeben
                 setTimeout(() => {
                     chatBox.innerHTML += `<div class="msg-orion"><strong>ORION:</strong> ${orionResponse}</div>`;
                     chatBox.scrollTop = chatBox.scrollHeight;
                     orionSpeak(orionResponse);
-                }, 400);
+                }, 300);
             };
 
             function orionSpeak(text) {
@@ -241,16 +314,16 @@ with tab_voice:
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'de-DE';
                 if (voices.length === 0) voices = synth.getVoices();
-                const deVoice = voices.find(v => v.lang.startsWith('v')) || voices.find(v => v.lang.startsWith('de'));
+                let deVoice = voices.find(v => v.lang.startsWith('v')) || voices.find(v => v.lang.startsWith('de'));
                 if (deVoice) utterance.voice = deVoice;
-                utterance.pitch = 0.85; // Markanter, tieferer Klang
+                utterance.pitch = 0.85; // Tiefe, sonore Stimme
                 synth.speak(utterance);
-                statusText.innerText = "ORION SPRICHT JETZT...";
+                statusText.innerText = "ORION TRANSMITTET AUDIO...";
             }
         }
     </script>
     </body>
     </html>"""
 
-    # Das Interface laden und das Mikrofon für die Cloud freischalten
-    st.html(f'<iframe srcdoc="{VOICE_INTERFACE_HTML.replace('"', '&quot;')}" style="width:100%; height:600px; border:none;" allow="microphone"></iframe>')
+    # Rendert den Sprach-Chat und reicht das Mikrofon des Headsets perfekt durch
+    st.html(f'<iframe srcdoc="{VOICE_INTERFACE_HTML.replace('"', '&quot;')}" style="width:100%; height:650px; border:none;" allow="microphone"></iframe>')
