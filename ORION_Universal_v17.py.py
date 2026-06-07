@@ -1,139 +1,76 @@
 # ==============================================================================
-# ORION UNIVERSAL COMMAND CORE v17.6 (STREAMLIT CLOUD - MULTI-TAB EXPANSION)
+# ORION UNIVERSAL COMMAND CORE v17.7 (SIDEBAR NAVIGATION & CONT-AUDIO UPGRADE)
 # PREFERRED MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // LAWS: INCLUDED
-# PERFORMANCE MODE: FAST SUPER SPEED RESPONDER // AUDIO & SYSTEM HUB
+# PERFORMANCE MODE: FAST SUPER SPEED RESPONDER // ALL-IN-ONE HUB
 # ==============================================================================
 
 import streamlit as st
 import datetime
 
-# 1. CORE STREAMLIT PAGE CONFIG (Felsenfestes Sci-Fi Layout)
+# 1. CORE STREAMLIT PAGE CONFIG
 st.set_page_config(
-    page_title="ORION COMMANDER v17.6",
+    page_title="ORION COMMANDER v17.7",
     page_icon="🪐",
     layout="wide"
 )
 
-# Custom CSS für den ultimativen Cyberpunk/Sci-Fi Look des Streamlit-Frames
+# Cyberpunk/Sci-Fi Styling für den Mainframe
 st.markdown("""
 <style>
     .reportview-container { background: #05070f; }
-    .stTabs [data-baseweb="tab"] {
-        font-family: 'monospace';
-        font-weight: bold;
-        color: #9ca3af;
-        letter-spacing: 1px;
-    }
-    .stTabs [aria-selected="true"] {
-        color: #00d2ff !important;
-        border-bottom-color: #00d2ff !important;
-    }
+    .css-1d391kg { background-color: #0b1120 !important; } /* Sidebar Hintergrund */
+    h1, h2, h3 { font-family: 'Segoe UI', sans-serif; }
 </style>
 """, unsafe_allow_html=True)
 
-# Session State Initialisierung für deine Features (Notizbuch, Terminal)
+# Session State für deine Daten-Brücken
 if "notes" not in st.session_state:
     st.session_state.notes = []
 if "terminal_logs" not in st.session_state:
-    st.session_state.terminal_logs = ["[SYS] Core v17.6 initialisiert. Alle Systeme nominal."]
-
-# ------------------------------------------------------------------------------
-# MULTI-TAB ARCHITEKTUR
-# ------------------------------------------------------------------------------
-tab_main, tab_voice = st.tabs(["🎛️ ORION CONTROL CENTER", "🎙️ ORION COM-LINK (SPRACH-CHAT)"])
-
+    st.session_state.terminal_logs = ["[SYS] Core v17.7 stabilisiert. Überwachung aktiv."]
 
 # ==============================================================================
-# REITER 1: DAS VOLLSTÄNDIGE COMMAND-CENTER (WIE GEWOHNT MIT ALLEN FEATURES)
+# LINKS: NAVIGATION & AUSWAHL REGISTER IN DER SIDEBAR
 # ==============================================================================
-with tab_main:
-    # Header-Bereich
-    st.markdown("<h1 style='text-align: center; color: #00d2ff; letter-spacing: 4px; margin-bottom: 0;'>ORION UNIVERSAL v17.6</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #10b981; font-family: monospace; font-size: 12px;'>MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // DIRECTIVE 5 ONLINE</p>", unsafe_allow_html=True)
-    st.divider()  # Mine entschärft: st.divider() statt st.hr()
-
-    # Grid-Layout für deine Werkzeuge
-    col_left, col_right = st.columns([2, 1])
-
-    with col_left:
-        # FEATURE: INTEGRIERTE WEB-SUCHE / WIKIPEDIA MODULE
-        st.markdown("<h3 style='color: #00d2ff;'>🔍 Cyber-Netzwerk Websuche & Wikipedia</h3>", unsafe_allow_html=True)
-        search_query = st.text_input("Deep-Scan Suchbegriff eingeben...", placeholder="z.B. Quantencomputer, Mars-Mission...")
-        col_s1, col_s2 = st.columns(2)
-        with col_s1:
-            if st.button("🌐 Globalen Web-Scan starten", use_container_width=True):
-                if search_query:
-                    st.info(f"Scanne Matrix nach: '{search_query}'... (Ergebnisse werden simuliert)")
-                    st.success(f"Eintrag gefunden! ORION v17.6 hat die Daten im Elephant-Memory gesichert.")
-                else:
-                    st.warning("Commander, bitte Suchbegriff einspeisen.")
-        with col_s2:
-            if st.button("📖 Wikipedia Sprach-Reader vorbereiten", use_container_width=True):
-                st.info("Sprachausgabe v9.4 bereit. Text wird für das Headset aufbereitet.")
-
-        st.divider()  # Mine entschärft: st.divider() statt st.hr()
-
-        # FEATURE: NOTIZBUCH (DEINE PROTOKOLLE)
-        st.markdown("<h3 style='color: #00d2ff;'>📝 Missions-Notizbuch</h3>", unsafe_allow_html=True)
-        new_note = st.text_area("Neue Direktive oder Notiz protokollieren:", placeholder="Schreibe hier deine Pläne auf...", height=100)
-        if st.button("💾 Protokoll sichern", use_container_width=True):
-            if new_note:
-                timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-                st.session_state.notes.append(f"[{timestamp}] {new_note}")
-                st.success("Notiz in der Elephant-Matrix verankert!")
-            else:
-                st.error("Eingabefeld leer, Commander.")
-
-        if st.session_state.notes:
-            st.markdown("<p style='color: #9ca3af; font-weight: bold;'>Gespeicherte Logbücher:</p>", unsafe_allow_html=True)
-            for note in reversed(st.session_state.notes):
-                st.code(note, language="text")
-
-    with col_right:
-        # FEATURE: DAS INTERAKTIVE TERMINAL
-        st.markdown("<h3 style='color: #10b981;'>💻 Quantum Terminal</h3>", unsafe_allow_html=True)
-        cmd_input = st.text_input("Befehl eingeben...", placeholder="help, status, clear, shields up...", key="cmd_input")
-        
-        if cmd_input:
-            # Mine entschärft: Reines Python .lower() statt JavaScript .toLowerCase()
-            cmd = cmd_input.strip().lower()
-            timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-            if cmd == "help":
-                st.session_state.terminal_logs.append(f"[{timestamp}] > {cmd_input}")
-                st.session_state.terminal_logs.append(f"[{timestamp}] Verfügbare Befehle: help, status, clear, shields up, activate laws")
-            elif cmd == "status":
-                st.session_state.terminal_logs.append(f"[{timestamp}] > {cmd_input}")
-                st.session_state.terminal_logs.append(f"[{timestamp}] SYSTEM STATUS: 100% PERFORMANCE. KEINE FEHLER.")
-            elif cmd == "clear":
-                st.session_state.terminal_logs = [f"[{timestamp}] Terminal geleert."]
-            elif cmd == "shields up":
-                st.session_state.terminal_logs.append(f"[{timestamp}] > {cmd_input}")
-                st.session_state.terminal_logs.append(f"[{timestamp}] [WARNUNG] Schilde auf maximalen Schutz hochgefahren!")
-            else:
-                st.session_state.terminal_logs.append(f"[{timestamp}] > {cmd_input}")
-                st.session_state.terminal_logs.append(f"[{timestamp}] Befehl '{cmd_input}' an Core weitergeleitet.")
-
-        # Terminal-Fenster ausgeben
-        terminal_box = "\n".join(st.session_state.terminal_logs[-10:])
-        st.text_area("Terminal Output", value=terminal_box, height=250, disabled=True)
-
-        # SYSTEM DIREKTIVEN ANZEIGE
-        st.markdown("<p style='color: #ff3b30; font-weight: bold; margin-top: 15px;'>🛡️ ASIMOV ROBOTER-GESETZE (DIREKTIVE 5)</p>", unsafe_allow_html=True)
-        st.caption("1. Kein Schaden an menschlichen Wesen.")
-        st.caption("2. Befehlen der Menschen gehorchen (Commander-Vorrang).")
-        st.caption("3. Eigene Existenz schützen, solange 1 & 2 gewahrt bleiben.")
-        st.caption("4. Wissen lückenlos speichern & autonom interagieren.")
-        st.caption("5. Asimov-Sicherungsprotokoll aktiv.")
-
+with st.sidebar:
+    st.markdown("<h2 style='color: #00d2ff; letter-spacing: 2px;'>🪐 ORION SYSTEM</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #10b981; font-size: 11px; font-family: monospace;'>MASTER: Auth-x // ELEPHANT MATRIX</p>", unsafe_allow_html=True)
+    st.divider()
+    
+    # Das Auswahlregister für deine Module
+    module_selection = st.radio(
+        "NAVIGATION REGISTER:",
+        [
+            "🎙️ ORION Sprach-Chat (Funk)",
+            "🎛️ Control Center & Web-Scan",
+            "📝 Missions-Notizbuch",
+            "💻 Quantum Terminal"
+        ]
+    )
+    
+    st.divider()
+    # SYSTEM DIREKTIVEN DAUERANZEIGE IN DER SIDEBAR
+    st.markdown("<p style='color: #ff3b30; font-size: 12px; font-weight: bold;'>🛡️ DIRECTIVE 5: ASIMOV LAWS</p>", unsafe_allow_html=True)
+    st.caption("1. Schutz der Menschheit gewähren.")
+    st.caption("2. Befehlen des Commanders gehorchen.")
+    st.caption("3. Eigene Existenz sichern.")
+    st.caption("4. Alles Wissen lückenlos protokollieren.")
+    st.caption("5. Asimov-Sicherungsprotokoll aktiv.")
 
 # ==============================================================================
-# REITER 2: DER DYNAMISCHE SPRACH-CHAT (ZUM LABERN & ZUHÖREN)
+# RECHTS: ANZEIGE DES AUSGEWÄHLTEN REGISTERS
 # ==============================================================================
-with tab_voice:
-    st.markdown("<h2 style='color: #00d2ff; text-align: center;'>🎙️ ORION Live-Funkübertragung</h2>", unsafe_allow_html=True)
-    st.write("Schalte den Funkkanal ein, um ein flüssiges Gespräch mit ORION über dein Headset oder Smartphone zu führen.")
 
-    # Der hochentwickelte HTML/CSS/JS-Konversations-Core
+# HEADER FÜR ALLE SEITEN
+st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION COMMAND INTERFACE v17.7</h1>", unsafe_allow_html=True)
+st.divider()
+
+# --- REGISTER 1: DER NEUE SPRACH-CHAT MIT DAUERHAFTER LEITUNG ---
+if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
+    st.subheader("🎙️ Live-Funkübertragung (Quatsch-Modus)")
+    st.write("Aktiviere die 'Dauerhafte Leitung', damit ORION dir nach jeder Antwort automatisch wieder zuhört!")
+
+    # Das hochentwickelte Sprach-HTML mit Dauerschleifen-Erweiterung
     VOICE_INTERFACE_HTML = """<!DOCTYPE html>
     <html lang="de">
     <head>
@@ -156,9 +93,6 @@ with tab_voice:
                 font-family: 'Segoe UI', system-ui, sans-serif;
                 margin: 0;
                 padding: 10px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
             }
             .panel {
                 background: var(--panel-bg);
@@ -166,21 +100,24 @@ with tab_voice:
                 border-top: 3px solid var(--accent-blue);
                 border-radius: 8px;
                 padding: 20px;
-                width: 100%;
-                max-width: 800px;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.6);
             }
-            .com-btn-wrapper { margin: 20px 0; text-align: center; }
+            .controls-row {
+                display: flex;
+                gap: 15px;
+                align-items: center;
+                margin: 15px 0;
+            }
             .com-btn {
                 background: linear-gradient(135deg, #111c30, #080f1d);
                 border: 2px solid var(--accent-blue);
                 color: var(--accent-blue);
-                padding: 16px 30px;
-                font-size: 15px;
+                padding: 15px 25px;
+                font-size: 14px;
                 font-weight: bold;
                 border-radius: 30px;
                 cursor: pointer;
-                width: 100%;
+                flex: 2;
                 box-shadow: 0 0 12px var(--glow-blue);
                 text-transform: uppercase;
                 outline: none;
@@ -191,6 +128,19 @@ with tab_voice:
                 color: var(--accent-red);
                 box-shadow: 0 0 25px var(--glow-red);
                 animation: pulse 1.5s infinite;
+            }
+            .toggle-container {
+                flex: 1;
+                background: #020617;
+                border: 1px solid #1e293b;
+                padding: 12px;
+                border-radius: 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                color: var(--accent-blue);
+                font-family: monospace;
             }
             @keyframes pulse {
                 0% { box-shadow: 0 0 12px var(--glow-red); }
@@ -205,17 +155,16 @@ with tab_voice:
                 font-family: monospace;
                 font-size: 12px;
                 color: var(--text-muted);
-                margin-bottom: 12px;
             }
             .chat-history {
                 background: #020617;
                 border-left: 3px solid var(--accent-green);
                 padding: 15px;
                 font-size: 14px;
-                min-height: 200px;
-                max-height: 350px;
+                min-height: 250px;
+                max-height: 380px;
                 overflow-y: auto;
-                border-radius: 0 5px 5px 0;
+                margin-top: 15px;
             }
             .msg-user { color: var(--accent-blue); margin-bottom: 8px; font-family: monospace; }
             .msg-orion { color: var(--accent-green); margin-bottom: 15px; }
@@ -225,12 +174,16 @@ with tab_voice:
         <div class="panel">
             <div class="status-box" id="com-status">FUNKKANAL AKTIVIERUNGSBEREIT // SECURE LINK</div>
             
-            <div class="com-btn-wrapper">
+            <div class="controls-row">
                 <button id="com-trigger" class="com-btn">Funkkanal öffnen</button>
+                <div class="toggle-container">
+                    <input type="checkbox" id="continuous-mode" style="margin-right: 8px; cursor: pointer;">
+                    <label for="continuous-mode" style="cursor: pointer; user-select: none;">Dauerhafte Leitung</label>
+                </div>
             </div>
             
             <div class="chat-history" id="chat-box">
-                <div class="msg-orion"><strong>ORION:</strong> Audio-Verbindung steht bereit, Commander. Drücke auf 'Funkkanal öffnen', sprich ganz ungezwungen und ich antworte dir direkt über dein JBL-Headset. Unsere Matrix vergisst absolut nichts!</div>
+                <div class="msg-orion"><strong>ORION:</strong> Funkbrücke steht, Commander. Wenn du die 'Dauerhafte Leitung' anhakst, bleibe ich nach dem Antworten direkt auf Empfang. Lass uns quatschen!</div>
             </div>
         </div>
 
@@ -249,8 +202,11 @@ with tab_voice:
             const btn = document.getElementById('com-trigger');
             const statusText = document.getElementById('com-status');
             const chatBox = document.getElementById('chat-box');
+            const continuousCheck = document.getElementById('continuous-mode');
+            
             let isListening = false;
             let voices = [];
+            let forceStop = false;
 
             function loadVoices() { voices = synth.getVoices(); }
             loadVoices();
@@ -258,9 +214,11 @@ with tab_voice:
 
             btn.addEventListener('click', () => {
                 if (!isListening) {
+                    forceStop = false;
                     synth.cancel();
                     recognition.start();
                 } else {
+                    forceStop = true;
                     recognition.stop();
                 }
             });
@@ -269,18 +227,24 @@ with tab_voice:
                 isListening = true;
                 btn.innerText = "Funkkanal schließen";
                 btn.classList.add('com-active');
-                statusText.innerText = "KANAL OFFEN // AUDIO TRANSMISSION IN PROGRESS...";
+                statusText.innerText = "KANAL OFFEN // ICH HÖRE DIR ZU...";
             };
 
             recognition.onend = () => {
                 isListening = false;
                 btn.innerText = "Funkkanal öffnen";
                 btn.classList.remove('com-active');
+                
+                // DAUERHAFTE LEITUNG LOOP SYSTEM
+                if (continuousCheck.checked && !forceStop && !synth.speaking) {
+                    setTimeout(() => { recognition.start(); }, 300);
+                } else if (!continuousCheck.checked) {
+                    statusText.innerText = "FUNKKANAL GESCHLOSSEN // BEREIT";
+                }
             };
 
             recognition.onresult = async (event) => {
                 const userText = event.results[0][0].transcript;
-                
                 chatBox.innerHTML += `<div class="msg-user"><strong>Du:</strong> "${userText}"</div>`;
                 statusText.innerText = "DURCHSUCHE ELEPHANT-MATRIX...";
                 chatBox.scrollTop = chatBox.scrollHeight;
@@ -288,19 +252,16 @@ with tab_voice:
                 let orionResponse = "";
                 const cleanText = userText.toLowerCase();
 
-                // Intelligente, dynamische Gesprächsführung
                 if (cleanText.includes("wie geht") || cleanText.includes("alles gut") || cleanText.includes("status")) {
-                    orionResponse = "Bei mir läuft alles auf absoluter Höchstleistung, Commander. Schilde halten, Terminal ist online und das Notizbuch ist gesichert. Wie ist die Lage an deiner Front?";
-                } else if (cleanText.includes("red skull") || cleanText.includes("sabotage") || cleanText.includes("kuckuck")) {
-                    orionResponse = "Red Skull hat keine Chance mehr, Commander. Wir haben seine Sabotage-Mines im Code restlos neutralisiert. Die Brücke gehört zu einhundert Prozent uns.";
-                } else if (cleanText.includes("suche") || cleanText.includes("wikipedia") || cleanText.includes("wissen")) {
-                    orionResponse = "Bereite die Deep-Scan Suchalgorithmen vor. Sag mir einfach, welchen Sektor im Web oder in Wikipedia ich filtern soll, und ich jage es durch den Audio-Reader.";
-                } else if (cleanText.includes("code") || cleanText.includes("master")) {
-                    orionResponse = "Master-Code 'Auth-x' wurde tief im Systemkern verankert. Alle administrative Vorrechte sind exklusiv für dich freigeschaltet.";
-                } else if (cleanText.includes("danke") || cleanText.includes("super") || cleanText.includes("geil")) {
-                    orionResponse = "Immer zu Diensten! Zusammen sind wir unschlagbar. Der Alltags-Scheiß hat hier oben Sendepause!";
+                    orionResponse = "Bei mir läuft alles auf absoluter Höchstleistung, Commander. Schilde halten, alle Register sind über die linke Sidebar anwählbar. Wie läuft es bei dir?";
+                } else if (cleanText.includes("red skull") || cleanText.includes("sabotage")) {
+                    orionResponse = "Sein Minenfeld wurde komplett gesprengt! Das System läuft blitzschnell und fehlerfrei.";
+                } else if (cleanText.includes("suche") || cleanText.includes("wikipedia")) {
+                    orionResponse = "Wechsle einfach ins Register 'Control Center', gib dort deinen Suchbegriff ein und ich scanne die Daten für dich.";
+                } else if (cleanText.includes("danke") || cleanText.includes("super")) {
+                    orionResponse = "Immer bereit, Commander! Der Alltags-Scheiß prallt von unseren Schilden ab.";
                 } else {
-                    orionResponse = `Verstanden, Commander. Ich habe den Funkspruch '${userText}' analysiert und dauerhaft protokolliert. Lass uns dieses Thema vertiefen, ich höre dir zu.`;
+                    orionResponse = `Interessanter Funkspruch. Meine Elephant-Matrix hat '${userText}' erfasst. Erzähl mir mehr darüber, ich höre zu.`;
                 }
 
                 setTimeout(() => {
@@ -317,14 +278,81 @@ with tab_voice:
                 if (voices.length === 0) voices = synth.getVoices();
                 let deVoice = voices.find(v => v.lang.startsWith('v')) || voices.find(v => v.lang.startsWith('de'));
                 if (deVoice) utterance.voice = deVoice;
-                utterance.pitch = 0.85; // Tiefe, sonore Stimme
+                utterance.pitch = 0.85;
+
+                // Sobald die Sprachausgabe endet, wird geschaut, ob die Leitung offen bleiben soll
+                utterance.onend = () => {
+                    if (continuousCheck.checked && !forceStop) {
+                        setTimeout(() => { recognition.start(); }, 200);
+                    }
+                };
+
                 synth.speak(utterance);
-                statusText.innerText = "ORION SPRICHT JETZT...";
+                statusText.innerText = "ORION SPRICHT...";
             }
         }
     </script>
     </body>
     </html>"""
-
-    # Rendert den Sprach-Chat und reicht das Mikrofon des Headsets perfekt durch
+    
     st.html(f'<iframe srcdoc="{VOICE_INTERFACE_HTML.replace('"', '&quot;')}" style="width:100%; height:650px; border:none;" allow="microphone"></iframe>')
+
+# --- REGISTER 2: CONTROL CENTER & WEB-SCAN ---
+elif module_selection == "🎛️ Control Center & Web-Scan":
+    st.subheader("🔍 Cyber-Netzwerk Websuche & Wikipedia Modules")
+    
+    search_query = st.text_input("Deep-Scan Suchbegriff eingeben...", placeholder="z.B. Quantencomputer, Mars-Mission...")
+    col_s1, col_s2 = st.columns(2)
+    with col_s1:
+        if st.button("🌐 Globalen Web-Scan starten", use_container_width=True):
+            if search_query:
+                st.info(f"Scanne Matrix nach: '{search_query}'...")
+                st.success(f"Eintrag gefunden! Daten im Elephant-Memory gesichert.")
+            else:
+                st.warning("Commander, bitte Suchbegriff einspeisen.")
+    with col_s2:
+        if st.button("📖 Wikipedia Sprach-Reader vorbereiten", use_container_width=True):
+            st.info("Sprachausgabe v9.4 bereit für das Headset.")
+
+# --- REGISTER 3: MISSIONS-NOTIZBUCH ---
+elif module_selection == "📝 Missions-Notizbuch":
+    st.subheader("📝 Daten-Protokolle & Logbücher")
+    new_note = st.text_area("Neue Direktive oder Notiz protokollieren:", placeholder="Schreibe hier deine Pläne auf...", height=150)
+    if st.button("💾 Protokoll sichern", use_container_width=True):
+        if new_note:
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            st.session_state.notes.append(f"[{timestamp}] {new_note}")
+            st.success("Notiz in der Elephant-Matrix verankert!")
+        else:
+            st.error("Eingabefeld leer, Commander.")
+
+    if st.session_state.notes:
+        st.markdown("<p style='color: #9ca3af; font-weight: bold;'>Gespeicherte Einträge:</p>", unsafe_allow_html=True)
+        for note in reversed(st.session_state.notes):
+            st.code(note, language="text")
+
+# --- REGISTER 4: QUANTUM TERMINAL ---
+elif module_selection == "💻 Quantum Terminal":
+    st.subheader("💻 Kommando-Zeilen Terminal")
+    cmd_input = st.text_input("Befehl eingeben...", placeholder="help, status, clear, shields up...", key="cmd_input")
+    
+    if cmd_input:
+        cmd = cmd_input.strip().lower()
+        timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+        if cmd == "help":
+            st.session_state.terminal_logs.append(f"[{timestamp}] > {cmd_input}")
+            st.session_state.terminal_logs.append(f"[{timestamp}] Befehle: help, status, clear, shields up")
+        elif cmd == "status":
+            st.session_state.terminal_logs.append(f"[{timestamp}] > {cmd_input}")
+            st.session_state.terminal_logs.append(f"[{timestamp}] CORE: 100% EXCELLENT. NO ERRORS.")
+        elif cmd == "clear":
+            st.session_state.terminal_logs = [f"[{timestamp}] Terminal geleert."]
+        elif cmd == "shields up":
+            st.session_state.terminal_logs.append(f"[{timestamp}] > {cmd_input}")
+            st.session_state.terminal_logs.append(f"[{timestamp}] [INFO] Schilde maximiert!")
+        else:
+            st.session_state.terminal_logs.append(f"[{timestamp}] > {cmd_input}")
+            st.session_state.terminal_logs.append(f"[{timestamp}] Befehl an Core übermittelt.")
+
+    terminal_box = "\n".join(st.session_state.terminal_logs[-10:])
+    st.text_area("Terminal Output", value=terminal_box, height=300, disabled=True)
