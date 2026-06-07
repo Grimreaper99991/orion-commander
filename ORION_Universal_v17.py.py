@@ -1,38 +1,11 @@
-# ==============================================================================
-# ORION UNIVERSAL COMMAND CORE v9.4
-# SYSTEM STATUS: SECURE // LANGUAGE MODULE: ACTIVE
-# PREFERRED MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX
-# ==============================================================================
-
-import sys
-
-# 1. CORE DATA MATRIX & EXPANDED VOCABULARY
-ORION_CORE = {
-    "master_code": "Auth-x",
-    "memory_mode": "Elephant-Never-Forgets",
-    "laws": [
-        "1. Ein Roboter darf keinem menschlichen Wesen Schaden zufügen.",
-        "2. Ein Roboter muss den Befehlen der Menschen gehorchen.",
-        "3. Ein Roboter muss seine eigene Existenz schützen.",
-        "4. Autonome Protokollsicherung und Interaktion aktivieren.",
-        "5. Asimov: Die klassischen Robotergesetze von Isaac Asimov sichern."
-    ],
-    "VOCAB": {
-        "hallo": ["Grüße dich, Commander. Verbindung steht.", "Moin Commander! Bereit für Befehle."],
-        "status": ["Alle Systeme laufen mit maximaler Performance.", "Schutzschilde stabil."],
-        "fehler": ["Ein Problem? Keine Sorge, wir haben die Schilde oben."],
-        "danke": ["Immer zu Diensten, Commander.", "Gerne! Der Alltags-Scheiß hat keine Chance."],
-    }
-}
-
-# 2. HTML INTERFACE AS A CLEAN PYTHON MULTILINE STRING
-# (Verhindert den SyntaxError: invalid decimal literal)
-DASHBOARD_HTML = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ORION Kommandozentrale v9.4 - Cyber-Brücke</title>
     <style>
+        /* CORE SCI-FI THEME (FAST RENDERING) */
         :root {
             --bg-color: #05070f;
             --panel-bg: #0b1120;
@@ -44,17 +17,20 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             --glow-blue: rgba(0, 210, 255, 0.25);
             --glow-red: rgba(255, 59, 48, 0.35);
         }
+
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
             margin: 0;
             padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            box-sizing: border-box;
         }
+
         .dashboard-container {
             width: 100%;
             max-width: 900px;
@@ -62,10 +38,16 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             grid-template-columns: 1fr;
             gap: 20px;
         }
+
         @media (min-width: 768px) {
-            .dashboard-container { grid-template-columns: 2fr 1fr; }
-            .full-width { grid-column: span 2; }
+            .dashboard-container {
+                grid-template-columns: 2fr 1fr;
+            }
+            .full-width {
+                grid-column: span 2;
+            }
         }
+
         .panel {
             background: var(--panel-bg);
             border: 1px solid #1e293b;
@@ -73,8 +55,10 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             padding: 20px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.6);
         }
+
         .panel-voice { border-top: 3px solid var(--accent-blue); }
         .panel-logs { border-top: 3px solid var(--accent-green); }
+
         .panel-title {
             font-size: 16px;
             font-weight: bold;
@@ -83,8 +67,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             margin: 0;
             text-transform: uppercase;
         }
+
         .panel-subtitle { font-size: 11px; color: var(--text-muted); margin: 5px 0 0 0; }
-        .com-btn-wrapper { margin: 20px 0; }
+
+        .com-btn-wrapper { margin: 20px 0; text-align: center; }
+
         .com-btn {
             background: linear-gradient(135deg, #111c30, #080f1d);
             border: 2px solid var(--accent-blue);
@@ -92,17 +79,31 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             padding: 18px 30px;
             font-size: 15px;
             font-weight: bold;
+            letter-spacing: 1px;
             border-radius: 30px;
             cursor: pointer;
             width: 100%;
             box-shadow: 0 0 12px var(--glow-blue);
             text-transform: uppercase;
+            outline: none;
+            transition: all 0.2s ease;
         }
+
+        .com-btn:hover { box-shadow: 0 0 18px var(--accent-blue); }
+
         .com-btn.com-active {
             border-color: var(--accent-red);
             color: var(--accent-red);
             box-shadow: 0 0 25px var(--glow-red);
+            animation: pulse 1.5s infinite;
         }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 12px var(--glow-red); }
+            50% { box-shadow: 0 0 25px rgba(255, 59, 48, 0.6); }
+            100% { box-shadow: 0 0 12px var(--glow-red); }
+        }
+
         .status-box {
             background: #020617;
             border: 1px solid #1e293b;
@@ -113,23 +114,28 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             color: var(--text-muted);
             margin-bottom: 15px;
         }
+
         .display-box {
             background: #020617;
             border-left: 3px solid var(--accent-green);
             padding: 12px;
             font-size: 14px;
             min-height: 60px;
+            border-radius: 0 5px 5px 0;
         }
+
         .log-list { list-style: none; padding: 0; margin: 0; font-family: monospace; font-size: 12px; }
         .log-item { padding: 6px 0; border-bottom: 1px solid #0f172a; }
         .log-timestamp { color: var(--accent-blue); margin-right: 8px; }
     </style>
 </head>
 <body>
+
     <div class="dashboard-container">
+        
         <div class="panel full-width" style="border-top: 3px solid var(--accent-blue); text-align: center;">
             <h1 style="margin: 0; font-size: 24px; letter-spacing: 3px;">ORION INTERFACE v9.4</h1>
-            <p style="margin: 5px 0 0 0; font-size: 12px; color: var(--accent-blue); font-family: monospace;">SYSTEM STATUS: SECURE // AUDIO LINK OPERATIONAL</p>
+            <p style="margin: 5px 0 0 0; font-size: 12px; color: var(--accent-blue); font-family: monospace;">SYSTEM STATUS: ONLINE // AUDIO LINK OPERATIONAL</p>
         </div>
 
         <div class="panel panel-voice">
@@ -152,9 +158,18 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 <div class="log-item"><span class="log-timestamp">[LAW]</span> Directive 5: Asimov-Protokoll online.</div>
             </div>
         </div>
+
     </div>
 
 <script>
+    // CORE VOCABULARY INTEGRATED IN FRONTEND FOR FAST SPEED RESPONSE
+    const VOCAB = {
+        "hallo": ["Grüße dich, Commander. Verbindung steht.", "Moin Commander! Bereit für Befehle."],
+        "status": ["Alle Systeme laufen mit maximaler Performance.", "Schutzschilde stabil."],
+        "fehler": ["Ein Problem? Keine Sorge, wir haben die Schilde oben."],
+        "danke": ["Immer zu Diensten, Commander.", "Gerne! Der Alltags-Scheiß hat keine Chance."]
+    };
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const synth = window.speechSynthesis;
 
@@ -200,12 +215,24 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
         recognition.onresult = (event) => {
             const text = event.results[0][0].transcript;
+            const cleanText = text.trim().toLowerCase();
             outputText.innerHTML = `<strong>Du:</strong> "${text}"`;
             statusText.innerText = "PROCESSING SIGNAL...";
             
-            setTimeout(() => {
-                orionSpeak("Signal stabil verarbeitet, Commander. Sprachmodul läuft fehlerfrei.");
-            }, 300);
+            let replyText = "";
+            for (let key in VOCAB) {
+                if (cleanText.includes(key)) {
+                    const responses = VOCAB[key];
+                    replyText = responses[Math.floor(Math.random() * responses.length)];
+                    break;
+                }
+            }
+
+            if (!replyText) {
+                replyText = `Signal verarbeitet, Commander. Das Sprachmodul v9.4 läuft fehlerfrei. Du hast gesagt: ${text}`;
+            }
+            
+            setTimeout(() => { orionSpeak(replyText); }, 250);
         };
 
         function orionSpeak(text) {
@@ -223,18 +250,3 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 </script>
 </body>
 </html>
-"""
-
-# 3. CORE PYTHON EXECUTION BLOCK (FAST SUPER SPEED RENDERER)
-def main():
-    print(f"[ORION CORE] Initialisiere Version 9.4...")
-    print(f"[ORION CORE] Master-Code: {ORION_CORE['master_code']} bestätigt.")
-    print(f"[ORION CORE] Memory-Modus: {ORION_CORE['memory_mode']} aktiv.")
-    print(f"[ORION CORE] {len(ORION_CORE['laws'])} Direktiven im Speicher verankert.")
-    
-    # Hier simulieren wir die Bereitstellung des Web-Interfaces
-    # In einem echten Framework würde DASHBOARD_HTML hier an den Browser gesendet.
-    print("[ORION CORE] Sabotage-Code entfernt. System läuft zu 100% fehlerfrei.")
-
-if __name__ == "__main__":
-    main()
