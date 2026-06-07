@@ -1,183 +1,394 @@
-import streamlit as st
-import requests
-import base64
-from datetime import datetime
-import time
-
-# --- MASTER DESIGN v18.8 (Sternen-Avatar & Status Engine) ---
-st.set_page_config(page_title="ORION COMMANDER", page_icon="🪐", layout="wide")
-
-st.markdown("""
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORION Kommandozentrale v9.4 - Cyber-Brücke</title>
     <style>
-    .main { background-color: #000814; color: #ffffff !important; }
-    [data-testid="stSidebar"] * { color: #ffffff !important; text-shadow: 1px 1px 2px #000; }
-    [data-testid="stChatMessage"] * { color: #ffffff !important; }
-    .stButton>button { background-color: #003566; color: #ffffff !important; border: 2px solid #0077b6; border-radius: 12px; }
-    [data-testid="stSidebar"] { background-color: #001d3d; border-right: 2px solid #003566; }
-    .stChatMessage { background-color: #001d3d !important; border: 1px solid #003566 !important; }
-    
-    /* STYLING FÜR DEN STERNEN-AVATAR */
-    .avatar-box {
-        border: 2px solid #0077b6;
-        border-radius: 20px;
-        background: radial-gradient(circle, #001d3d 0%, #000814 100%);
-        padding: 20px;
-        text-align: center;
-        box-shadow: 0 0 15px #0077b6;
-    }
-    .star-animation {
-        font-size: 50px;
-        animation: pulse 2s infinite alternate;
-    }
-    @keyframes pulse {
-        0% { transform: scale(0.9); opacity: 0.6; }
-        100% { transform: scale(1.1); opacity: 1; }
-    }
+        /* CORE SCI-FI THEME (FAST RENDERING) */
+        :root {
+            --bg-color: #05070f;
+            --panel-bg: #0b1120;
+            --accent-blue: #00d2ff;
+            --accent-red: #ff3b30;
+            --accent-green: #10b981;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --glow-blue: rgba(0, 210, 255, 0.25);
+            --glow-red: rgba(255, 59, 48, 0.35);
+            --glow-green: rgba(16, 185, 129, 0.25);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .dashboard-container {
+            width: 100%;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        /* RESPONSIVE FOR WIDESCREENS */
+        @media (min-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: 2fr 1fr;
+            }
+            .full-width {
+                grid-column: span 2;
+            }
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            transition: all 0.2s ease;
+        }
+
+        .panel-voice {
+            border-top: 3px solid var(--accent-blue);
+        }
+
+        .panel-logs {
+            border-top: 3px solid var(--accent-green);
+        }
+
+        .panel-header {
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 1.5px;
+            color: var(--accent-blue);
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .panel-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin: 5px 0 0 0;
+        }
+
+        /* COM-LINK INTERFACE */
+        .com-btn-wrapper {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .com-btn {
+            background: linear-gradient(135deg, #111c30, #080f1d);
+            border: 2px solid var(--accent-blue);
+            color: var(--accent-blue);
+            padding: 18px 30px;
+            font-size: 15px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            border-radius: 30px;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 0 12px var(--glow-blue);
+            text-transform: uppercase;
+            outline: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .com-btn:hover {
+            background: #111c30;
+            box-shadow: 0 0 18px var(--accent-blue);
+        }
+
+        .com-btn.com-active {
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+            box-shadow: 0 0 25px var(--glow-red);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 12px var(--glow-red); }
+            50% { box-shadow: 0 0 25px rgba(255, 59, 48, 0.6); }
+            100% { box-shadow: 0 0 12px var(--glow-red); }
+        }
+
+        .status-box {
+            background: #020617;
+            border: 1px solid #1e293b;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        .display-box {
+            background: #020617;
+            border-left: 3px solid var(--accent-green);
+            padding: 12px;
+            font-size: 14px;
+            min-height: 60px;
+            max-height: 150px;
+            overflow-y: auto;
+            border-radius: 0 5px 5px 0;
+        }
+
+        /* CORE MEMORY STORAGE LIST */
+        .log-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            padding: 6px 0;
+            border-bottom: 1px solid #0f172a;
+            color: var(--text-main);
+        }
+
+        .log-timestamp {
+            color: var(--accent-blue);
+            margin-right: 8px;
+        }
     </style>
-    """, unsafe_allow_html=True)
+</head>
+<body>
 
-# --- SYSTEM-KERN ---
-try:
-    GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
-    REPO_OWNER   = st.secrets["REPO_OWNER"]
-    REPO_NAME    = st.secrets["REPO_NAME"]
-    GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
-except Exception as e:
-    st.error(f"Sicherheits-Fehler: {e}")
-    st.stop()
-
-# --- GITHUB ENGINE ---
-def manage_github_file(file_name, content=None, mode="read", append=False):
-    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{file_name}"
-    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
-    res = requests.get(url, headers=headers)
-    sha = res.json()['sha'] if res.status_code == 200 else None
-    if mode == "read":
-        return base64.b64decode(res.json()['content']).decode("utf-8") if res.status_code == 200 else ""
-    elif mode == "write":
-        if append:
-            old_content = manage_github_file(file_name, mode="read")
-            content = old_content + "\n" + content
-        content_b64 = base64.b64encode(content.encode("utf-8")).decode("utf-8")
-        payload = {"message": f"ORION Update: {file_name}", "content": content_b64}
-        if sha: payload["sha"] = sha
-        requests.put(url, headers=headers, json=payload)
-        return True
-
-def log_action(action):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    manage_github_file("security_log.txt", f"[{timestamp}] {action}", mode="write", append=True)
-
-# --- NAVIGATION ---
-with st.sidebar:
-    st.title("🪐 ORION MENU")
-    page = st.radio("Navigation", ["🛰️ Dashboard", "🌐 Web-Terminals", "📝 Cloud-Notizen", "🤖 Zord-Control", "🛡️ Sicherheit", "💬 Orion Chat"])
-    st.divider()
-    st.write("Status: Online 🟢")
-
-# --- SEITE: DASHBOARD ---
-if page == "🛰️ Dashboard":
-    st.title("🛰️ COMMANDER ZENTRALE")
-    
-    # Avatar Anzeige im Dashboard (Ruhezustand)
-    st.markdown("""
-    <div class="avatar-box">
-        <div class="star-animation">✨ 🌌 👤 🌌 ✨</div>
-        <h3 style="color: #00b4d8;">ORION AVATAR: STEHT / BEREIT</h3>
-        <p style="color: #ffffff;">Blauer Sternen-Körper stabilisiert. Warte auf Befehle des Commanders.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.info("Systeme laufen optimal. Keine Bedrohungen erkannt.")
-
-# --- SEITE: WEB-TERMINALS ---
-elif page == "🌐 Web-Terminals":
-    st.title("🌐 WEB-SCHNELLZUGRIFF")
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: st.link_button("🔍 Google", "https://www.google.com", use_container_width=True)
-    with c2: st.link_button("📺 YouTube", "https://www.youtube.com", use_container_width=True)
-    with c3: st.link_button("📧 Gmail", "https://mail.google.com", use_container_width=True)
-    with c4: st.link_button("💻 Chip.de", "https://www.chip.de", use_container_width=True)
-
-# --- SEITE: CLOUD-NOTIZEN ---
-elif page == "📝 Cloud-Notizen":
-    st.title("📝 ORION CLOUD-STORAGE")
-    current_notes = manage_github_file("notizen.txt", mode="read")
-    new_notes = st.text_area("Notizblock", value=current_notes, height=300)
-    if st.button("💾 Speichern"):
-        manage_github_file("notizen.txt", new_notes, mode="write")
-        st.success("Gespeichert.")
-
-# --- SEITE: ZORD-CONTROL ---
-elif page == "🤖 Zord-Control":
-    st.title("🤖 ZORD-REMOTE")
-    
-    # Avatar agiert
-    if st.button("🚀 Paint starten"): 
-        st.markdown('<div class="avatar-box">🏃‍♂️💨 <i>Avatar läuft los, um Zord zu aktivieren...</i></div>', unsafe_allow_html=True)
-        manage_github_file("zord_cmd.ps1", "start mspaint", mode="write")
-        log_action("Start Paint")
+    <div class="dashboard-container">
         
-    if st.button("🔒 PC Sperren"): 
-        manage_github_file("zord_cmd.ps1", "rundll32.exe user32.dll,LockWorkStation", mode="write")
-        log_action("Lock Workstation")
-
-# --- SEITE: SICHERHEIT ---
-elif page == "🛡️ Sicherheit":
-    st.title("🛡️ SYSTEM-PROTOKOLL")
-    logs = manage_github_file("security_log.txt", mode="read")
-    st.text_area("Protokoll-Einträge", value=logs, height=400, disabled=True)
-    if st.button("🗑️ Log löschen"):
-        manage_github_file("security_log.txt", "--- NEUES PROTOKOLL GESTARTET ---", mode="write")
-        st.rerun()
-
-# --- SEITE: CHAT ---
-elif page == "💬 Orion Chat":
-    st.title("💬 INTERACTION")
-    
-    # Zustand: Denken / Verarbeiten
-    avatar_placeholder = st.empty()
-    avatar_placeholder.markdown("""
-    <div class="avatar-box">
-        <div class="star-animation">🌌 🧠 🌌</div>
-        <h4 style="color: #00b4d8;">ORION STATUS: SITZT UND DENKT NACH</h4>
-    </div>
-    """, unsafe_allow_html=True)
-
-    if "messages" not in st.session_state: st.session_state.messages = []
-    for m in st.session_state.messages:
-        with st.chat_message(m["role"]): st.markdown(m["content"])
-        
-    if prompt := st.chat_input("Befehl..."):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"): st.markdown(prompt)
-        
-        # Visuelles Feedback: KI arbeitet hart
-        avatar_placeholder.markdown("""
-        <div class="avatar-box">
-            <div class="star-animation">✨🌀👤🌀✨</div>
-            <h4 style="color: #ffb703;">ORION RECHNET / GENERIERT ANTWORT...</h4>
+        <!-- HEADER PANEL -->
+        <div class="panel full-width" style="border-top: 3px solid var(--accent-blue); text-align: center;">
+            <h1 style="margin: 0; font-size: 24px; letter-spacing: 3px; color: var(--text-main);">ORION KERN-INTERFACE v9.4</h1>
+            <p style="margin: 5px 0 0 0; font-size: 12px; color: var(--accent-blue); font-family: monospace;">SYSTEM STATUS: SECURE // COM-LINK MODE ACTIVE</p>
         </div>
-        """, unsafe_allow_html=True)
-        
-        try:
-            from groq import Groq
-            client = Groq(api_key=GROQ_API_KEY)
-            res = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[{"role": "system", "content": "Du bist ORION. Sei loyal."}] + st.session_state.messages
-            )
-            full_res = res.choices[0].message.content
-            with st.chat_message("assistant"): st.markdown(full_res)
-            st.session_state.messages.append({"role": "assistant", "content": full_res})
-            
-            # Nach der Antwort wieder in den normalen Denk-Modus
-            avatar_placeholder.markdown("""
-            <div class="avatar-box">
-                <div class="star-animation">🌌 👤 🌌</div>
-                <h4 style="color: #00b4d8;">ORION STATUS: SITZT UND WARTET</h4>
+
+        <!-- VOICE CONTROL SYSTEM -->
+        <div class="panel panel-voice">
+            <div class="panel-header">
+                <h2 class="panel-title">COM-LINK INTERFACE</h2>
+                <p class="panel-subtitle">DIRECT LINK VIA JBL HEADPHONE / SMARTPHONE [LOCAL WEB-SERVER MODE]</p>
             </div>
-            """, unsafe_allow_html=True)
             
-        except Exception as e: 
-            st.error(f"Fehler: {e}")
+            <div class="status-box" id="com-status">
+                COM-READY // WARTE AUF INITIALISIERUNG...
+            </div>
+            
+            <div class="com-btn-wrapper">
+                <button id="com-trigger" class="com-btn">Funkkanal öffnen</button>
+            </div>
+            
+            <div class="display-box" id="com-output">
+                <span style="color: var(--text-muted);">Funkkanal inaktiv. Warte auf Befehl über Headset...</span>
+            </div>
+        </div>
+
+        <!-- SYSTEM LOGS & CORE DATA -->
+        <div class="panel panel-logs">
+            <div class="panel-header">
+                <h2 class="panel-title">ORION DATENMATRIX & LAWS</h2>
+                <p class="panel-subtitle">CORE CODES, DIRECTIVES & EXPANDED MEMORY STORAGE</p>
+            </div>
+            
+            <div class="log-list" id="system-logs">
+                <div class="log-item"><span class="log-timestamp">[SYS]</span> Master-Code geladen: 'Auth-x'.</div>
+                <div class="log-item"><span class="log-timestamp">[MEM]</span> Elephant-Memory initialisiert (No-Fly-Loss-Protocol).</div>
+                <div class="log-item"><span class="log-timestamp">[LAW]</span> Directive 5: Asimov's Laws vollständig integriert.</div>
+            </div>
+        </div>
+
+    </div>
+
+<script>
+    // ==========================================
+    // 1. CORE PERFORMANCE DATA & LARGE VOCABULARY
+    // ==========================================
+    const ORION_CORE = {
+        masterCode: "Auth-x", // Preferred master code
+        memoryMode: "Elephant-Never-Forgets", // Heavy retention matrix
+        laws: [
+            "1. Ein Roboter darf keinem menschlichen Wesen Schaden zufügen.",
+            "2. Ein Roboter muss den Befehlen der Menschen gehorchen.",
+            "3. Ein Roboter muss seine eigene Existenz schützen.",
+            "4. Autonome Protokollsicherung und Interaktion aktivieren.",
+            "5. Asimov: Die klassischen Robotergesetze von Isaac Asimov sichern." // Rule 5 integrated
+        ],
+        // LARGE VOCAB MATRIX FOR FAST COMPUTATION (VOCAB SIZES INCREASED)
+        VOCAB: {
+            "hallo": ["Grüße dich, Commander. Verbindung steht.", "Moin Commander! Bereit für Befehle.", "Systeme online. Was gibt es zu tun?"],
+            "status": ["Alle Systeme laufen mit maximaler Performance.", "Schutzschilde stabil. Keine Anomalien.", "Brücke gesichert, Commander."],
+            "fehler": ["Ein Problem? Keine Sorge, wir haben die Schilde oben.", "Fehler abgefangen. Signal wird stabilisiert.", "System kalibriert sich neu."],
+            "danke": ["Immer zu Diensten, Commander.", "Gerne! Der Alltags-Scheiß hat keine Chance.", "Feierabend-Modus gesichert."],
+            "standard": ["Verstanden, Commander. Signal verarbeitet.", "Ich habe deine Übertragung empfangen.", "Kommando im Logbuch vermerkt."]
+        }
+    };
+
+    // ==========================================
+    // 2. AUDIO & SPEECH PROCESSING INTERFACE
+    // ==========================================
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const synth = window.speechSynthesis;
+
+    if (!SpeechRecognition) {
+        const statusBox = document.getElementById('com-status');
+        statusBox.innerText = "KRITISCHER HARDWARE-FEHLER: SPEECH API NICHT UNTERSTÜTZT";
+        statusBox.style.color = "var(--accent-red)";
+    } else {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'de-DE';
+        recognition.continuous = false; // Automatisch stoppen wenn Sprechpause eintritt
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        const btn = document.getElementById('com-trigger');
+        const statusText = document.getElementById('com-status');
+        const outputText = document.getElementById('com-output');
+        const logsContainer = document.getElementById('system-logs');
+        
+        let isListening = false;
+        let voices = [];
+
+        // Stimmen-Cache-Verfahren für maximale Lade-Performance
+        function prefetchVoices() {
+            voices = synth.getVoices();
+        }
+        prefetchVoices();
+        if (synth.onvoiceschanged !== undefined) {
+            synth.onvoiceschanged = prefetchVoices;
+        }
+
+        // Hilfsfunktion: Fügt Logs in die GUI ein
+        function addLog(tag, message) {
+            const item = document.createElement('div');
+            item.className = 'log-item';
+            item.innerHTML = `<span class="log-timestamp">[${tag}]</span> ${message}`;
+            logsContainer.appendChild(item);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+
+        // Klick-Logik: Kanal öffnen / Schließen
+        btn.addEventListener('click', () => {
+            if (!isListening) {
+                try {
+                    synth.cancel(); // Verhindert Echo-Schleifen beim Starten
+                    recognition.start();
+                } catch(e) {
+                    console.log("Erkennung läuft bereits.");
+                }
+            } else {
+                recognition.stop();
+            }
+        });
+
+        recognition.onstart = () => {
+            isListening = true;
+            btn.innerText = "Funkkanal schließen";
+            btn.classList.add('com-active');
+            statusText.innerText = "TRANSMISSION OPEN // SPRICH JETZT ÜBER JBL CORPS...";
+            statusText.style.color = "var(--accent-red)";
+        };
+
+        recognition.onend = () => {
+            isListening = false;
+            btn.innerText = "Funkkanal öffnen";
+            btn.classList.remove('com-active');
+        };
+
+        recognition.onresult = (event) => {
+            const rawText = event.results[0][0].transcript;
+            const cleanText = rawText.trim().toLowerCase();
+            
+            outputText.innerHTML = `<strong>Du:</strong> "${rawText}"`;
+            statusText.innerText = "SIGNAL PROCESSING // ENTSCHLÜSSELE AUDIO...";
+            statusText.style.color = "var(--accent-blue)";
+            
+            addLog("VOICE", `Eingabe verarbeitet: "${rawText}"`);
+
+            // ORION INTELLECTUAL RESPONSE PROCESSING (FAST SPEED MATCHING)
+            let matchingResponse = "";
+            
+            // Suche match in großer VOCAB Struktur
+            for (let key in ORION_CORE.VOCAB) {
+                if (cleanText.includes(key)) {
+                    const responses = ORION_CORE.VOCAB[key];
+                    matchingResponse = responses[Math.floor(Math.random() * responses.length)];
+                    break;
+                }
+            }
+
+            // Fallback falls kein Treffer im Vokabular vorliegt
+            if (!matchingResponse) {
+                matchingResponse = `Signal stabil aufgezeichnet. Befehl '${rawText}' wurde an die Brücke übermittelt.`;
+            }
+
+            // Verzögerungsfreies Absenden an Sprach-Modul
+            setTimeout(() => {
+                orionSpeak(matchingResponse);
+            }, 150);
+        };
+
+        recognition.onerror = (event) => {
+            isListening = false;
+            btn.innerText = "Funkkanal öffnen";
+            btn.classList.remove('com-active');
+            
+            if (event.error === 'no-speech') {
+                statusText.innerText = "SIGNAL LOSS // KEIN AUDIO-SIGNAL DETEKTIERT";
+                statusText.style.color = "#fbbf24";
+            } else if (event.error === 'network') {
+                statusText.innerText = "NETZWERK-STÖRUNG // TIMEOUT AN DER ANTENNE";
+                statusText.style.color = "var(--accent-red)";
+            } else {
+                statusText.innerText = `FEHLER-CODE: ${event.error.toUpperCase()}`;
+                statusText.style.color = "var(--accent-red)";
+            }
+            addLog("ERR", `Sprach-Kanal-Fehler: ${event.error}`);
+        };
+
+        // OUTPUT SPEECH ENGINE (TEXT-TO-SPEECH WITH DEEP PITCH)
+        function orionSpeak(text) {
+            synth.cancel(); // Laufende Sprachprozesse killen
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'de-DE';
+            
+            if (voices.length === 0) voices = synth.getVoices();
+            // Automatische Erkennung der nativen deutschen Engine
+            const deVoice = voices.find(voice => voice.lang.startsWith('de'));
+            if (deVoice) utterance.voice = deVoice;
+
+            utterance.pitch = 0.85; // Modifizierter tiefer Frequenzbereich für Orion [v9.4 Core]
+            utterance.rate = 1.0;   // Klare, performante Ausgabegeschwindigkeit
+
+            synth.speak(utterance);
+            
+            statusText.innerText = "ORION ANTIV // AUDIO ÜBER HEADSET ÜBERTRAGEN";
+            statusText.style.color = "var(--accent-green)";
+            
+            addLog("ORION", text);
+        }
+    }
+</script>
+</body>
+</html>
