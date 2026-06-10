@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION UNIVERSAL COMMAND CORE v19.5 (GROQ HYPER-SPEED BRAIN)
+# ORION UNIVERSAL COMMAND CORE v19.6 (GROQ UPGRADED BRAIN MATRIX)
 # PREFERRED MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // LAWS: INCLUDED
 # PERFORMANCE MODE: ULTRA FAST REAL-TIME RESPONDER // ALL-IN-ONE HUB
 # ==============================================================================
@@ -14,7 +14,7 @@ except ImportError:
 
 # 1. CORE STREAMLIT PAGE CONFIG
 st.set_page_config(
-    page_title="ORION COMMANDER v19.5",
+    page_title="ORION COMMANDER v19.6",
     page_icon="🪐",
     layout="wide"
 )
@@ -38,12 +38,12 @@ except Exception as e:
 # Session State für Konversation, Logs und Notizen initialisieren
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
-        {"role": "orion", "text": "Hochentwickelter Groq-KI-Core v19.5 online, Commander! Die Hyper-Speed-Matrix ist aktiv. Schluss mit Roboter-Antworten – lass uns quatschen!"}
+        {"role": "orion", "text": "Hochentwickelter Groq-KI-Core v19.6 online, Commander! Die Triebwerke wurden auf Llama-3.1-Instant umgestellt. Fehler 400 ist eliminiert!"}
     ]
 if "notes" not in st.session_state:
     st.session_state.notes = []
 if "terminal_logs" not in st.session_state:
-    st.session_state.terminal_logs = ["[SYS] Core v19.5 stabilisiert. Groq-Hyper-Speed aktiv."]
+    st.session_state.terminal_logs = ["[SYS] Core v19.6 stabilisiert. Model-Upgrade erfolgreich durchgeführt."]
 
 # ==============================================================================
 # LINKS: NAVIGATION & AUSWAHL REGISTER IN DER SIDEBAR
@@ -75,10 +75,10 @@ with st.sidebar:
 # RECHTS: ANZEIGE DES AUSGEWÄHLTEN REGISTERS
 # ==============================================================================
 
-st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION COMMAND INTERFACE v19.5</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION COMMAND INTERFACE v19.6</h1>", unsafe_allow_html=True)
 st.divider()
 
-# ECHTE GROQ-KI-LOGIK (Verarbeitet Freitext in Lichtgeschwindigkeit)
+# ECHTE GROQ-KI-LOGIK (Llama 3.1 Hyper-Speed)
 def ask_orion_groq(user_text):
     if not ai_active:
         return "FEHLER: Groq-Key nicht in Streamlit Secrets gefunden. Bitte GROQ_API_KEY hinterlegen!"
@@ -98,8 +98,9 @@ def ask_orion_groq(user_text):
             
         messages.append({"role": "user", "content": user_text})
         
+        # HIER WURDE DAS MODELL AKTUALISIERT!
         response = client.chat.completions.create(
-            model="llama3-8b-8192",  # Ultraschnelles Groq-Modell
+            model="llama-3.1-8b-instant",  
             messages=messages,
             max_tokens=200,
             temperature=0.7
@@ -154,7 +155,7 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
         <div class="panel">
             <div class="hardware-status-row">
                 <div id="orion-led" class="status-led"></div>
-                <div id="com-status" class="status-text">FUNKKANAL READY // GROQ MATRIX GELADEN</div>
+                <div id="com-status" class="status-text">FUNKKANAL READY // NEUE MATRIX ACTIVE</div>
             </div>
             
             <div class="button-grid">
@@ -246,7 +247,6 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
                 statusText.innerText = "BEFEHL AN DETEKTOREN...";
                 setLED('#10b981', '#10b981');
                 
-                // Sprach-Input sicher verpacken und hochjagen
                 window.parent.postMessage({
                     type: 'streamlit:setComponentValue',
                     value: JSON.stringify({text: userText, timestamp: Date.now()})
@@ -267,7 +267,7 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
                 st.session_state.last_v_text = v_text
                 st.session_state.chat_history.append({"role": "user", "text": v_text})
                 
-                # Jage das Funksignal direkt durch das Groq-Gehirn
+                # Jage das Funksignal direkt durch das aktualisierte Groq-Gehirn
                 voice_reply = ask_orion_groq(v_text)
                 st.session_state.chat_history.append({"role": "orion", "text": voice_reply})
                 st.rerun()
