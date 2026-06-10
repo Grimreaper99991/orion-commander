@@ -1,16 +1,20 @@
 # ==============================================================================
-# ORION UNIVERSAL COMMAND CORE v19.0 (REAL AI BRAIN MATRIX)
+# ORION UNIVERSAL COMMAND CORE v19.5 (GROQ HYPER-SPEED BRAIN)
 # PREFERRED MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // LAWS: INCLUDED
-# PERFORMANCE MODE: REAL INTELLIGENCE RESPONDER // ALL-IN-ONE HUB
+# PERFORMANCE MODE: ULTRA FAST REAL-TIME RESPONDER // ALL-IN-ONE HUB
 # ==============================================================================
 
 import streamlit as st
 import datetime
-from openai import OpenAI
+import json
+try:
+    from groq import Groq
+except ImportError:
+    st.error("Bitte füge 'groq' zu deiner requirements.txt hinzu!")
 
 # 1. CORE STREAMLIT PAGE CONFIG
 st.set_page_config(
-    page_title="ORION COMMANDER v19.0",
+    page_title="ORION COMMANDER v19.5",
     page_icon="🪐",
     layout="wide"
 )
@@ -24,9 +28,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ERSTELLE ECHTEN OPENAI CLIENT AUS DEN SECRETS
+# ERSTELLE GROQ CLIENT AUS DEN SECRETS
 try:
-    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
     ai_active = True
 except Exception as e:
     ai_active = False
@@ -34,12 +38,12 @@ except Exception as e:
 # Session State für Konversation, Logs und Notizen initialisieren
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
-        {"role": "orion", "text": "Hochentwickelter KI-Core v19.0 online, Commander! Das echte, denkende Gehirn wurde hochgefahren. Teste mich – ich bin kein Roboter mehr!"}
+        {"role": "orion", "text": "Hochentwickelter Groq-KI-Core v19.5 online, Commander! Die Hyper-Speed-Matrix ist aktiv. Schluss mit Roboter-Antworten – lass uns quatschen!"}
     ]
 if "notes" not in st.session_state:
     st.session_state.notes = []
 if "terminal_logs" not in st.session_state:
-    st.session_state.terminal_logs = ["[SYS] Core v19.0 stabilisiert. Real-Intelligence-Matrix aktiv."]
+    st.session_state.terminal_logs = ["[SYS] Core v19.5 stabilisiert. Groq-Hyper-Speed aktiv."]
 
 # ==============================================================================
 # LINKS: NAVIGATION & AUSWAHL REGISTER IN DER SIDEBAR
@@ -71,45 +75,45 @@ with st.sidebar:
 # RECHTS: ANZEIGE DES AUSGEWÄHLTEN REGISTERS
 # ==============================================================================
 
-st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION COMMAND INTERFACE v19.0</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION COMMAND INTERFACE v19.5</h1>", unsafe_allow_html=True)
 st.divider()
 
-# ECHTE KI-LOGIK (Verarbeitet Freitext über die API)
-def ask_orion_brain(user_text):
+# ECHTE GROQ-KI-LOGIK (Verarbeitet Freitext in Lichtgeschwindigkeit)
+def ask_orion_groq(user_text):
     if not ai_active:
-        return "FEHLER: API-Schlüssel nicht in Streamlit Secrets gefunden. Bitte OPENAI_API_KEY hinterlegen!"
+        return "FEHLER: Groq-Key nicht in Streamlit Secrets gefunden. Bitte GROQ_API_KEY hinterlegen!"
         
     try:
-        # Erstelle das Prompt mit deiner Identität für das Modell
         messages = [
             {
                 "role": "system", 
-                "content": "Du bist ORION, eine hochentwickelte, humorvolle und treue Sci-Fi-Schiffs-KI für den Commander. Du besitzt die 'Elephant Matrix' (vergisst nie). Antworte authentisch, locker, nicht steif oder roboterhaft, sondern wie ein genialer Co-Pilot. Halte dich an Gesetz 5 (Asimov-Sicherung)."
+                "content": "Du bist ORION, eine hochentwickelte, schlaue, humorvolle und treue Sci-Fi-Schiffs-KI für den Commander. Du besitzt die 'Elephant Matrix' (vergisst nie). Antworte absolut authentisch, kumpelhaft, locker und niemals steif oder wie ein Roboter. Antworte immer auf Deutsch, halte dich kurz und knackig und beachte Gesetz 5 (Asimov-Sicherung)."
             }
         ]
         
-        # Füge die letzten Chatverläufe für echten Kontext hinzu
-        for msg in st.session_state.chat_history[-5:]:
+        # Verlauf für Kontext anhängen
+        for msg in st.session_state.chat_history[-6:]:
             role_type = "assistant" if msg["role"] == "orion" else "user"
             messages.append({"role": role_type, "content": msg["text"]})
             
         messages.append({"role": "user", "content": user_text})
         
         response = client.chat.completions.create(
-            model="gpt-4o-mini", # Extrem schnell und kosteneffizient
+            model="llama3-8b-8192",  # Ultraschnelles Groq-Modell
             messages=messages,
-            max_tokens=250
+            max_tokens=200,
+            temperature=0.7
         )
         return response.choices[0].message.content
     except Exception as error:
-        return f"[MATRIX-FEHLER]: {str(error)}"
+        return f"[GROQ-MATRIX-FEHLER]: {str(error)}"
 
 # --- REGISTER 1: DER HYBRIDE TEXT/SPRACH-CHAT MIT PHYSISCHEN BUTTONS & LED ---
 if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
-    st.subheader("🎙️ Live-Funkübertragung & Text-Zentrale (Echtes KI-Gehirn)")
+    st.subheader("🎙️ Live-Funkübertragung & Text-Zentrale (Groq Hyper-Engine)")
     
     if not ai_active:
-        st.error("⚠️ Warnung: Der API-Schlüssel wurde nicht erkannt. Bitte überprüfe deine Streamlit Cloud Secrets!")
+        st.error("⚠️ Warnung: Der GROQ_API_KEY wurde nicht erkannt. Bitte überprüfe deine Secrets!")
 
     # TEXT-EINGABE-KANAL
     with st.container():
@@ -122,8 +126,8 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
             
         if send_btn and text_input:
             st.session_state.chat_history.append({"role": "user", "text": text_input})
-            with st.spinner("ORION denkt nach..."):
-                reply = ask_orion_brain(text_input)
+            with st.spinner("ORION berechnet Antwort..."):
+                reply = ask_orion_groq(text_input)
             st.session_state.chat_history.append({"role": "orion", "text": reply})
             st.rerun()
 
@@ -150,7 +154,7 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
         <div class="panel">
             <div class="hardware-status-row">
                 <div id="orion-led" class="status-led"></div>
-                <div id="com-status" class="status-text">FUNKKANAL IM STANDBY // KI RECHENKERN READY</div>
+                <div id="com-status" class="status-text">FUNKKANAL READY // GROQ MATRIX GELADEN</div>
             </div>
             
             <div class="button-grid">
@@ -239,10 +243,10 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
 
             recognition.onresult = async (event) => {
                 const userText = event.results[0][0].transcript;
-                statusText.innerText = "SENDER AN MAIN-BRAIN...";
+                statusText.innerText = "BEFEHL AN DETEKTOREN...";
                 setLED('#10b981', '#10b981');
                 
-                // Wir schicken den Text direkt an Streamlit
+                // Sprach-Input sicher verpacken und hochjagen
                 window.parent.postMessage({
                     type: 'streamlit:setComponentValue',
                     value: JSON.stringify({text: userText, timestamp: Date.now()})
@@ -253,10 +257,8 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
     </body>
     </html>"""
     
-    import json
     voice_data_raw = st.components.v1.html(VOICE_INTERFACE_HTML, height=140, scrolling=False)
     
-    # Text aus dem Funk auffangen und durch die echte API jagen
     if voice_data_raw:
         try:
             data_parsed = json.loads(str(voice_data_raw))
@@ -265,8 +267,8 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
                 st.session_state.last_v_text = v_text
                 st.session_state.chat_history.append({"role": "user", "text": v_text})
                 
-                # Hol das echte KI-Wissen ab!
-                voice_reply = ask_orion_brain(v_text)
+                # Jage das Funksignal direkt durch das Groq-Gehirn
+                voice_reply = ask_orion_groq(v_text)
                 st.session_state.chat_history.append({"role": "orion", "text": voice_reply})
                 st.rerun()
         except:
@@ -303,7 +305,7 @@ elif module_selection == "🎛️ Control Center & Web-Scan":
 # --- REGISTER 3: MISSIONS-NOTIZBUCH ---
 elif module_selection == "📝 Missions-Notizbuch":
     st.subheader("📝 Daten-Protokolle & Logbücher")
-    new_note = st.text_area("Neue Direktive oder Notiz diplomieren:", placeholder="Schreibe hier deine Pläne auf...", height=150)
+    new_note = st.text_area("Neue Direktive oder Notiz protokollieren:", placeholder="Schreibe hier deine Pläne auf...", height=150)
     if st.button("💾 Protokoll sichern", use_container_width=True):
         if new_note:
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
