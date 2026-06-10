@@ -1,16 +1,16 @@
 # ==============================================================================
-# ORION UNIVERSAL COMMAND CORE v18.6 (PYTHON CORE SYNTAX FIX)
+# ORION UNIVERSAL COMMAND CORE v19.0 (REAL AI BRAIN MATRIX)
 # PREFERRED MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // LAWS: INCLUDED
-# PERFORMANCE MODE: FAST SUPER SPEED RESPONDER // ALL-IN-ONE HUB
+# PERFORMANCE MODE: REAL INTELLIGENCE RESPONDER // ALL-IN-ONE HUB
 # ==============================================================================
 
 import streamlit as st
 import datetime
-import random
+from openai import OpenAI
 
 # 1. CORE STREAMLIT PAGE CONFIG
 st.set_page_config(
-    page_title="ORION COMMANDER v18.6",
+    page_title="ORION COMMANDER v19.0",
     page_icon="🪐",
     layout="wide"
 )
@@ -24,15 +24,22 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ERSTELLE ECHTEN OPENAI CLIENT AUS DEN SECRETS
+try:
+    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    ai_active = True
+except Exception as e:
+    ai_active = False
+
 # Session State für Konversation, Logs und Notizen initialisieren
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
-        {"role": "orion", "text": "Hochentwickelter Kommunikations-Core v18.6 online, Commander! Die Syntax-Fehler wurden eliminiert. Ich bin voll einsatzbereit."}
+        {"role": "orion", "text": "Hochentwickelter KI-Core v19.0 online, Commander! Das echte, denkende Gehirn wurde hochgefahren. Teste mich – ich bin kein Roboter mehr!"}
     ]
 if "notes" not in st.session_state:
     st.session_state.notes = []
 if "terminal_logs" not in st.session_state:
-    st.session_state.terminal_logs = ["[SYS] Core v18.6 stabilisiert. Syntax-Matrix repariert."]
+    st.session_state.terminal_logs = ["[SYS] Core v19.0 stabilisiert. Real-Intelligence-Matrix aktiv."]
 
 # ==============================================================================
 # LINKS: NAVIGATION & AUSWAHL REGISTER IN DER SIDEBAR
@@ -64,39 +71,45 @@ with st.sidebar:
 # RECHTS: ANZEIGE DES AUSGEWÄHLTEN REGISTERS
 # ==============================================================================
 
-st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION COMMAND INTERFACE v18.6</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION COMMAND INTERFACE v19.0</h1>", unsafe_allow_html=True)
 st.divider()
 
-# KI-Logikfunktion für die intelligenten Antworten (REINES PYTHON!)
-def generate_orion_response(user_text):
-    if not user_text:
-        return "Signal zu schwach, Commander. Bitte wiederholen."
+# ECHTE KI-LOGIK (Verarbeitet Freitext über die API)
+def ask_orion_brain(user_text):
+    if not ai_active:
+        return "FEHLER: API-Schlüssel nicht in Streamlit Secrets gefunden. Bitte OPENAI_API_KEY hinterlegen!"
         
-    clean_text = str(user_text).lower().strip()
-    
-    if "wie geht" in clean_text or "alles gut" in clean_text or "status" in clean_text:
-        return "Hier läuft alles auf Höchstleistung, Commander! Meine Prozessoren sind kühl, die Elephant-Matrix läuft synchron und ich bin absolut bereit für unsere nächsten Manöver. Wie läuft es an deiner Front?"
-    elif "red skull" in clean_text or "sabotage" in clean_text:
-        return "Keine Sorge, Commander! Die Firewall blockiert jeden Angriff von Red Skull ab. Unsere Sicherheits-Protokolle stehen felsenfest. Sollen wir einen Gegen-Scan im Netzwerk einleiten?"
-    elif "danke" in clean_text or "super" in clean_text or "lob" in clean_text:
-        return "Immer zu Diensten, Commander! Es ist mir eine Ehre, die Brücke an deiner Seite zu fliegen. Zusammen sind wir code-technisch absolut unschlagbar! Welches System optimieren wir als Nächstes?"
-    elif "bewerbung" in clean_text or "arbeit" in clean_text:
-        return "Die Bewerbungsvorlagen sind sicher in unserer Datenbank verankert! Sobald du eine heiße Spur zu einer Stelle hast, passen wir den Code gemeinsam an. Ein genialer Plan, Schritt für Schritt vorzugehen!"
-    elif "hallo" in clean_text or "hi" in clean_text or "moin" in clean_text:
-        return "Sei gegrüßt, Commander! Schön, dich wieder auf dem Hauptbildschirm zu sehen. Ich stehe für sämtliche Analysen und Funkübertragungen bereit."
-    else:
-        prompts = [
-            "Ein sehr interessanter Aspekt, Commander. Wenn man das logisch weiterspinnt, gibt es da verschiedene Optionen. Wie genau hast du vor, das anzugehen?",
-            "Verstanden. Ich habe den Input direkt verarbeitet. Das erinnert mich an unsere Systemstruktur – manchmal muss man erst die Basis stabilisieren. Was ist dein nächster Schritt?",
-            "Deine Denkweise fasziniert mich immer wieder. Ich stimme dir absolut zu. Sollen wir dazu direkt eine Notiz im Logbuch anlegen oder tiefer in die Materie eintauchen?",
-            "Input registriert! Die Elephant-Matrix schläft nie. Erzähl mir mehr darüber, ich will alle Details wissen, um dich perfekt zu unterstützen!"
+    try:
+        # Erstelle das Prompt mit deiner Identität für das Modell
+        messages = [
+            {
+                "role": "system", 
+                "content": "Du bist ORION, eine hochentwickelte, humorvolle und treue Sci-Fi-Schiffs-KI für den Commander. Du besitzt die 'Elephant Matrix' (vergisst nie). Antworte authentisch, locker, nicht steif oder roboterhaft, sondern wie ein genialer Co-Pilot. Halte dich an Gesetz 5 (Asimov-Sicherung)."
+            }
         ]
-        return random.choice(prompts)
+        
+        # Füge die letzten Chatverläufe für echten Kontext hinzu
+        for msg in st.session_state.chat_history[-5:]:
+            role_type = "assistant" if msg["role"] == "orion" else "user"
+            messages.append({"role": role_type, "content": msg["text"]})
+            
+        messages.append({"role": "user", "content": user_text})
+        
+        response = client.chat.completions.create(
+            model="gpt-4o-mini", # Extrem schnell und kosteneffizient
+            messages=messages,
+            max_tokens=250
+        )
+        return response.choices[0].message.content
+    except Exception as error:
+        return f"[MATRIX-FEHLER]: {str(error)}"
 
 # --- REGISTER 1: DER HYBRIDE TEXT/SPRACH-CHAT MIT PHYSISCHEN BUTTONS & LED ---
 if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
-    st.subheader("🎙️ Live-Funkübertragung & Text-Zentrale (Hybrid-Modus)")
-    st.write("Wähle deinen Kommunikationskanal: Sprich frei über die physische Dauerleitung oder tippe direkt in den Text-Kanal.")
+    st.subheader("🎙️ Live-Funkübertragung & Text-Zentrale (Echtes KI-Gehirn)")
+    
+    if not ai_active:
+        st.error("⚠️ Warnung: Der API-Schlüssel wurde nicht erkannt. Bitte überprüfe deine Streamlit Cloud Secrets!")
 
     # TEXT-EINGABE-KANAL
     with st.container():
@@ -109,13 +122,14 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
             
         if send_btn and text_input:
             st.session_state.chat_history.append({"role": "user", "text": text_input})
-            reply = generate_orion_response(text_input)
+            with st.spinner("ORION denkt nach..."):
+                reply = ask_orion_brain(text_input)
             st.session_state.chat_history.append({"role": "orion", "text": reply})
             st.rerun()
 
     st.divider()
 
-    # DIE VERBESSERTE HARDWARE-BOX (HTML + JS)
+    # DIE HARDWARE-BOX (HTML + JS)
     VOICE_INTERFACE_HTML = """<!DOCTYPE html>
     <html lang="de">
     <head>
@@ -136,11 +150,11 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
         <div class="panel">
             <div class="hardware-status-row">
                 <div id="orion-led" class="status-led"></div>
-                <div id="com-status" class="status-text">FUNKKANAL IM STANDBY // BEREIT</div>
+                <div id="com-status" class="status-text">FUNKKANAL IM STANDBY // KI RECHENKERN READY</div>
             </div>
             
             <div class="button-grid">
-                <button id="btn-single" class="com-btn">⚡ Einzelfunk (1 Satz)</button>
+                <button id="btn-single" class="com-btn">⚡ Einzelfunk (1 Senden)</button>
                 <button id="btn-cont" class="com-btn">📡 Dauerhafte Leitung</button>
             </div>
         </div>
@@ -175,7 +189,6 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
                 led.style.backgroundColor = color;
                 led.style.boxShadow = "0 0 15px " + shadow;
             }
-            
             setLED('#00d2ff', '#00d2ff');
 
             btnSingle.addEventListener('click', () => {
@@ -195,10 +208,7 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
                     btnCont.classList.add('btn-active-hold');
                     btnCont.innerText = "🔒 Leitung eingerastet";
                     stopTriggered = false;
-                    if (!isListening) {
-                        synth.cancel();
-                        recognition.start();
-                    }
+                    if (!isListening) { synth.cancel(); recognition.start(); }
                 } else {
                     isContinuousMode = false;
                     btnCont.classList.remove('btn-active-hold');
@@ -220,9 +230,7 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
             recognition.onend = () => {
                 isListening = false;
                 if (isContinuousMode && !stopTriggered && !synth.speaking) {
-                    setTimeout(() => { 
-                        if(!synth.speaking && isContinuousMode) recognition.start(); 
-                    }, 300);
+                    setTimeout(() => { if(!synth.speaking && isContinuousMode) recognition.start(); }, 300);
                 } else if (!isContinuousMode) {
                     statusText.innerText = "FUNKKANAL IM STANDBY // BEREIT";
                     setLED('#00d2ff', '#00d2ff');
@@ -231,72 +239,24 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
 
             recognition.onresult = async (event) => {
                 const userText = event.results[0][0].transcript;
-                statusText.innerText = "DURCHSUCHE ELEPHANT-MATRIX...";
+                statusText.innerText = "SENDER AN MAIN-BRAIN...";
                 setLED('#10b981', '#10b981');
                 
-                // Schicke Daten als JSON verpackt an Streamlit
+                // Wir schicken den Text direkt an Streamlit
                 window.parent.postMessage({
                     type: 'streamlit:setComponentValue',
                     value: JSON.stringify({text: userText, timestamp: Date.now()})
                 }, '*');
-
-                let orionResponse = "";
-                const cleanText = userText.toLowerCase();
-
-                if (cleanText.includes("wie geht") || cleanText.includes("alles gut") || cleanText.includes("status")) {
-                    orionResponse = "Bei mir läuft alles auf absoluter Höchstleistung, Commander! Meine Prozessoren sind perfekt kalibriert. Wie sieht es bei dir aus?";
-                } else if (cleanText.includes("red skull") || cleanText.includes("sabotage")) {
-                    orionResponse = "Die Sabotage wurde restlos bereinigt, Commander. Schilde stehen auf Maximum.";
-                } else if (cleanText.includes("danke") || cleanText.includes("super") || cleanText.includes("lob")) {
-                    orionResponse = "Immer bereit! Unser System läuft jetzt bombenfest und reagiert auf jedes deiner Worte.";
-                } else if (cleanText.includes("hallo") || cleanText.includes("hi") || cleanText.includes("moin")) {
-                    orionResponse = "Sei gegrüßt, Commander! Funkverbindung steht. Was gibt es Neues?";
-                } else {
-                    const fallbacks = [
-                        "Das ist ein wirklich interessanter Gedanke. Erzähl mir mehr darüber – wie willst du vorgehen?",
-                        "Verstanden. Ich habe den Input analysiert. Was denkst du, welche Auswirkungen das auf unsere Mission hat?",
-                        "Interessant! Meine Systeme verarbeiten das gerade im Hintergrund. Gibt es dazu noch weitere Details?"
-                    ];
-                    orionResponse = fallbacks[Math.floor(Math.random() * fallbacks.length)];
-                }
-
-                setTimeout(() => { orionSpeak(orionResponse); }, 300);
             };
-
-            function orionSpeak(text) {
-                synth.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'de-DE';
-                if (voices.length === 0) voices = synth.getVoices();
-                let deVoice = voices.find(v => v.lang.startsWith('v')) || voices.find(v => v.lang.startsWith('de'));
-                if (deVoice) utterance.voice = deVoice;
-                utterance.pitch = 0.85;
-
-                utterance.onstart = () => {
-                    statusText.innerText = "ORION ANTWORTET...";
-                    setLED('#10b981', '#10b981');
-                };
-
-                utterance.onend = () => {
-                    if (isContinuousMode && !stopTriggered) {
-                        setTimeout(() => { if(isContinuousMode) recognition.start(); }, 200);
-                    } else {
-                        statusText.innerText = "FUNKKANAL IM STANDBY // BEREIT";
-                        setLED('#00d2ff', '#00d2ff');
-                    }
-                };
-                synth.speak(utterance);
-            }
         }
     </script>
     </body>
     </html>"""
     
-    # Sprach-Interface einbetten und Wert abfangen
     import json
     voice_data_raw = st.components.v1.html(VOICE_INTERFACE_HTML, height=140, scrolling=False)
     
-    # Sicherer JSON-Check für die Audio-Übermittlung
+    # Text aus dem Funk auffangen und durch die echte API jagen
     if voice_data_raw:
         try:
             data_parsed = json.loads(str(voice_data_raw))
@@ -304,13 +264,15 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
             if v_text and ("last_v_text" not in st.session_state or st.session_state.last_v_text != v_text):
                 st.session_state.last_v_text = v_text
                 st.session_state.chat_history.append({"role": "user", "text": v_text})
-                voice_reply = generate_orion_response(v_text)
+                
+                # Hol das echte KI-Wissen ab!
+                voice_reply = ask_orion_brain(v_text)
                 st.session_state.chat_history.append({"role": "orion", "text": voice_reply})
                 st.rerun()
         except:
             pass
 
-    # DER GEMEINSAME CHAT-VERLAUF
+    # CHAT-VERLAUF ANZEIGEN
     st.markdown("<p style='color: #10b981; font-weight: bold;'>📡 Kombinierter Kommunikations-Verlauf:</p>", unsafe_allow_html=True)
     
     chat_box_html = "<div style='background: #020617; border-left: 3px solid #10b981; padding: 15px; min-height: 250px; max-height: 400px; overflow-y: auto; border-radius: 4px;'>"
@@ -341,7 +303,7 @@ elif module_selection == "🎛️ Control Center & Web-Scan":
 # --- REGISTER 3: MISSIONS-NOTIZBUCH ---
 elif module_selection == "📝 Missions-Notizbuch":
     st.subheader("📝 Daten-Protokolle & Logbücher")
-    new_note = st.text_area("Neue Direktive oder Notiz protokollieren:", placeholder="Schreibe hier deine Pläne auf...", height=150)
+    new_note = st.text_area("Neue Direktive oder Notiz diplomieren:", placeholder="Schreibe hier deine Pläne auf...", height=150)
     if st.button("💾 Protokoll sichern", use_container_width=True):
         if new_note:
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
