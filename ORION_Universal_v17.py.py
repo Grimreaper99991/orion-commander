@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION UNIVERSAL COMMAND CORE v19.7 (MOBILE VOICE CONTEXT LOCK)
+# ORION UNIVERSAL COMMAND CORE v19.8 (IFRAME PERMISSION ISOLATION)
 # PREFERRED MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // LAWS: INCLUDED
 # PERFORMANCE MODE: ULTRA FAST REAL-TIME RESPONDER // ALL-IN-ONE HUB
 # ==============================================================================
@@ -14,7 +14,7 @@ except ImportError:
 
 # 1. CORE STREAMLIT PAGE CONFIG
 st.set_page_config(
-    page_title="ORION COMMANDER v19.7",
+    page_title="ORION COMMANDER v19.8",
     page_icon="🪐",
     layout="wide"
 )
@@ -38,12 +38,12 @@ except Exception as e:
 # Session State für Konversation, Logs und Notizen initialisieren
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
-        {"role": "orion", "text": "Hochentwickelter Groq-KI-Core v19.7 online, Commander! Die Funkleitung wurde speziell für den mobilen Einsatz stabilisiert. Kein Mikrofon-Flackern mehr!"}
+        {"role": "orion", "text": "Hochentwickelter Groq-KI-Core v19.8 online! Funk-Rechte isoliert. Commander, für flüssigen mobilen Funk wird die Option 'Immer zulassen' im Browser dringend empfohlen!"}
     ]
 if "notes" not in st.session_state:
     st.session_state.notes = []
 if "terminal_logs" not in st.session_state:
-    st.session_state.terminal_logs = ["[SYS] Core v19.7 stabilisiert. Mobile Audio Matrix repariert."]
+    st.session_state.terminal_logs = ["[SYS] Core v19.8 stabilisiert. Iframe-Rechte-Sperre optimiert."]
 
 # ==============================================================================
 # LINKS: NAVIGATION & AUSWAHL REGISTER IN DER SIDEBAR
@@ -75,7 +75,7 @@ with st.sidebar:
 # RECHTS: ANZEIGE DES AUSGEWÄHLTEN REGISTERS
 # ==============================================================================
 
-st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION COMMAND INTERFACE v19.7</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION COMMAND INTERFACE v19.8</h1>", unsafe_allow_html=True)
 st.divider()
 
 # ECHTE GROQ-KI-LOGIK (Llama 3.1 Hyper-Speed)
@@ -132,7 +132,7 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
 
     st.divider()
 
-    # DIE SENSITIVE HARDWARE-BOX MIT MOBIL-OPTIMIERTEM LOCKS-SYSTEM
+    # DIE SENSITIVE HARDWARE-BOX - JETZT GEGEN RECHTE-SCHLEIFEN GEPUFFERT
     VOICE_INTERFACE_HTML = """<!DOCTYPE html>
     <html lang="de">
     <head>
@@ -153,7 +153,7 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
         <div class="panel">
             <div class="hardware-status-row">
                 <div id="orion-led" class="status-led"></div>
-                <div id="com-status" class="status-text">FUNKKANAL READY // MOBILE LOCK ACTIVE</div>
+                <div id="com-status" class="status-text">FUNKKANAL READY // CONFIRMED STATUS</div>
             </div>
             
             <div class="button-grid">
@@ -183,7 +183,8 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
             let isContinuousMode = false;
             let voices = [];
             let stopTriggered = false;
-            let isSpeakingRightNow = false; // Sicherheitsschloss gegen Flackern
+            let isSpeakingRightNow = false;
+            let permissionBlocked = false; // Verhindert aggressive Schleifen bei Rechteentzug
 
             function loadVoices() { voices = synth.getVoices(); }
             loadVoices();
@@ -196,16 +197,17 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
             setLED('#00d2ff', '#00d2ff');
 
             function safeStartRecognition() {
-                if (!isListening && !isSpeakingRightNow && !stopTriggered) {
+                if (!isListening && !isSpeakingRightNow && !stopTriggered && !permissionBlocked) {
                     try {
                         recognition.start();
                     } catch(e) {
-                        console.log("Zündung verzögert, starte neu...");
+                        console.log("Audio-Kanal besetzt, verzögere...");
                     }
                 }
             }
 
             btnSingle.addEventListener('click', () => {
+                permissionBlocked = false; 
                 if (!isListening && !isSpeakingRightNow) {
                     isContinuousMode = false;
                     btnCont.classList.remove('btn-active-hold');
@@ -217,6 +219,7 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
             });
 
             btnCont.addEventListener('click', () => {
+                permissionBlocked = false;
                 if (!isContinuousMode) {
                     isContinuousMode = true;
                     btnCont.classList.add('btn-active-hold');
@@ -246,9 +249,8 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
 
             recognition.onend = () => {
                 isListening = false;
-                // Wenn wir im Dauermodus sind, ORION nicht spricht und kein Stop gedrückt wurde: Neustart!
-                if (isContinuousMode && !stopTriggered && !isSpeakingRightNow) {
-                    setTimeout(() => { safeStartRecognition(); }, 400);
+                if (isContinuousMode && !stopTriggered && !isSpeakingRightNow && !permissionBlocked) {
+                    setTimeout(() => { safeStartRecognition(); }, 500);
                 } else if (!isContinuousMode && !isSpeakingRightNow) {
                     statusText.innerText = "FUNKKANAL IM STANDBY // BEREIT";
                     setLED('#00d2ff', '#00d2ff');
@@ -266,15 +268,18 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
                 }, '*');
             };
 
-            // Falls das Handy das Mikrofon wegen Audio-Fokus-Wechsel unerwartet abwirft
             recognition.onerror = (event) => {
-                console.log("Audio-Fehler abgefangen: " + event.error);
-                if (isContinuousMode && !stopTriggered && event.error !== 'not-allowed') {
-                    setTimeout(() => { safeStartRecognition(); }, 500);
+                console.log("Audio-Fehler: " + event.error);
+                if (event.error === 'not-allowed') {
+                    permissionBlocked = true; // Stoppt die Schleife!
+                    statusText.innerText = "RECHTE-BLOCKADE! BITTE 'IMMER ZULASSEN' WÄHLEN.";
+                    setLED('#ff3b30', '#ff3b30');
+                }
+                if (isContinuousMode && !stopTriggered && !permissionBlocked) {
+                    setTimeout(() => { safeStartRecognition(); }, 600);
                 }
             };
 
-            // Empfängt die berechnete Antwort von ORION und spricht sie aus
             window.addEventListener('message', function(event) {
                 if(event.data && event.data.orionSpeakText) {
                     orionSpeak(event.data.orionSpeakText);
@@ -283,7 +288,7 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
 
             function orionSpeak(text) {
                 isSpeakingRightNow = true;
-                recognition.stop(); // Mikrofon sofort kappen, wenn er spricht!
+                recognition.stop();
                 synth.cancel();
                 
                 const utterance = new SpeechSynthesisUtterance(text);
@@ -300,8 +305,8 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
 
                 utterance.onend = () => {
                     isSpeakingRightNow = false;
-                    if (isContinuousMode && !stopTriggered) {
-                        setTimeout(() => { safeStartRecognition(); }, 300);
+                    if (isContinuousMode && !stopTriggered && !permissionBlocked) {
+                        setTimeout(() => { safeStartRecognition(); }, 400);
                     } else {
                         statusText.innerText = "FUNKKANAL IM STANDBY // BEREIT";
                         setLED('#00d2ff', '#00d2ff');
@@ -324,11 +329,9 @@ if module_selection == "🎙️ ORION Sprach-Chat (Funk)":
                 st.session_state.last_v_text = v_text
                 st.session_state.chat_history.append({"role": "user", "text": v_text})
                 
-                # Berechne die geniale Antwort
                 voice_reply = ask_orion_groq(v_text)
                 st.session_state.chat_history.append({"role": "orion", "text": voice_reply})
                 
-                # WICHTIG: Sende die Antwort zurück ins HTML-Widget, damit ORION stabil spricht!
                 st.components.v1.html(f"""
                 <script>
                     window.parent.postMessage({{orionSpeakText: {json.dumps(voice_reply)}}}, '*');
