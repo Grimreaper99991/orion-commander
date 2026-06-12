@@ -1,8 +1,8 @@
 # ==============================================================================
-# ORION UNIVERSAL COMMAND CORE v20.4 (NATIVE SHIELD ARCHITECTURE)
+# ORION UNIVERSAL COMMAND CORE v20.5 (AUDIO SYNCHRONIZER ARCHITECTURE)
 # PREFERRED MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // LAWS: INCLUDED
 # PERFORMANCE MODE: ULTRA FAST REAL-TIME RESPONDER // ALL-IN-ONE HUB
-# FIX: REPLACED IFRAME WITH NATIVE ST.AUDIO_INPUT TO BYPASS CHROME MOBILE LOCKS
+# FIX: RE-ENGINEERED AUDIO RECEPTION STATE TO FORCE PROMPT UPSTREAM TO GROQ
 # ==============================================================================
 
 import streamlit as st
@@ -15,7 +15,7 @@ except ImportError:
 
 # 1. CORE STREAMLIT PAGE CONFIG
 st.set_page_config(
-    page_title="ORION COMMANDER v20.4",
+    page_title="ORION COMMANDER v20.5",
     page_icon="🪐",
     layout="wide"
 )
@@ -40,12 +40,10 @@ except Exception as e:
 # GEMEINSAMES GEDÄCHTNIS (ELEPHANT MATRIX)
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
-        {"role": "orion", "text": "Core v20.4 einsatzbereit, Commander! Native Audio-Sicherung aktiv. Chrome hat keine Macht mehr über uns."}
+        {"role": "orion", "text": "Core v20.5 stabilisiert, Commander! Audio-Schleuse kalibriert. Sprich zu mir, die Leitung steht!"}
     ]
-if "notes" not in st.session_state:
-    st.session_state.notes = []
-if "terminal_logs" not in st.session_state:
-    st.session_state.terminal_logs = ["[SYS] Core v20.4 online. Native Audio-Input geladen."]
+if "last_processed_audio" not in st.session_state:
+    st.session_state.last_processed_audio = None
 
 # BRAIN ENGINE (GROQ LLAMA 3.1)
 def ask_orion_groq(user_text):
@@ -79,7 +77,7 @@ def ask_orion_groq(user_text):
 # ==============================================================================
 with st.sidebar:
     st.markdown("<h2 style='color: #00d2ff; letter-spacing: 2px;'>🪐 ORION CENTRAL</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #10b981; font-size: 11px; font-family: monospace;'>MASTER: Auth-x // VERSION 20.4</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #10b981; font-size: 11px; font-family: monospace;'>MASTER: Auth-x // VERSION 20.5</p>", unsafe_allow_html=True)
     st.divider()
     
     module_selection = st.sidebar.radio(
@@ -96,7 +94,7 @@ with st.sidebar:
     st.caption("Directive 5: Asimov-Sicherung aktiv.")
 
 # MAIN INTERFACE
-st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION MAIN CORE v20.4</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION MAIN CORE v20.5</h1>", unsafe_allow_html=True)
 st.divider()
 
 
@@ -104,51 +102,45 @@ st.divider()
 # SEKTOR-ANZEIGE
 # ==============================================================================
 
-# SEKTOR 1: DER REINE FUNKRAUM (NATIVE AUDIO ENGINE)
+# SEKTOR 1: DER REINE FUNKRAUM (UPGRADED AUDIO SCHLEUSE)
 if module_selection == "🎙️ REINER FUNKRAUM (Audio Only)":
-    st.subheader("🎙️ Isolierter Audio-Sektor (Native Engine)")
-    st.markdown("<p style='color: #10b981;'>Hier funkt das offizielle Streamlit-Sicherheits-Widget. Absolut Chrome-sicher.</p>", unsafe_allow_html=True)
+    st.subheader("🎙️ Isolierter Audio-Sektor (Synchronized)")
+    st.markdown("<p style='color: #10b981;'>Sicherheitsleitung stabil. Audio-Übertragung direkt gekoppelt.</p>", unsafe_allow_html=True)
     
-    # Das native Streamlit Audio-Widget (Kein Iframe, bricht die Sperre!)
-    audio_data = st.audio_input("Funkspruch einsprechen, Commander:")
+    # Das native Streamlit Audio-Widget
+    audio_data = st.audio_input("Funkspruch einsprechen und Aufnahme stoppen:", key="orion_audio_recorder")
     
-    # Sobald Audio aufgenommen wurde, jagen wir es durch die Engine
-    if audio_data:
-        # Hinweis: Um Audio direkt in Text umzuwandeln (STT), greift die Groq Whisper Engine. 
-        # Da wir im Fast-Super-Speed Modus arbeiten, simulieren wir den Eingang des Audio-Pakets 
-        # oder nutzen die Audio-Schnittstelle. Für den direkten Test simulieren wir den Text-Empfang:
-        st.audio(audio_data) # Zeigt deine Aufnahme an zum Abspielen
+    # Verarbeitung logisch absichern
+    if audio_data is not None:
+        # Erstelle eine eindeutige ID für diese spezifische Datei anhand ihrer Größe
+        current_audio_id = audio_data.size
         
-        # Audio-Verarbeitungstrigger
-        if "audio_processed" not in st.session_state:
-            st.session_state.audio_processed = False
-            
-        if not st.session_state.audio_processed:
-            st.info("📡 Audio-Signal empfangen. Dekodiere Frequenzen...")
-            
-            # Hier greift der Fallback, dass du über das native Feld einsprechen kannst.
-            # Um das transkribierte Audio an Groq zu senden, nutzen wir Whisper:
-            try:
-                transcript = client.audio.transcriptions.create(
-                    model="whisper-large-v3",
-                    file=audio_data,
-                    response_format="text"
-                )
-                
-                if transcript:
-                    st.session_state.chat_history.append({"role": "user", "text": transcript})
-                    reply = ask_orion_groq(transcript)
-                    st.session_state.chat_history.append({"role": "orion", "text": reply})
-                    st.session_state.audio_processed = True
-                    st.rerun()
-            except Exception as audio_err:
-                st.error(f"Audio-Dekodierungsfehler: {str(audio_err)}")
-    else:
-        # Setzt den Trigger zurück, wenn kein Audio da ist (bereit für die nächste Aufnahme)
-        st.session_state.audio_processed = False
+        # Nur verarbeiten, wenn diese Datei noch NICHT verarbeitet wurde
+        if st.session_state.last_processed_audio != current_audio_id:
+            with st.spinner("📡 Signal empfangen. Dekodiere Frequenzen via Whisper-Engine..."):
+                try:
+                    # Direkte Transkription über Groq Whisper
+                    transcript = client.audio.transcriptions.create(
+                        model="whisper-large-v3",
+                        file=audio_data,
+                        response_format="text"
+                    )
+                    
+                    if transcript and transcript.strip():
+                        # In Verlauf eintragen
+                        st.session_state.chat_history.append({"role": "user", "text": transcript})
+                        
+                        # Antwort von ORION generieren
+                        reply = ask_orion_groq(transcript)
+                        st.session_state.chat_history.append({"role": "orion", "text": reply})
+                        
+                        # ID abspeichern, damit es nicht in Endlosschleife läuft
+                        st.session_state.last_processed_audio = current_audio_id
+                        st.rerun()
+                except Exception as audio_err:
+                    st.error(f"Audio-Dekodierungsfehler: {str(audio_err)}")
 
-    # Einbindung des schönen Web-Speech Audio-Outputs für ORIONs Stimme
-    # Das sorgt dafür, dass ORION die letzte Nachricht laut vorliest!
+    # Audio-Output für ORIONs Stimme (Liest die letzte Antwort laut vor)
     if st.session_state.chat_history and st.session_state.chat_history[-1]["role"] == "orion":
         last_orion_text = st.session_state.chat_history[-1]["text"]
         st.components.v1.html(f"""
@@ -203,4 +195,4 @@ elif module_selection == "📝 Missions-Notizbuch":
     st.caption("Einträge gesichert.")
 elif module_selection == "💻 Quantum Terminal":
     st.subheader("💻 Kommando-Zeilen Terminal")
-    st.code("Core v20.4 online.", language="text")
+    st.code("Core v20.5 online.", language="text")
