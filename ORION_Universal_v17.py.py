@@ -1,8 +1,8 @@
 # ==============================================================================
-# ORION UNIVERSAL COMMAND CORE v20.2 (RADICAL ISOLATION MATRIX)
+# ORION UNIVERSAL COMMAND CORE v20.2 (RADICAL ISOLATION MATRIX) - FIXED
 # PREFERRED MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // LAWS: INCLUDED
 # PERFORMANCE MODE: ULTRA FAST REAL-TIME RESPONDER // ALL-IN-ONE HUB
-# STRATEGY: COMPLETELY SEPARATED FUNK INTERFACE WITH HIDDEN BACKGROUND BACKBONE
+# FIX: JAVASCRIPT ESCAPING ERROR IN F-STRING RESOLVED
 # ==============================================================================
 
 import streamlit as st
@@ -103,7 +103,6 @@ st.divider()
 # ==============================================================================
 # DIE UNZERSTÖRBARE CORE-AUDIO-BRÜCKE (Läuft IMMER, wird aber versteckt)
 # ==============================================================================
-# Wir berechnen, ob das Widget sichtbar oder unsichtbar (height=0) sein soll
 is_funkraum = (module_selection == "🎙️ REINER FUNKRAUM (Audio Only)")
 widget_height = 150 if is_funkraum else 0
 
@@ -213,7 +212,7 @@ VOICE_INTERFACE_HTML = f"""<!DOCTYPE html>
             setLED('#10b981', '#10b981');
             window.parent.postMessage({
                 type: 'streamlit:setComponentValue',
-                value: JSON.stringify({text: userText, timestamp: Date.now()})
+                value: JSON.stringify({{text: userText, timestamp: Date.now()}})
             }, '*');
         }};
 
@@ -287,7 +286,6 @@ if module_selection == "🎙️ REINER FUNKRAUM (Audio Only)":
     st.subheader("🎙️ Isolierter Audio-Sektor")
     st.markdown("<p style='color: #ff3b30;'>ABSOLUTE FUNKSTILLE FÜR KEYBOARDS. Nur reiner Voice-Chat.</p>", unsafe_allow_html=True)
     
-    # Der Chat-Verlauf wird hier sauber ausgegeben
     st.markdown("### 📡 Funk-Logbuch:")
     chat_box_html = "<div style='background: #020617; border-left: 3px solid #ff3b30; padding: 15px; min-height: 300px; max-height: 450px; overflow-y: auto; border-radius: 4px;'>"
     for msg in st.session_state.chat_history:
@@ -320,7 +318,7 @@ elif module_selection == "💻 REINE TEXT-ZENTRALE":
     text_box_html += "</div>"
     st.markdown(text_box_html, unsafe_allow_html=True)
 
-# SEKTOREN 3, 4, 5 (Bleiben wie gehabt stabil)
+# SEKTOREN 3, 4, 5
 elif module_selection == "🎛️ Control Center & Web-Scan":
     st.subheader("🔍 Cyber-Netzwerk Websuche & Wikipedia Modules")
     st.info("System bereit.")
