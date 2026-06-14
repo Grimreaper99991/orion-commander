@@ -1,8 +1,8 @@
 # ==============================================================================
-# ORION UNIVERSAL COMMAND CORE v20.5 (AUDIO SYNCHRONIZER ARCHITECTURE)
+# ORION UNIVERSAL COMMAND CORE v21.0 (SECURE GATEWAY ARCHITECTURE)
 # PREFERRED MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // LAWS: INCLUDED
 # PERFORMANCE MODE: ULTRA FAST REAL-TIME RESPONDER // ALL-IN-ONE HUB
-# FIX: RE-ENGINEERED AUDIO RECEPTION STATE TO FORCE PROMPT UPSTREAM TO GROQ
+# UPGRADE: SCI-FI SECURITY GATEWAY MASK WITH LICENSE KEY & ADMIN BYPASS
 # ==============================================================================
 
 import streamlit as st
@@ -15,18 +15,53 @@ except ImportError:
 
 # 1. CORE STREAMLIT PAGE CONFIG
 st.set_page_config(
-    page_title="ORION COMMANDER v20.5",
+    page_title="ORION COMMANDER v21.0",
     page_icon="🪐",
     layout="wide"
 )
 
-# Cyberpunk/Sci-Fi Styling für den Mainframe
+# Cyberpunk/Sci-Fi Styling für den Mainframe und die Login-Schleuse
 st.markdown("""
 <style>
     .stApp { background-color: #05070f; color: #f3f4f6; }
     [data-testid="stSidebar"] { background-color: #0b1120 !important; border-right: 2px solid #1e293b; }
     .reportview-container { background: #05070f; }
     hr { border-top: 1px solid #1e293b !important; }
+    
+    /* Bling-Bling Sci-Fi Container */
+    .scifi-gate {
+        background: linear-gradient(135deg, #0b1120, #05070f);
+        border: 2px solid #00d2ff;
+        box-shadow: 0 0 25px rgba(0, 210, 255, 0.2), inset 0 0 15px rgba(0, 210, 255, 0.1);
+        border-radius: 12px;
+        padding: 30px;
+        text-align: center;
+        margin-top: 50px;
+    }
+    .pulsing-led {
+        width: 12px;
+        height: 12px;
+        background-color: #ff3b30;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 12px #ff3b30;
+        animation: blink 1.5s infinite;
+        margin-right: 10px;
+    }
+    .pulsing-led-green {
+        width: 12px;
+        height: 12px;
+        background-color: #10b981;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 12px #10b981;
+        margin-right: 10px;
+    }
+    @keyframes blink {
+        0% { opacity: 0.3; box-shadow: 0 0 4px #ff3b30; }
+        50% { opacity: 1; box-shadow: 0 0 14px #ff3b30; }
+        100% { opacity: 0.3; box-shadow: 0 0 4px #ff3b30; }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -37,13 +72,21 @@ try:
 except Exception as e:
     ai_active = False
 
-# GEMEINSAMES GEDÄCHTNIS (ELEPHANT MATRIX)
+# INITIALISIERUNG DER SYSTEM-ZUSTÄNDE
+if "access_granted" not in st.session_state:
+    st.session_state.access_granted = False
+if "user_role" not in st.session_state:
+    st.session_state.user_role = None # 'commander' oder 'customer'
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
-        {"role": "orion", "text": "Core v20.5 stabilisiert, Commander! Audio-Schleuse kalibriert. Sprich zu mir, die Leitung steht!"}
+        {"role": "orion", "text": "Core v21.0 gesichert. Schleusen-Protokoll aktiv. System verschlüsselt."}
     ]
 if "last_processed_audio" not in st.session_state:
     st.session_state.last_processed_audio = None
+
+# GÜLTIGE KUNDEN-LIZENZKEYS (Hier kannst du Keys hinzufügen oder löschen!)
+VALID_LICENSE_KEYS = ["ORION-ALPHA-99", "ORION-BETA-88", "ORION-GAMMA-77"]
+MASTER_CODE = "Auth-x"
 
 # BRAIN ENGINE (GROQ LLAMA 3.1)
 def ask_orion_groq(user_text):
@@ -72,54 +115,102 @@ def ask_orion_groq(user_text):
     except Exception as error:
         return f"[GROQ-MATRIX-FEHLER]: {str(error)}"
 
+
 # ==============================================================================
-# SIDEBAR NAVIGATION
+# SEKTOR 0: DIE DESIGNTE SCI-FI SCHLEUSE (LOGIN MASK)
+# ==============================================================================
+if not st.session_state.access_granted:
+    # Zentrierter Login-Bereich
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        st.markdown("""
+        <div class="scifi-gate">
+            <h1 style='color: #00d2ff; font-family: monospace; letter-spacing: 5px; margin-bottom: 0;'>ORION DEEP-SPACE</h1>
+            <p style='color: #64748b; font-family: monospace; font-size: 12px; margin-top: 5px;'>SECURITY HUB // MATRIX CODES REQUIRED</p>
+            <hr style='border-color: #1e293b !important;'>
+            <div style='margin: 20px 0;'>
+                <span class="pulsing-led"></span>
+                <span style='color: #ff3b30; font-family: monospace; font-size: 14px; letter-spacing: 2px;'>MAIN DECK LOCKED // ENCRYPTION ACTIVE</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Das stylische Eingabefeld
+        gate_key = st.text_input("ENTER ACCESS CODE OR LICENSE KEY:", type="password", key="gateway_key_input")
+        
+        if st.button("DEKODIEREN & ZUGANG ANFORDERN", use_container_width=True):
+            if gate_key == MASTER_CODE:
+                st.session_state.access_granted = True
+                st.session_state.user_role = "commander"
+                st.toast("⚡ WILLKOMMEN ZURÜCK, COMMANDER. MASTER-ZUGANG ERTEILT.", icon="🪐")
+                st.rerun()
+            elif gate_key in VALID_LICENSE_KEYS:
+                st.session_state.access_granted = True
+                st.session_state.user_role = "customer"
+                st.toast("📡 LIZENZ BESTÄTIGT. WILLKOMMEN AN BORD.", icon="🚀")
+                st.rerun()
+            else:
+                st.error("❌ ZUGRIFF VERWEIGERT: Code oder Lizenz-Key ungültig. Die Firewall hält.")
+                
+    st.stop() # Stoppt die App hier, falls man nicht eingeloggt ist!
+
+
+# ==============================================================================
+# SIDEBAR NAVIGATION (Wird erst NACH dem Login sichtbar!)
 # ==============================================================================
 with st.sidebar:
     st.markdown("<h2 style='color: #00d2ff; letter-spacing: 2px;'>🪐 ORION CENTRAL</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #10b981; font-size: 11px; font-family: monospace;'>MASTER: Auth-x // VERSION 20.5</p>", unsafe_allow_html=True)
+    
+    # Zeigt an, wer eingeloggt ist
+    if st.session_state.user_role == "commander":
+        st.markdown("<p style='color: #00d2ff; font-size: 11px; font-family: monospace;'><span class='pulsing-led-green'></span>RANK: ARCHITECT (Michael)</p>", unsafe_allow_html=True)
+    else:
+        st.markdown("<p style='color: #10b981; font-size: 11px; font-family: monospace;'><span class='pulsing-led-green'></span>RANK: LICENSED CUSTOMER</p>", unsafe_allow_html=True)
+        
+    st.markdown("<p style='color: #64748b; font-size: 11px; font-family: monospace;'>CORE: v21.0 // Auth-x Active</p>", unsafe_allow_html=True)
     st.divider()
     
-    module_selection = st.sidebar.radio(
-        "WÄHLE SEKTOR:",
-        [
-            "🎙️ REINER FUNKRAUM (Audio Only)",
-            "💻 REINE TEXT-ZENTRALE",
-            "🎛️ Control Center & Web-Scan",
-            "📝 Missions-Notizbuch",
-            "💻 Quantum Terminal"
-        ]
-    )
+    # Sektoren-Auswahl
+    available_sectors = [
+        "🎙️ REINER FUNKRAUM (Audio Only)",
+        "💻 REINE TEXT-ZENTRALE",
+        "🎛️ Control Center & Web-Scan",
+        "📝 Missions-Notizbuch"
+    ]
+    
+    # Nur der Commander sieht das kritische Quantum Terminal
+    if st.session_state.user_role == "commander":
+        available_sectors.append("💻 Quantum Terminal")
+        
+    module_selection = st.sidebar.radio("WÄHLE SEKTOR:", available_sectors)
     st.divider()
-    st.caption("Directive 5: Asimov-Sicherung aktiv.")
+    
+    if st.button("🔴 DEKOPPELN (Logout)", use_container_width=True):
+        st.session_state.access_granted = False
+        st.session_state.user_role = None
+        st.rerun()
 
-# MAIN INTERFACE
-st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION MAIN CORE v20.5</h1>", unsafe_allow_html=True)
+# MAIN MAINMAIN INTERFACE (NACH LOGIN)
+st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION MAIN CORE v21.0</h1>", unsafe_allow_html=True)
 st.divider()
 
 
 # ==============================================================================
-# SEKTOR-ANZEIGE
+# MODULE SELECTION EXECUTION
 # ==============================================================================
 
-# SEKTOR 1: DER REINE FUNKRAUM (UPGRADED AUDIO SCHLEUSE)
+# SEKTOR 1: DER REINE FUNKRAUM (NATIVE AUDIO ENGINE)
 if module_selection == "🎙️ REINER FUNKRAUM (Audio Only)":
     st.subheader("🎙️ Isolierter Audio-Sektor (Synchronized)")
-    st.markdown("<p style='color: #10b981;'>Sicherheitsleitung stabil. Audio-Übertragung direkt gekoppelt.</p>", unsafe_allow_html=True)
     
-    # Das native Streamlit Audio-Widget
     audio_data = st.audio_input("Funkspruch einsprechen und Aufnahme stoppen:", key="orion_audio_recorder")
     
-    # Verarbeitung logisch absichern
     if audio_data is not None:
-        # Erstelle eine eindeutige ID für diese spezifische Datei anhand ihrer Größe
         current_audio_id = audio_data.size
-        
-        # Nur verarbeiten, wenn diese Datei noch NICHT verarbeitet wurde
         if st.session_state.last_processed_audio != current_audio_id:
             with st.spinner("📡 Signal empfangen. Dekodiere Frequenzen via Whisper-Engine..."):
                 try:
-                    # Direkte Transkription über Groq Whisper
                     transcript = client.audio.transcriptions.create(
                         model="whisper-large-v3",
                         file=audio_data,
@@ -127,20 +218,15 @@ if module_selection == "🎙️ REINER FUNKRAUM (Audio Only)":
                     )
                     
                     if transcript and transcript.strip():
-                        # In Verlauf eintragen
                         st.session_state.chat_history.append({"role": "user", "text": transcript})
-                        
-                        # Antwort von ORION generieren
                         reply = ask_orion_groq(transcript)
                         st.session_state.chat_history.append({"role": "orion", "text": reply})
-                        
-                        # ID abspeichern, damit es nicht in Endlosschleife läuft
                         st.session_state.last_processed_audio = current_audio_id
                         st.rerun()
                 except Exception as audio_err:
                     st.error(f"Audio-Dekodierungsfehler: {str(audio_err)}")
 
-    # Audio-Output für ORIONs Stimme (Liest die letzte Antwort laut vor)
+    # Audio-Output für ORIONs Stimme
     if st.session_state.chat_history and st.session_state.chat_history[-1]["role"] == "orion":
         last_orion_text = st.session_state.chat_history[-1]["text"]
         st.components.v1.html(f"""
@@ -186,13 +272,16 @@ elif module_selection == "💻 REINE TEXT-ZENTRALE":
     text_box_html += "</div>"
     st.markdown(text_box_html, unsafe_allow_html=True)
 
-# SEKTOREN 3, 4, 5
+# SEKTOREN 3, 4
 elif module_selection == "🎛️ Control Center & Web-Scan":
     st.subheader("🔍 Cyber-Netzwerk Websuche & Wikipedia Modules")
     st.info("System bereit.")
 elif module_selection == "📝 Missions-Notizbuch":
     st.subheader("📝 Daten-Protokolle & Logbücher")
     st.caption("Einträge gesichert.")
-elif module_selection == "💻 Quantum Terminal":
-    st.subheader("💻 Kommando-Zeilen Terminal")
-    st.code("Core v20.5 online.", language="text")
+
+# EXKLUSIVER COMMANDER SEKTOR 5
+elif module_selection == "💻 Quantum Terminal" and st.session_state.user_role == "commander":
+    st.subheader("💻 ARCHITEKTEN QUANTUM TERMINAL")
+    st.code("Core v21.0 Online. Master-Bypass aktiv. Alle Systeme laufen nominal.", language="text")
+    st.write("Gültige Kunden-Keys im Speicher:", VALID_LICENSE_KEYS)
