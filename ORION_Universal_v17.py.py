@@ -1,33 +1,50 @@
 import os
 import logging
+import streamlit as st
 from typing import List, Dict, Any, Optional
-from groq import Groq, GroqError
 
-# Logging Configuration
+try:
+    from groq import Groq, GroqError
+except ImportError:
+    st.error("Das 'groq' Paket ist nicht installiert. Bitte im Terminal ausführen: pip install groq")
+    st.stop()
+
+# -----------------------------------------------------------------------------
+# 1. LOGGING & SEITEN-SETUP
+# -----------------------------------------------------------------------------
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - [%(levelname)s] - %(message)s")
-logger = logging.getLogger("ORION-GROQ-ROUTER")
+logger = logging.getLogger("ORION-STREAMLIT")
 
+st.set_page_config(
+    page_title="ORION Command Core",
+    page_icon="⚡",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# -----------------------------------------------------------------------------
+# 2. GROQ ROUTER MATRIX
+# -----------------------------------------------------------------------------
 class GroqMatrixRouter:
     """
     ORION Multi-Model-Router für die Groq API.
-    Führt Fallbacks über mehrere Modell-IDs durch, falls Modelle nicht erreichbar oder dekommissioniert sind.
+    Führt automatische Fallbacks durch, falls Modelle nicht erreichbar oder dekommissioniert sind.
     """
 
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or os.getenv("GROQ_API_KEY")
         if not self.api_key:
-            logger.warning("[GROQ-MATRIX]: Kein API-Key gefunden. Bitte GROQ_API_KEY setzen.")
             self.client = None
         else:
             self.client = Groq(api_key=self.api_key)
 
-        # Aktuell verifizierte & aktive Groq Modell-IDs (Stand 2026)
-        # Priorisiert nach Performanz & Verfügbarkeit
+        # Aktuelle & aktive Groq Modell-IDs (Stand 2026)
         self.default_matrix: List[str] = [
-            "openai/gpt-oss-120b",       # Primäres High-Performance Modell
-            "openai/gpt-oss-20b",        # Schnelles Ultra-Low-Latency Modell
-            "qwen/qwen3.6-27b",          # Multimodales / Vielseitiges Backup
-            "groq/compound",             # System-Compound Fallback
+            "openai/gpt-oss-120b",                       # Primär: High-Performance Reasoning
+            "openai/gpt-oss-20b",                        # Fast: Low-Latency Router
+            "qwen/qwen3.6-27b",                          # Vision & Vielseitiges Backup
+            "meta-llama/llama-4-scout-17b-16e-instruct", # Scout Llama Backup
+            "llama-3.1-8b-instant",                      # Standard Fast Fallback
         ]
 
     def get_live_models(self) -> List[str]:
@@ -37,74 +54,58 @@ class GroqMatrixRouter:
         try:
             models_page = self.client.models.list()
             active_models = [m.id for m in models_page.data if hasattr(m, 'id')]
-            logger.info(f"[GROQ-MATRIX]: Live-Modellliste erfolgreich abgerufen ({len(active_models)} Modelle).")
             return active_models
         except Exception as e:
-            logger.error(f"[GROQ-MATRIX]: Fehler beim Abfragen der Live-Modellliste: {e}")
+            logger.error(f"[GROQ-MATRIX]: Fehler beim Live-Model-Fetch: {e}")
             return []
 
     def query(
         self,
         messages: List[Dict[str, str]],
         temperature: float = 0.7,
-        max_tokens: int = 2048,
-        custom_matrix: Optional[List[str]] = None
+        max_tokens: int = 2048
     ) -> Dict[str, Any]:
-        """
-        Sendet eine Anfrage an die Groq Model-Matrix mit automatischem Fallback.
-        """
+        """Sendet eine Anfrage an die Groq Model-Matrix mit automatischem Fallback."""
         if not self.client:
             return {
                 "success": False,
-                "error": "GROQ_API_KEY ist nicht konfiguriert.",
+                "error": "Kein gültiger GROQ_API_KEY vorhanden. Bitte API-Key in der Sidebar eingeben.",
                 "model_used": None,
                 "response": None
             }
 
-        # Modell-Reihenfolge festlegen
-        candidate_models = custom_matrix or self.default_matrix
         error_logs = []
 
-        # Versuch 1: Durchlaufen der vordefinierten Matrix
-        for model_id in candidate_models:
+        # Versuch 1: Vordefinierte Matrix durchlaufen
+        for model_id in self.default_matrix:
             try:
-                logger.info(f"[GROQ-MATRIX]: Sende Anfrage an Modell '{model_id}'...")
+                logger.info(f"[GROQ-MATRIX]: Anfrage an '{model_id}'...")
                 response = self.client.chat.completions.create(
                     model=model_id,
                     messages=messages,
                     temperature=temperature,
                     max_tokens=max_tokens,
                 )
-                
                 content = response.choices[0].message.content
-                logger.info(f"[GROQ-MATRIX]: Erfolgreich geantwortet mit Modell '{model_id}'.")
-                
+                logger.info(f"[GROQ-MATRIX]: Erfolg mit Modell '{model_id}'.")
                 return {
                     "success": True,
                     "model_used": model_id,
                     "response": content,
-                    "raw_response": response
+                    "error_logs": error_logs
                 }
-
-            except GroqError as ge:
-                err_msg = f"Modell '{model_id}' fehlgeschlagen: {ge}"
-                logger.warning(f"[GROQ-MATRIX-FEHLER]: {err_msg}")
-                error_logs.append(err_msg)
             except Exception as e:
-                err_msg = f"Unerwarteter Fehler bei '{model_id}': {e}"
-                logger.error(f"[GROQ-MATRIX-FEHLER]: {err_msg}")
-                error_logs.append(err_msg)
+                err_text = f"Modell '{model_id}' fehlgeschlagen: {str(e)}"
+                logger.warning(f"[GROQ-MATRIX-FEHLER]: {err_text}")
+                error_logs.append(err_text)
 
-        # Versuch 2: Dynamischer Fallback über API-Live-Abfrage (falls alle Kandidaten fehlschlagen)
-        logger.warning("[GROQ-MATRIX]: Alle Standard-Modelle fehlgeschlagen. Starte Live-Auto-Fetch...")
+        # Versuch 2: Live-Auto-Fetch (Fallback)
+        logger.warning("[GROQ-MATRIX]: Standard-Matrix erschöpft. Starte Live-Auto-Fetch...")
         live_models = self.get_live_models()
-        
-        # Filter bereits ausprobierte Modelle heraus
-        remaining_models = [m for m in live_models if m not in candidate_models]
-        
+        remaining_models = [m for m in live_models if m not in self.default_matrix]
+
         for model_id in remaining_models:
             try:
-                logger.info(f"[GROQ-MATRIX-LIVE]: Versuche Ausweichmodell '{model_id}'...")
                 response = self.client.chat.completions.create(
                     model=model_id,
                     messages=messages,
@@ -114,39 +115,104 @@ class GroqMatrixRouter:
                 content = response.choices[0].message.content
                 return {
                     "success": True,
-                    "model_used": model_id,
+                    "model_used": f"{model_id} (Live-Fallback)",
                     "response": content,
-                    "raw_response": response
+                    "error_logs": error_logs
                 }
             except Exception as e:
-                error_logs.append(f"Live-Fallback '{model_id}' fehlgeschlagen: {e}")
+                error_logs.append(f"Live-Fallback '{model_id}' fehlgeschlagen: {str(e)}")
 
-        # Wenn gar kein Modell erreichbar war:
         return {
             "success": False,
-            "error": "Keines der Matrix-Modelle konnte erreicht werden. Bitte API-Key oder Netzwerk prüfen.",
-            "logs": error_logs,
+            "error": "Keines der Matrix-Modelle konnte erreicht werden.",
+            "error_logs": error_logs,
             "model_used": None,
             "response": None
         }
 
-
-# ==========================================
-# Beispiel für die direkte Nutzung in ORION
-# ==========================================
-if __name__ == "__main__":
-    # Test-Setup
-    router = GroqMatrixRouter()
-
-    sample_prompt = [
-        {"role": "system", "content": "Du bist ORION, eine fortschrittliche KI-Steuerung."},
-        {"role": "user", "content": "System-Statusüberprüfung: Ist die Multi-Model-Router-Matrix aktiv?"}
+# -----------------------------------------------------------------------------
+# 3. STREAMLIT SESSION STATE INITIALISIERUNG
+# -----------------------------------------------------------------------------
+if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {"role": "system", "content": "Du bist ORION, ein hochentwickeltes KI-Betriebssystem. Antworte präzise, intelligent und direkt."}
     ]
 
-    result = router.query(sample_prompt)
+if "last_model_used" not in st.session_state:
+    st.session_state.last_model_used = "Inaktiv"
 
-    if result["success"]:
-        print(f"\n[ERFOLG - Modell: {result['model_used']}]")
-        print(f"Antwort:\n{result['response']}")
+# -----------------------------------------------------------------------------
+# 4. SIDEBAR - STEUERUNG & KEY-MANAGEMENT
+# -----------------------------------------------------------------------------
+with st.sidebar:
+    st.title("⚡ ORION Core Control")
+    st.markdown("---")
+    
+    # API-Key Eingabe (aus st.secrets, Umgebungsvariablen oder manuelle Eingabe)
+    default_key = st.secrets.get("GROQ_API_KEY", os.getenv("GROQ_API_KEY", ""))
+    user_api_key = st.text_input("Groq API Key:", value=default_key, type="password")
+    
+    st.markdown("---")
+    st.subheader("Matrix Status")
+    
+    # Router Initialisieren
+    router = GroqMatrixRouter(api_key=user_api_key)
+    
+    if user_api_key:
+        st.success("API Key Geladen")
     else:
-        print(f"\n[FEHLER]: {result['error']}")
+        st.error("API Key fehlt!")
+        
+    st.info(f"Aktives Modell: **{st.session_state.last_model_used}**")
+    
+    # System-Reset
+    if st.button("💬 Chat-Verlauf zurücksetzen"):
+        st.session_state.messages = [
+            {"role": "system", "content": "Du bist ORION, ein hochentwickeltes KI-Betriebssystem. Antworte präzise, intelligent und direkt."}
+        ]
+        st.session_state.last_model_used = "Inaktiv"
+        st.rerun()
+
+    st.markdown("---")
+    st.caption("ORION Universal Core Matrix v21.4")
+
+# -----------------------------------------------------------------------------
+# 5. HAUPTFENSTER - CHAT INTERFACE
+# -----------------------------------------------------------------------------
+st.title("🛡️ ORION AI Gateway")
+st.caption("Multi-Model-Router mit automatischem Groq-Fallback System")
+
+# Verlauf anzeigen (ohne den System-Prompt)
+for msg in st.session_state.messages:
+    if msg["role"] != "system":
+        with st.chat_message(msg["role"]):
+            st.write(msg["content"])
+
+# Benutzereingabe
+if prompt := st.chat_input("Befehl oder Frage eingeben..."):
+    # 1. User Message hinzufügen
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.write(prompt)
+
+    # 2. KI Antwort generieren
+    with st.chat_message("assistant"):
+        with st.spinner("ORION Router analysiert und sendet Anfrage..."):
+            res = router.query(messages=st.session_state.messages)
+
+            if res["success"]:
+                response_text = res["response"]
+                st.write(response_text)
+                
+                # Model-Information aktualisieren
+                st.session_state.last_model_used = res["model_used"]
+                st.caption(f"🤖 Antworterstellend: `{res['model_used']}`")
+                
+                # In Session Speichern
+                st.session_state.messages.append({"role": "assistant", "content": response_text})
+            else:
+                st.error(f"❌ **GROQ-MATRIX-FEHLER**: {res['error']}")
+                if res.get("error_logs"):
+                    with st.expander("Fehler-Logbuch anzeigen"):
+                        for err in res["error_logs"]:
+                            st.write(f"- `{err}`")
