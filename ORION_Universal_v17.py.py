@@ -1,8 +1,8 @@
 # ==============================================================================
-# ORION UNIVERSAL COMMAND CORE v21.1 (REPAIRED MODEL CONNECTOR)
+# ORION UNIVERSAL COMMAND CORE v21.2 (STABLE GROQ MODEL CONNECTED)
 # PREFERRED MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // LAWS: INCLUDED
 # PERFORMANCE MODE: ULTRA FAST REAL-TIME RESPONDER // ALL-IN-ONE HUB
-# FIX: UPDATED GROQ AI MODEL TO LLAMA-3.3-70B-VERSATILE (NO MORE DEPRECATED ERRORS)
+# FIX: SWITCHED TO LLAMA-3.1-8B-INSTANT (GUARANTEED ACCESS FOR ALL KEYS)
 # ==============================================================================
 
 import streamlit as st
@@ -15,7 +15,7 @@ except ImportError:
 
 # 1. CORE STREAMLIT PAGE CONFIG
 st.set_page_config(
-    page_title="ORION COMMANDER v21.1",
+    page_title="ORION COMMANDER v21.2",
     page_icon="🪐",
     layout="wide"
 )
@@ -79,7 +79,7 @@ if "user_role" not in st.session_state:
     st.session_state.user_role = None # 'commander' oder 'customer'
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
-        {"role": "orion", "text": "Core v21.1 gesichert. AI-Modell neu kalibriert. Schleusen-Protokoll aktiv."}
+        {"role": "orion", "text": "Core v21.2 gesichert. Verbindung hergestellt auf Llama-3.1-8b-Instant Engine."}
     ]
 if "last_processed_audio" not in st.session_state:
     st.session_state.last_processed_audio = None
@@ -88,7 +88,7 @@ if "last_processed_audio" not in st.session_state:
 VALID_LICENSE_KEYS = ["ORION-ALPHA-99", "ORION-BETA-88", "ORION-GAMMA-77"]
 MASTER_CODE = "Auth-x"
 
-# BRAIN ENGINE (GROQ LLAMA 3.3 POWER CORE)
+# BRAIN ENGINE (GROQ INSTANT POWER CORE)
 def ask_orion_groq(user_text):
     if not ai_active:
         return "FEHLER: Groq-Key fehlt in den Secrets!"
@@ -105,9 +105,9 @@ def ask_orion_groq(user_text):
             
         messages.append({"role": "user", "content": user_text})
         
-        # AKTUALISIERTES MODELL: llama-3.3-70b-versatile
+        # GARANTIERTES STABILES MODELL: llama-3.1-8b-instant
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",
             messages=messages,
             max_tokens=200,
             temperature=0.7
@@ -166,7 +166,7 @@ with st.sidebar:
     else:
         st.markdown("<p style='color: #10b981; font-size: 11px; font-family: monospace;'><span class='pulsing-led-green'></span>RANK: LICENSED CUSTOMER</p>", unsafe_allow_html=True)
         
-    st.markdown("<p style='color: #64748b; font-size: 11px; font-family: monospace;'>CORE: v21.1 // Auth-x Active</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #64748b; font-size: 11px; font-family: monospace;'>CORE: v21.2 // Auth-x Active</p>", unsafe_allow_html=True)
     st.divider()
     
     available_sectors = [
@@ -188,7 +188,7 @@ with st.sidebar:
         st.rerun()
 
 # MAIN INTERFACE
-st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION MAIN CORE v21.1</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION MAIN CORE v21.2</h1>", unsafe_allow_html=True)
 st.divider()
 
 
@@ -278,5 +278,5 @@ elif module_selection == "📝 Missions-Notizbuch":
 # EXKLUSIVER COMMANDER SEKTOR 5
 elif module_selection == "💻 Quantum Terminal" and st.session_state.user_role == "commander":
     st.subheader("💻 ARCHITEKTEN QUANTUM TERMINAL")
-    st.code("Core v21.1 Online. Llama-3.3-70b Engine aktiv. Master-Bypass bereit.", language="text")
+    st.code("Core v21.2 Online. Llama-3.1-8b-Instant Engine aktiv. Master-Bypass bereit.", language="text")
     st.write("Gültige Kunden-Keys im Speicher:", VALID_LICENSE_KEYS)
