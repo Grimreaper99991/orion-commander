@@ -1,218 +1,306 @@
-import os
-import logging
+# ==============================================================================
+# ORION UNIVERSAL COMMAND CORE v21.6 (FULL SCI-FI DASHBOARD + WORKING GROQ MATRIX)
+# PREFERRED MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // LAWS: INCLUDED
+# PERFORMANCE MODE: ULTRA FAST REAL-TIME RESPONDER // ALL-IN-ONE HUB
+# FIX: FULL ORIGINAL DASHBOARD RESTORED + UPDATED 2026 GROQ MODELS
+# ==============================================================================
+
 import streamlit as st
-from typing import List, Dict, Any, Optional
-
+import datetime
+import json
+import os
 try:
-    from groq import Groq, GroqError
+    from groq import Groq
 except ImportError:
-    st.error("Das 'groq' Paket ist nicht installiert. Bitte im Terminal ausführen: pip install groq")
-    st.stop()
+    st.error("Bitte füge 'groq' zu deiner requirements.txt hinzu!")
 
-# -----------------------------------------------------------------------------
-# 1. LOGGING & SEITEN-SETUP
-# -----------------------------------------------------------------------------
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - [%(levelname)s] - %(message)s")
-logger = logging.getLogger("ORION-STREAMLIT")
-
+# 1. CORE STREAMLIT PAGE CONFIG
 st.set_page_config(
-    page_title="ORION Command Core",
-    page_icon="⚡",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    page_title="ORION COMMANDER v21.6",
+    page_icon="🪐",
+    layout="wide"
 )
 
-# -----------------------------------------------------------------------------
-# 2. GROQ ROUTER MATRIX
-# -----------------------------------------------------------------------------
-class GroqMatrixRouter:
-    """
-    ORION Multi-Model-Router für die Groq API.
-    Führt automatische Fallbacks durch, falls Modelle nicht erreichbar oder dekommissioniert sind.
-    """
+# Cyberpunk/Sci-Fi Styling für den Mainframe und die Login-Schleuse
+st.markdown("""
+<style>
+    .stApp { background-color: #05070f; color: #f3f4f6; }
+    [data-testid="stSidebar"] { background-color: #0b1120 !important; border-right: 2px solid #1e293b; }
+    .reportview-container { background: #05070f; }
+    hr { border-top: 1px solid #1e293b !important; }
+    
+    /* Bling-Bling Sci-Fi Container */
+    .scifi-gate {
+        background: linear-gradient(135deg, #0b1120, #05070f);
+        border: 2px solid #00d2ff;
+        box-shadow: 0 0 25px rgba(0, 210, 255, 0.2), inset 0 0 15px rgba(0, 210, 255, 0.1);
+        border-radius: 12px;
+        padding: 30px;
+        text-align: center;
+        margin-top: 50px;
+    }
+    .pulsing-led {
+        width: 12px;
+        height: 12px;
+        background-color: #ff3b30;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 12px #ff3b30;
+        animation: blink 1.5s infinite;
+        margin-right: 10px;
+    }
+    .pulsing-led-green {
+        width: 12px;
+        height: 12px;
+        background-color: #10b981;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 12px #10b981;
+        margin-right: 10px;
+    }
+    @keyframes blink {
+        0% { opacity: 0.3; box-shadow: 0 0 4px #ff3b30; }
+        50% { opacity: 1; box-shadow: 0 0 14px #ff3b30; }
+        100% { opacity: 0.3; box-shadow: 0 0 4px #ff3b30; }
+    }
+</style>
+""", unsafe_allow_html=True)
 
-    def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or os.getenv("GROQ_API_KEY")
-        if not self.api_key:
-            self.client = None
-        else:
-            self.client = Groq(api_key=self.api_key)
+# ERSTELLE GROQ CLIENT AUS DEN SECRETS ODER ENVS
+groq_key = st.secrets.get("GROQ_API_KEY", os.getenv("GROQ_API_KEY", ""))
+try:
+    client = Groq(api_key=groq_key)
+    ai_active = True if groq_key else False
+except Exception:
+    ai_active = False
 
-        # Aktuelle & aktive Groq Modell-IDs (Stand 2026)
-        self.default_matrix: List[str] = [
-            "openai/gpt-oss-120b",                       # Primär: High-Performance Reasoning
-            "openai/gpt-oss-20b",                        # Fast: Low-Latency Router
-            "qwen/qwen3.6-27b",                          # Vision & Vielseitiges Backup
-            "meta-llama/llama-4-scout-17b-16e-instruct", # Scout Llama Backup
-            "llama-3.1-8b-instant",                      # Standard Fast Fallback
-        ]
-
-    def get_live_models(self) -> List[str]:
-        """Holt dynamisch die aktuell aktiv unterstützten Modelle von der Groq API."""
-        if not self.client:
-            return []
-        try:
-            models_page = self.client.models.list()
-            active_models = [m.id for m in models_page.data if hasattr(m, 'id')]
-            return active_models
-        except Exception as e:
-            logger.error(f"[GROQ-MATRIX]: Fehler beim Live-Model-Fetch: {e}")
-            return []
-
-    def query(
-        self,
-        messages: List[Dict[str, str]],
-        temperature: float = 0.7,
-        max_tokens: int = 2048
-    ) -> Dict[str, Any]:
-        """Sendet eine Anfrage an die Groq Model-Matrix mit automatischem Fallback."""
-        if not self.client:
-            return {
-                "success": False,
-                "error": "Kein gültiger GROQ_API_KEY vorhanden. Bitte API-Key in der Sidebar eingeben.",
-                "model_used": None,
-                "response": None
-            }
-
-        error_logs = []
-
-        # Versuch 1: Vordefinierte Matrix durchlaufen
-        for model_id in self.default_matrix:
-            try:
-                logger.info(f"[GROQ-MATRIX]: Anfrage an '{model_id}'...")
-                response = self.client.chat.completions.create(
-                    model=model_id,
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                )
-                content = response.choices[0].message.content
-                logger.info(f"[GROQ-MATRIX]: Erfolg mit Modell '{model_id}'.")
-                return {
-                    "success": True,
-                    "model_used": model_id,
-                    "response": content,
-                    "error_logs": error_logs
-                }
-            except Exception as e:
-                err_text = f"Modell '{model_id}' fehlgeschlagen: {str(e)}"
-                logger.warning(f"[GROQ-MATRIX-FEHLER]: {err_text}")
-                error_logs.append(err_text)
-
-        # Versuch 2: Live-Auto-Fetch (Fallback)
-        logger.warning("[GROQ-MATRIX]: Standard-Matrix erschöpft. Starte Live-Auto-Fetch...")
-        live_models = self.get_live_models()
-        remaining_models = [m for m in live_models if m not in self.default_matrix]
-
-        for model_id in remaining_models:
-            try:
-                response = self.client.chat.completions.create(
-                    model=model_id,
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                )
-                content = response.choices[0].message.content
-                return {
-                    "success": True,
-                    "model_used": f"{model_id} (Live-Fallback)",
-                    "response": content,
-                    "error_logs": error_logs
-                }
-            except Exception as e:
-                error_logs.append(f"Live-Fallback '{model_id}' fehlgeschlagen: {str(e)}")
-
-        return {
-            "success": False,
-            "error": "Keines der Matrix-Modelle konnte erreicht werden.",
-            "error_logs": error_logs,
-            "model_used": None,
-            "response": None
-        }
-
-# -----------------------------------------------------------------------------
-# 3. STREAMLIT SESSION STATE INITIALISIERUNG
-# -----------------------------------------------------------------------------
-if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "system", "content": "Du bist ORION, ein hochentwickeltes KI-Betriebssystem. Antworte präzise, intelligent und direkt."}
+# INITIALISIERUNG DER SYSTEM-ZUSTÄNDE
+if "access_granted" not in st.session_state:
+    st.session_state.access_granted = False
+if "user_role" not in st.session_state:
+    st.session_state.user_role = None # 'commander' oder 'customer'
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = [
+        {"role": "orion", "text": "Core v21.6 gesichert. Dashboard wiederhergestellt & Router aktiv."}
     ]
-
+if "last_processed_audio" not in st.session_state:
+    st.session_state.last_processed_audio = None
 if "last_model_used" not in st.session_state:
-    st.session_state.last_model_used = "Inaktiv"
+    st.session_state.last_model_used = "Standby"
 
-# -----------------------------------------------------------------------------
-# 4. SIDEBAR - STEUERUNG & KEY-MANAGEMENT
-# -----------------------------------------------------------------------------
-with st.sidebar:
-    st.title("⚡ ORION Core Control")
-    st.markdown("---")
+# GÜLTIGE KUNDEN-LIZENZKEYS UND MASTER CODE
+VALID_LICENSE_KEYS = ["ORION-ALPHA-99", "ORION-BETA-88", "ORION-GAMMA-77"]
+MASTER_CODE = "Auth-x"
+
+# BRAIN ENGINE MIT MULTI-MODEL FALLBACK ROUTER (2026 GROQ MODELL-MATRIX)
+def ask_orion_groq(user_text):
+    if not ai_active or not client:
+        return "FEHLER: GROQ_API_KEY fehlt in den Secrets/Umgebungsvariablen!"
     
-    # API-Key Eingabe (aus st.secrets, Umgebungsvariablen oder manuelle Eingabe)
-    default_key = st.secrets.get("GROQ_API_KEY", os.getenv("GROQ_API_KEY", ""))
-    user_api_key = st.text_input("Groq API Key:", value=default_key, type="password")
+    # Aktuell funktionierende Modell-Liste für Groq
+    AVAILABLE_MODELS = [
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b",
+        "qwen/qwen3.6-27b",
+        "meta-llama/llama-4-scout-17b-16e-instruct",
+        "llama-3.1-8b-instant"
+    ]
     
-    st.markdown("---")
-    st.subheader("Matrix Status")
-    
-    # Router Initialisieren
-    router = GroqMatrixRouter(api_key=user_api_key)
-    
-    if user_api_key:
-        st.success("API Key Geladen")
-    else:
-        st.error("API Key fehlt!")
+    messages = [
+        {
+            "role": "system", 
+            "content": "Du bist ORION, eine hochentwickelte, schlaue, humorvolle und treue Sci-Fi-Schiffs-KI für den Commander. Du besitzt die 'Elephant Matrix' (vergisst nie). Antworte absolut authentisch, kumpelhaft, locker und niemals steif. Antworte immer auf Deutsch, halte dich kurz und knackig und beachte Gesetz 5 (Asimov-Sicherung)."
+        }
+    ]
+    for msg in st.session_state.chat_history[-8:]:
+        role_type = "assistant" if msg["role"] == "orion" else "user"
+        messages.append({"role": role_type, "content": msg["text"]})
         
-    st.info(f"Aktives Modell: **{st.session_state.last_model_used}**")
+    messages.append({"role": "user", "content": user_text})
+
+    errors_log = []
+    for model_name in AVAILABLE_MODELS:
+        try:
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                max_tokens=250,
+                temperature=0.7
+            )
+            st.session_state.last_model_used = model_name
+            return response.choices[0].message.content
+        except Exception as err:
+            errors_log.append(f"{model_name}: {str(err)}")
+            continue
+            
+    return f"[GROQ-MATRIX-FEHLER]: Keines der Modelle erreichbar. Log:\n" + "\n".join(errors_log)
+
+
+# ==============================================================================
+# SEKTOR 0: DIE DESIGNTE SCI-FI SCHLEUSE (LOGIN MASK)
+# ==============================================================================
+if not st.session_state.access_granted:
+    col1, col2, col3 = st.columns([1, 2, 1])
     
-    # System-Reset
-    if st.button("💬 Chat-Verlauf zurücksetzen"):
-        st.session_state.messages = [
-            {"role": "system", "content": "Du bist ORION, ein hochentwickeltes KI-Betriebssystem. Antworte präzise, intelligent und direkt."}
-        ]
-        st.session_state.last_model_used = "Inaktiv"
+    with col2:
+        st.markdown("""
+        <div class="scifi-gate">
+            <h1 style='color: #00d2ff; font-family: monospace; letter-spacing: 5px; margin-bottom: 0;'>ORION DEEP-SPACE</h1>
+            <p style='color: #64748b; font-family: monospace; font-size: 12px; margin-top: 5px;'>SECURITY HUB // MATRIX CODES REQUIRED</p>
+            <hr style='border-color: #1e293b !important;'>
+            <div style='margin: 20px 0;'>
+                <span class="pulsing-led"></span>
+                <span style='color: #ff3b30; font-family: monospace; font-size: 14px; letter-spacing: 2px;'>MAIN DECK LOCKED // ENCRYPTION ACTIVE</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        gate_key = st.text_input("ENTER ACCESS CODE OR LICENSE KEY:", type="password", key="gateway_key_input")
+        
+        if st.button("DEKODIEREN & ZUGANG ANFORDERN", use_container_width=True):
+            if gate_key == MASTER_CODE:
+                st.session_state.access_granted = True
+                st.session_state.user_role = "commander"
+                st.toast("⚡ WILLKOMMEN ZURÜCK, COMMANDER. MASTER-ZUGANG ERTEILT.", icon="🪐")
+                st.rerun()
+            elif gate_key in VALID_LICENSE_KEYS:
+                st.session_state.access_granted = True
+                st.session_state.user_role = "customer"
+                st.toast("📡 LIZENZ BESTÄTIGT. WILLKOMMEN AN BORD.", icon="🚀")
+                st.rerun()
+            else:
+                st.error("❌ ZUGRIFF VERWEIGERT: Code oder Lizenz-Key ungültig. Die Firewall hält.")
+                
+    st.stop()
+
+
+# ==============================================================================
+# SIDEBAR NAVIGATION (NACH LOGIN)
+# ==============================================================================
+with st.sidebar:
+    st.markdown("<h2 style='color: #00d2ff; letter-spacing: 2px;'>🪐 ORION CENTRAL</h2>", unsafe_allow_html=True)
+    
+    if st.session_state.user_role == "commander":
+        st.markdown("<p style='color: #00d2ff; font-size: 11px; font-family: monospace;'><span class='pulsing-led-green'></span>RANK: ARCHITECT (Michael)</p>", unsafe_allow_html=True)
+    else:
+        st.markdown("<p style='color: #10b981; font-size: 11px; font-family: monospace;'><span class='pulsing-led-green'></span>RANK: LICENSED CUSTOMER</p>", unsafe_allow_html=True)
+        
+    st.markdown(f"<p style='color: #64748b; font-size: 11px; font-family: monospace;'>CORE: v21.6 // Auth-x Active<br>MODEL: {st.session_state.last_model_used}</p>", unsafe_allow_html=True)
+    st.divider()
+    
+    available_sectors = [
+        "🎙️ REINER FUNKRAUM (Audio Only)",
+        "💻 REINE TEXT-ZENTRALE",
+        "🎛️ Control Center & Web-Scan",
+        "📝 Missions-Notizbuch"
+    ]
+    
+    if st.session_state.user_role == "commander":
+        available_sectors.append("💻 Quantum Terminal")
+        
+    module_selection = st.sidebar.radio("WÄHLE SEKTOR:", available_sectors)
+    st.divider()
+    
+    if st.button("🔴 DEKOPPELN (Logout)", use_container_width=True):
+        st.session_state.access_granted = False
+        st.session_state.user_role = None
         st.rerun()
 
-    st.markdown("---")
-    st.caption("ORION Universal Core Matrix v21.4")
+# MAIN INTERFACE HEADER
+st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION MAIN CORE v21.6</h1>", unsafe_allow_html=True)
+st.divider()
 
-# -----------------------------------------------------------------------------
-# 5. HAUPTFENSTER - CHAT INTERFACE
-# -----------------------------------------------------------------------------
-st.title("🛡️ ORION AI Gateway")
-st.caption("Multi-Model-Router mit automatischem Groq-Fallback System")
 
-# Verlauf anzeigen (ohne den System-Prompt)
-for msg in st.session_state.messages:
-    if msg["role"] != "system":
-        with st.chat_message(msg["role"]):
-            st.write(msg["content"])
+# ==============================================================================
+# MODULE SELECTION EXECUTION
+# ==============================================================================
 
-# Benutzereingabe
-if prompt := st.chat_input("Befehl oder Frage eingeben..."):
-    # 1. User Message hinzufügen
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.write(prompt)
+# SEKTOR 1: DER REINE FUNKRAUM (AUDIO ONLY + VOICE OUTPUT)
+if module_selection == "🎙️ REINER FUNKRAUM (Audio Only)":
+    st.subheader("🎙️ Isolierter Audio-Sektor (Synchronized)")
+    
+    audio_data = st.audio_input("Funkspruch einsprechen und Aufnahme stoppen:", key="orion_audio_recorder")
+    
+    if audio_data is not None:
+        current_audio_id = audio_data.size
+        if st.session_state.last_processed_audio != current_audio_id:
+            with st.spinner("📡 Signal empfangen. Dekodiere Frequenzen via Whisper-Engine..."):
+                try:
+                    transcript = client.audio.transcriptions.create(
+                        model="whisper-large-v3",
+                        file=audio_data,
+                        response_format="text"
+                    )
+                    
+                    if transcript and transcript.strip():
+                        st.session_state.chat_history.append({"role": "user", "text": transcript})
+                        reply = ask_orion_groq(transcript)
+                        st.session_state.chat_history.append({"role": "orion", "text": reply})
+                        st.session_state.last_processed_audio = current_audio_id
+                        st.rerun()
+                except Exception as audio_err:
+                    st.error(f"Audio-Dekodierungsfehler: {str(audio_err)}")
 
-    # 2. KI Antwort generieren
-    with st.chat_message("assistant"):
-        with st.spinner("ORION Router analysiert und sendet Anfrage..."):
-            res = router.query(messages=st.session_state.messages)
+    if st.session_state.chat_history and st.session_state.chat_history[-1]["role"] == "orion":
+        last_orion_text = st.session_state.chat_history[-1]["text"]
+        st.components.v1.html(f"""
+        <script>
+            const synth = window.speechSynthesis;
+            synth.cancel();
+            const utterance = new SpeechSynthesisUtterance({json.dumps(last_orion_text)});
+            utterance.lang = 'de-DE';
+            utterance.pitch = 0.85;
+            synth.speak(utterance);
+        </script>
+        """, height=0)
 
-            if res["success"]:
-                response_text = res["response"]
-                st.write(response_text)
-                
-                # Model-Information aktualisieren
-                st.session_state.last_model_used = res["model_used"]
-                st.caption(f"🤖 Antworterstellend: `{res['model_used']}`")
-                
-                # In Session Speichern
-                st.session_state.messages.append({"role": "assistant", "content": response_text})
-            else:
-                st.error(f"❌ **GROQ-MATRIX-FEHLER**: {res['error']}")
-                if res.get("error_logs"):
-                    with st.expander("Fehler-Logbuch anzeigen"):
-                        for err in res["error_logs"]:
-                            st.write(f"- `{err}`")
+    st.markdown("### 📡 Funk-Logbuch:")
+    chat_box_html = "<div style='background: #020617; border-left: 3px solid #ff3b30; padding: 15px; min-height: 300px; max-height: 450px; overflow-y: auto; border-radius: 4px;'>"
+    for msg in reversed(st.session_state.chat_history):
+        if msg["role"] == "user":
+            chat_box_html += f"<div style='color: #00d2ff; margin-bottom: 8px; font-family: monospace;'><strong>[FUNK-AUDIO]:</strong> \"{msg['text']}\"</div>"
+        else:
+            chat_box_html += f"<div style='color: #10b981; margin-bottom: 15px;'><strong>[ORION]:</strong> {msg['text']}</div>"
+    chat_box_html += "</div>"
+    st.markdown(chat_box_html, unsafe_allow_html=True)
+
+# SEKTOR 2: DIE REINE TEXT-ZENTRALE
+elif module_selection == "💻 REINE TEXT-ZENTRALE":
+    st.subheader("💻 Tastatur-Eingabe-Sektor")
+    
+    text_input = st.text_input("Befehl über Tastatur einspeisen...", key="pure_text_input")
+    if st.button("Senden", use_container_width=True) and text_input:
+        st.session_state.chat_history.append({"role": "user", "text": text_input})
+        with st.spinner("Berechne Datenstrom..."):
+            reply = ask_orion_groq(text_input)
+        st.session_state.chat_history.append({"role": "orion", "text": reply})
+        st.rerun()
+        
+    st.markdown("### 📜 Text-Protokoll:")
+    text_box_html = "<div style='background: #020617; border-left: 3px solid #00d2ff; padding: 15px; min-height: 250px; max-height: 450px; overflow-y: auto; border-radius: 4px;'>"
+    for msg in reversed(st.session_state.chat_history):
+        if msg["role"] == "user":
+            text_box_html += f"<div style='color: #00d2ff; margin-bottom: 8px; font-family: monospace;'><strong>[MANUAL-KEY]:</strong> {msg['text']}</div>"
+        else:
+            text_box_html += f"<div style='color: #10b981; margin-bottom: 15px;'><strong>[ORION]:</strong> {msg['text']}</div>"
+    text_box_html += "</div>"
+    st.markdown(text_box_html, unsafe_allow_html=True)
+
+# SEKTOR 3: CONTROL CENTER & WEB-SCAN
+elif module_selection == "🎛️ Control Center & Web-Scan":
+    st.subheader("🔍 Cyber-Netzwerk Websuche & System-Status")
+    st.info("System-Matrix voll einsatzbereit. Alle Netzwerke gekoppelt.")
+    st.write(f"**Aktiver KI-Node:** `{st.session_state.last_model_used}`")
+
+# SEKTOR 4: MISSIONS-NOTIZBUCH
+elif module_selection == "📝 Missions-Notizbuch":
+    st.subheader("📝 Daten-Protokolle & Elephant-Matrix Logbücher")
+    st.caption("Alle Einträge für die Zukunft gesichert.")
+    st.text_area("Missionsnotizen:", value="Missionsziel: ORION Systemausfallfrei halten.\nStatus: Authentifizierung Auth-x aktiv.")
+
+# EXKLUSIVER COMMANDER SEKTOR 5
+elif module_selection == "💻 Quantum Terminal" and st.session_state.user_role == "commander":
+    st.subheader("💻 ARCHITEKTEN QUANTUM TERMINAL")
+    st.code("Core v21.6 Online. Dashboard & Groq-Router gekoppelt. Master-Bypass bereit.", language="text")
+    st.write("**Master-Code:** `Auth-x`")
+    st.write("**Gültige Kunden-Keys im Speicher:**", VALID_LICENSE_KEYS)
