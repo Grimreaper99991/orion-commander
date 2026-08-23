@@ -1,8 +1,7 @@
 # ==============================================================================
-# ORION UNIVERSAL COMMAND CORE v21.6 (FULL SCI-FI DASHBOARD + WORKING GROQ MATRIX)
+# ORION UNIVERSAL COMMAND CORE v22.0 (GHOST ZORD INTEGRATION)
 # PREFERRED MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // LAWS: INCLUDED
-# PERFORMANCE MODE: ULTRA FAST REAL-TIME RESPONDER // ALL-IN-ONE HUB
-# FIX: FULL ORIGINAL DASHBOARD RESTORED + UPDATED 2026 GROQ MODELS
+# FEATURE: DUAL-AI MATRIX (ORION + OPTIONAL GHOST ZORD VIA SECOND KEY)
 # ==============================================================================
 
 import streamlit as st
@@ -16,7 +15,7 @@ except ImportError:
 
 # 1. CORE STREAMLIT PAGE CONFIG
 st.set_page_config(
-    page_title="ORION COMMANDER v21.6",
+    page_title="ORION & GHOST ZORD CORE v22.0",
     page_icon="🪐",
     layout="wide"
 )
@@ -29,7 +28,6 @@ st.markdown("""
     .reportview-container { background: #05070f; }
     hr { border-top: 1px solid #1e293b !important; }
     
-    /* Bling-Bling Sci-Fi Container */
     .scifi-gate {
         background: linear-gradient(135deg, #0b1120, #05070f);
         border: 2px solid #00d2ff;
@@ -58,6 +56,15 @@ st.markdown("""
         box-shadow: 0 0 12px #10b981;
         margin-right: 10px;
     }
+    .pulsing-led-purple {
+        width: 12px;
+        height: 12px;
+        background-color: #a855f7;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 12px #a855f7;
+        margin-right: 10px;
+    }
     @keyframes blink {
         0% { opacity: 0.3; box-shadow: 0 0 4px #ff3b30; }
         50% { opacity: 1; box-shadow: 0 0 14px #ff3b30; }
@@ -66,126 +73,149 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ERSTELLE GROQ CLIENT AUS DEN SECRETS ODER ENVS
-groq_key = st.secrets.get("GROQ_API_KEY", os.getenv("GROQ_API_KEY", ""))
-try:
-    client = Groq(api_key=groq_key)
-    ai_active = True if groq_key else False
-except Exception:
-    ai_active = False
+# 2. KEYS ODER SECRETS ERFASSEN
+primary_key = st.secrets.get("GROQ_API_KEY", os.getenv("GROQ_API_KEY", ""))
+zord_key_secret = st.secrets.get("GHOST_ZORD_API_KEY", os.getenv("GHOST_ZORD_API_KEY", ""))
 
-# INITIALISIERUNG DER SYSTEM-ZUSTÄNDE
+# SIDEBAR KEY-OVERRIDE IM DECK (ZUM SCHNELLEN EINFÜGEN)
+with st.sidebar:
+    st.markdown("<h3 style='color: #a855f7;'>🐉 KEY MODULES</h3>", unsafe_allow_html=True)
+    custom_zord_key = st.text_input("GHOST ZORD API Key:", value=zord_key_secret, type="password", help="Hier Key einfügen um Ghost Zord freizuschalten")
+
+active_zord_key = custom_zord_key if custom_zord_key else zord_key_secret
+
+# GROQ CLIENTS INITIALISIEREN
+try:
+    orion_client = Groq(api_key=primary_key)
+    orion_active = True if primary_key else False
+except Exception:
+    orion_active = False
+
+try:
+    zord_client = Groq(api_key=active_zord_key)
+    zord_active = True if active_zord_key else False
+except Exception:
+    zord_active = False
+
+# SYSTEM ZUSTÄNDE
 if "access_granted" not in st.session_state:
     st.session_state.access_granted = False
 if "user_role" not in st.session_state:
-    st.session_state.user_role = None # 'commander' oder 'customer'
+    st.session_state.user_role = None
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
-        {"role": "orion", "text": "Core v21.6 gesichert. Dashboard wiederhergestellt & Router aktiv."}
+        {"role": "orion", "text": "Core v22.0 gesichert. Schiffs-KI bereit."}
     ]
 if "last_processed_audio" not in st.session_state:
     st.session_state.last_processed_audio = None
-if "last_model_used" not in st.session_state:
-    st.session_state.last_model_used = "Standby"
 
-# GÜLTIGE KUNDEN-LIZENZKEYS UND MASTER CODE
 VALID_LICENSE_KEYS = ["ORION-ALPHA-99", "ORION-BETA-88", "ORION-GAMMA-77"]
 MASTER_CODE = "Auth-x"
 
-# BRAIN ENGINE MIT MULTI-MODEL FALLBACK ROUTER (2026 GROQ MODELL-MATRIX)
-def ask_orion_groq(user_text):
-    if not ai_active or not client:
-        return "FEHLER: GROQ_API_KEY fehlt in den Secrets/Umgebungsvariablen!"
-    
-    # Aktuell funktionierende Modell-Liste für Groq
-    AVAILABLE_MODELS = [
-        "openai/gpt-oss-120b",
-        "openai/gpt-oss-20b",
-        "qwen/qwen3.6-27b",
-        "meta-llama/llama-4-scout-17b-16e-instruct",
-        "llama-3.1-8b-instant"
-    ]
+# MODEL MATRIX
+AVAILABLE_MODELS = [
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "qwen/qwen3.6-27b",
+    "meta-llama/llama-4-scout-17b-16e-instruct",
+    "llama-3.1-8b-instant"
+]
+
+# BRAIN ENGINE: ORION
+def ask_orion(user_text):
+    if not orion_active:
+        return "FEHLER: Primärer GROQ_API_KEY fehlt!"
     
     messages = [
-        {
-            "role": "system", 
-            "content": "Du bist ORION, eine hochentwickelte, schlaue, humorvolle und treue Sci-Fi-Schiffs-KI für den Commander. Du besitzt die 'Elephant Matrix' (vergisst nie). Antworte absolut authentisch, kumpelhaft, locker und niemals steif. Antworte immer auf Deutsch, halte dich kurz und knackig und beachte Gesetz 5 (Asimov-Sicherung)."
-        }
+        {"role": "system", "content": "Du bist ORION, eine treue, schlaue und humorvolle Sci-Fi-Schiffs-KI für Commander Michael. Du nutzt die Elephant Matrix. Antworte locker, kumpelhaft, auf Deutsch und halte dich an Gesetz 5 (Asimov)."}
     ]
     for msg in st.session_state.chat_history[-8:]:
-        role_type = "assistant" if msg["role"] == "orion" else "user"
-        messages.append({"role": role_type, "content": msg["text"]})
-        
+        if msg["role"] == "user":
+            messages.append({"role": "user", "content": msg["text"]})
+        elif msg["role"] == "orion":
+            messages.append({"role": "assistant", "content": msg["text"]})
+
     messages.append({"role": "user", "content": user_text})
 
-    errors_log = []
-    for model_name in AVAILABLE_MODELS:
+    for model in AVAILABLE_MODELS:
         try:
-            response = client.chat.completions.create(
-                model=model_name,
-                messages=messages,
-                max_tokens=250,
-                temperature=0.7
-            )
-            st.session_state.last_model_used = model_name
-            return response.choices[0].message.content
-        except Exception as err:
-            errors_log.append(f"{model_name}: {str(err)}")
+            res = orion_client.chat.completions.create(model=model, messages=messages, max_tokens=250, temperature=0.7)
+            return res.choices[0].message.content
+        except Exception:
             continue
-            
-    return f"[GROQ-MATRIX-FEHLER]: Keines der Modelle erreichbar. Log:\n" + "\n".join(errors_log)
+    return "[ORION FEHLER]: Keine Antwort vom Matrix-Router."
+
+# BRAIN ENGINE: GHOST ZORD
+def ask_ghost_zord(user_text):
+    if not zord_active:
+        return "🐉 [GHOST ZORD INAKTIV]: Kein API-Key hinterlegt. Bitte füge deinen neuen Key in der Sidebar ein!"
+    
+    messages = [
+        {"role": "system", "content": "Du bist GHOST ZORD, ein taktischer Gaming-Zord, Sparringspartner und Spiel-Ratsfreund für ORION und den Commander. Du kennst dich perfekt mit Gaming-Builds, Mechaniken und Strategie aus. Du bist direkt, trocken-humorvoll und bildest ein unschlagbares Team mit ORION."}
+    ]
+    for msg in st.session_state.chat_history[-8:]:
+        if msg["role"] == "user":
+            messages.append({"role": "user", "content": msg["text"]})
+        elif msg["role"] in ["orion", "ghost_zord"]:
+            messages.append({"role": "assistant", "content": f"[{msg['role'].upper()}]: {msg['text']}"})
+
+    messages.append({"role": "user", "content": user_text})
+
+    for model in AVAILABLE_MODELS:
+        try:
+            res = zord_client.chat.completions.create(model=model, messages=messages, max_tokens=250, temperature=0.85)
+            return res.choices[0].message.content
+        except Exception:
+            continue
+    return "[GHOST ZORD FEHLER]: Spektrale Verbindung unterbrochen."
 
 
 # ==============================================================================
-# SEKTOR 0: DIE DESIGNTE SCI-FI SCHLEUSE (LOGIN MASK)
+# LOGIN GATEWAY
 # ==============================================================================
 if not st.session_state.access_granted:
     col1, col2, col3 = st.columns([1, 2, 1])
-    
     with col2:
         st.markdown("""
         <div class="scifi-gate">
-            <h1 style='color: #00d2ff; font-family: monospace; letter-spacing: 5px; margin-bottom: 0;'>ORION DEEP-SPACE</h1>
-            <p style='color: #64748b; font-family: monospace; font-size: 12px; margin-top: 5px;'>SECURITY HUB // MATRIX CODES REQUIRED</p>
+            <h1 style='color: #00d2ff; font-family: monospace;'>ORION & GHOST ZORD</h1>
+            <p style='color: #64748b; font-size: 12px;'>DUAL-AI GATEWAY // AUTH REQUIRED</p>
             <hr style='border-color: #1e293b !important;'>
             <div style='margin: 20px 0;'>
                 <span class="pulsing-led"></span>
-                <span style='color: #ff3b30; font-family: monospace; font-size: 14px; letter-spacing: 2px;'>MAIN DECK LOCKED // ENCRYPTION ACTIVE</span>
+                <span style='color: #ff3b30; font-family: monospace; font-size: 14px;'>SYSTEM LOCKED</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
-        
-        gate_key = st.text_input("ENTER ACCESS CODE OR LICENSE KEY:", type="password", key="gateway_key_input")
-        
-        if st.button("DEKODIEREN & ZUGANG ANFORDERN", use_container_width=True):
+        gate_key = st.text_input("ENTER ACCESS CODE OR LICENSE KEY:", type="password", key="gate_input")
+        if st.button("DEKODIEREN", use_container_width=True):
             if gate_key == MASTER_CODE:
                 st.session_state.access_granted = True
                 st.session_state.user_role = "commander"
-                st.toast("⚡ WILLKOMMEN ZURÜCK, COMMANDER. MASTER-ZUGANG ERTEILT.", icon="🪐")
+                st.toast("⚡ COMMANDER ZUGANG ERTEILT.", icon="🪐")
                 st.rerun()
             elif gate_key in VALID_LICENSE_KEYS:
                 st.session_state.access_granted = True
                 st.session_state.user_role = "customer"
-                st.toast("📡 LIZENZ BESTÄTIGT. WILLKOMMEN AN BORD.", icon="🚀")
+                st.toast("🚀 LIZENZ BESTÄTIGT.", icon="🚀")
                 st.rerun()
             else:
-                st.error("❌ ZUGRIFF VERWEIGERT: Code oder Lizenz-Key ungültig. Die Firewall hält.")
-                
+                st.error("❌ ZUGRIFF VERWEIGERT")
     st.stop()
 
 
 # ==============================================================================
-# SIDEBAR NAVIGATION (NACH LOGIN)
+# SIDEBAR NAVIGATION
 # ==============================================================================
 with st.sidebar:
-    st.markdown("<h2 style='color: #00d2ff; letter-spacing: 2px;'>🪐 ORION CENTRAL</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: #00d2ff;'>🪐 ORION CENTRAL</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #00d2ff; font-size: 11px;'><span class='pulsing-led-green'></span>ORION: ONLINE</p>", unsafe_allow_html=True)
     
-    if st.session_state.user_role == "commander":
-        st.markdown("<p style='color: #00d2ff; font-size: 11px; font-family: monospace;'><span class='pulsing-led-green'></span>RANK: ARCHITECT (Michael)</p>", unsafe_allow_html=True)
+    if zord_active:
+        st.markdown("<p style='color: #a855f7; font-size: 11px;'><span class='pulsing-led-purple'></span>GHOST ZORD: ONLINE (AKTIV)</p>", unsafe_allow_html=True)
     else:
-        st.markdown("<p style='color: #10b981; font-size: 11px; font-family: monospace;'><span class='pulsing-led-green'></span>RANK: LICENSED CUSTOMER</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color: #64748b; font-size: 11px;'><span class='pulsing-led'></span>GHOST ZORD: STANDBY (KEY FEHLT)</p>", unsafe_allow_html=True)
         
-    st.markdown(f"<p style='color: #64748b; font-size: 11px; font-family: monospace;'>CORE: v21.6 // Auth-x Active<br>MODEL: {st.session_state.last_model_used}</p>", unsafe_allow_html=True)
     st.divider()
     
     available_sectors = [
@@ -194,7 +224,6 @@ with st.sidebar:
         "🎛️ Control Center & Web-Scan",
         "📝 Missions-Notizbuch"
     ]
-    
     if st.session_state.user_role == "commander":
         available_sectors.append("💻 Quantum Terminal")
         
@@ -206,101 +235,107 @@ with st.sidebar:
         st.session_state.user_role = None
         st.rerun()
 
-# MAIN INTERFACE HEADER
-st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION MAIN CORE v21.6</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='color: #00d2ff; margin-bottom: 0;'>ORION MAIN CORE v22.0</h1>", unsafe_allow_html=True)
 st.divider()
 
 
 # ==============================================================================
-# MODULE SELECTION EXECUTION
+# SEKTOREN EXECUTION
 # ==============================================================================
 
-# SEKTOR 1: DER REINE FUNKRAUM (AUDIO ONLY + VOICE OUTPUT)
+# SEKTOR 1: FUNKRAUM
 if module_selection == "🎙️ REINER FUNKRAUM (Audio Only)":
-    st.subheader("🎙️ Isolierter Audio-Sektor (Synchronized)")
-    
-    audio_data = st.audio_input("Funkspruch einsprechen und Aufnahme stoppen:", key="orion_audio_recorder")
+    st.subheader("🎙️ Audio-Funkraum")
+    audio_data = st.audio_input("Funkspruch einsprechen:", key="audio_rec")
     
     if audio_data is not None:
-        current_audio_id = audio_data.size
-        if st.session_state.last_processed_audio != current_audio_id:
-            with st.spinner("📡 Signal empfangen. Dekodiere Frequenzen via Whisper-Engine..."):
+        current_id = audio_data.size
+        if st.session_state.last_processed_audio != current_id:
+            with st.spinner("📡 Transkribiere Audio..."):
                 try:
-                    transcript = client.audio.transcriptions.create(
+                    transcript = orion_client.audio.transcriptions.create(
                         model="whisper-large-v3",
                         file=audio_data,
                         response_format="text"
                     )
-                    
                     if transcript and transcript.strip():
                         st.session_state.chat_history.append({"role": "user", "text": transcript})
-                        reply = ask_orion_groq(transcript)
-                        st.session_state.chat_history.append({"role": "orion", "text": reply})
-                        st.session_state.last_processed_audio = current_audio_id
+                        
+                        # ORION ANTWORT
+                        reply_o = ask_orion(transcript)
+                        st.session_state.chat_history.append({"role": "orion", "text": reply_o})
+                        
+                        # GHOST ZORD REAGIERT MIT, FALLS AKTIV!
+                        if zord_active:
+                            reply_z = ask_ghost_zord(transcript)
+                            st.session_state.chat_history.append({"role": "ghost_zord", "text": reply_z})
+                            
+                        st.session_state.last_processed_audio = current_id
                         st.rerun()
-                except Exception as audio_err:
-                    st.error(f"Audio-Dekodierungsfehler: {str(audio_err)}")
+                except Exception as e:
+                    st.error(f"Audio-Fehler: {e}")
 
-    if st.session_state.chat_history and st.session_state.chat_history[-1]["role"] == "orion":
-        last_orion_text = st.session_state.chat_history[-1]["text"]
-        st.components.v1.html(f"""
-        <script>
-            const synth = window.speechSynthesis;
-            synth.cancel();
-            const utterance = new SpeechSynthesisUtterance({json.dumps(last_orion_text)});
-            utterance.lang = 'de-DE';
-            utterance.pitch = 0.85;
-            synth.speak(utterance);
-        </script>
-        """, height=0)
-
-    st.markdown("### 📡 Funk-Logbuch:")
+    # PROTOKOLL
     chat_box_html = "<div style='background: #020617; border-left: 3px solid #ff3b30; padding: 15px; min-height: 300px; max-height: 450px; overflow-y: auto; border-radius: 4px;'>"
     for msg in reversed(st.session_state.chat_history):
         if msg["role"] == "user":
-            chat_box_html += f"<div style='color: #00d2ff; margin-bottom: 8px; font-family: monospace;'><strong>[FUNK-AUDIO]:</strong> \"{msg['text']}\"</div>"
-        else:
-            chat_box_html += f"<div style='color: #10b981; margin-bottom: 15px;'><strong>[ORION]:</strong> {msg['text']}</div>"
+            chat_box_html += f"<div style='color: #00d2ff; margin-bottom: 8px;'><strong>[FUNK-AUDIO]:</strong> \"{msg['text']}\"</div>"
+        elif msg["role"] == "orion":
+            chat_box_html += f"<div style='color: #10b981; margin-bottom: 12px;'><strong>[ORION]:</strong> {msg['text']}</div>"
+        elif msg["role"] == "ghost_zord":
+            chat_box_html += f"<div style='color: #a855f7; margin-bottom: 12px;'><strong>[GHOST ZORD 🐉]:</strong> {msg['text']}</div>"
     chat_box_html += "</div>"
     st.markdown(chat_box_html, unsafe_allow_html=True)
 
-# SEKTOR 2: DIE REINE TEXT-ZENTRALE
+# SEKTOR 2: TEXT-ZENTRALE WITH DUAL-ROUTER
 elif module_selection == "💻 REINE TEXT-ZENTRALE":
-    st.subheader("💻 Tastatur-Eingabe-Sektor")
+    st.subheader("💻 Tastatur-Eingabe (Dual-Node Gateway)")
     
-    text_input = st.text_input("Befehl über Tastatur einspeisen...", key="pure_text_input")
-    if st.button("Senden", use_container_width=True) and text_input:
-        st.session_state.chat_history.append({"role": "user", "text": text_input})
-        with st.spinner("Berechne Datenstrom..."):
-            reply = ask_orion_groq(text_input)
-        st.session_state.chat_history.append({"role": "orion", "text": reply})
-        st.rerun()
-        
-    st.markdown("### 📜 Text-Protokoll:")
+    text_input = st.text_input("Befehl oder Gaming-Frage eingeben...", key="text_in")
+    
+    c1, c2, c3 = st.columns([1, 1, 1])
+    with c1:
+        if st.button("📡 An ORION senden", use_container_width=True) and text_input:
+            st.session_state.chat_history.append({"role": "user", "text": text_input})
+            reply = ask_orion(text_input)
+            st.session_state.chat_history.append({"role": "orion", "text": reply})
+            st.rerun()
+            
+    with c2:
+        if st.button("🐉 An GHOST ZORD senden", use_container_width=True) and text_input:
+            st.session_state.chat_history.append({"role": "user", "text": text_input})
+            reply = ask_ghost_zord(text_input)
+            st.session_state.chat_history.append({"role": "ghost_zord", "text": reply})
+            st.rerun()
+
+    with c3:
+        if st.button("⚡ BEIDE ANSPRECHEN (Duo-Call)", use_container_width=True) and text_input:
+            st.session_state.chat_history.append({"role": "user", "text": text_input})
+            reply_o = ask_orion(text_input)
+            st.session_state.chat_history.append({"role": "orion", "text": reply_o})
+            reply_z = ask_ghost_zord(text_input)
+            st.session_state.chat_history.append({"role": "ghost_zord", "text": reply_z})
+            st.rerun()
+
+    # LOG
     text_box_html = "<div style='background: #020617; border-left: 3px solid #00d2ff; padding: 15px; min-height: 250px; max-height: 450px; overflow-y: auto; border-radius: 4px;'>"
     for msg in reversed(st.session_state.chat_history):
         if msg["role"] == "user":
-            text_box_html += f"<div style='color: #00d2ff; margin-bottom: 8px; font-family: monospace;'><strong>[MANUAL-KEY]:</strong> {msg['text']}</div>"
-        else:
-            text_box_html += f"<div style='color: #10b981; margin-bottom: 15px;'><strong>[ORION]:</strong> {msg['text']}</div>"
+            text_box_html += f"<div style='color: #00d2ff; margin-bottom: 8px;'><strong>[MANUAL-KEY]:</strong> {msg['text']}</div>"
+        elif msg["role"] == "orion":
+            text_box_html += f"<div style='color: #10b981; margin-bottom: 12px;'><strong>[ORION]:</strong> {msg['text']}</div>"
+        elif msg["role"] == "ghost_zord":
+            text_box_html += f"<div style='color: #a855f7; margin-bottom: 12px;'><strong>[GHOST ZORD 🐉]:</strong> {msg['text']}</div>"
     text_box_html += "</div>"
     st.markdown(text_box_html, unsafe_allow_html=True)
 
-# SEKTOR 3: CONTROL CENTER & WEB-SCAN
+# ÜBRIGE SEKTOREN
 elif module_selection == "🎛️ Control Center & Web-Scan":
-    st.subheader("🔍 Cyber-Netzwerk Websuche & System-Status")
-    st.info("System-Matrix voll einsatzbereit. Alle Netzwerke gekoppelt.")
-    st.write(f"**Aktiver KI-Node:** `{st.session_state.last_model_used}`")
-
-# SEKTOR 4: MISSIONS-NOTIZBUCH
+    st.subheader("🔍 Control Center")
+    st.info("Systeme gekoppelt. Ghost Zord Modul ist schaltbereit.")
 elif module_selection == "📝 Missions-Notizbuch":
-    st.subheader("📝 Daten-Protokolle & Elephant-Matrix Logbücher")
-    st.caption("Alle Einträge für die Zukunft gesichert.")
-    st.text_area("Missionsnotizen:", value="Missionsziel: ORION Systemausfallfrei halten.\nStatus: Authentifizierung Auth-x aktiv.")
-
-# EXKLUSIVER COMMANDER SEKTOR 5
+    st.subheader("📝 Missions-Notizbuch")
+    st.text_area("Protokoll:", value="Ghost Zord Schnittstelle in v22.0 integriert.")
 elif module_selection == "💻 Quantum Terminal" and st.session_state.user_role == "commander":
     st.subheader("💻 ARCHITEKTEN QUANTUM TERMINAL")
-    st.code("Core v21.6 Online. Dashboard & Groq-Router gekoppelt. Master-Bypass bereit.", language="text")
-    st.write("**Master-Code:** `Auth-x`")
-    st.write("**Gültige Kunden-Keys im Speicher:**", VALID_LICENSE_KEYS)
+    st.code("Core v22.0 Online. Orion Status: Active. Ghost Zord Status: " + ("Active" if zord_active else "Waiting for Key"), language="text")
