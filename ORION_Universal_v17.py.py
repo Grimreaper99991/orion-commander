@@ -1,8 +1,8 @@
-## ==============================================================================
-# ORION UNIVERSAL COMMAND CORE v21.4 (FAILSAFE MULTI-MODEL ROUTER)
+# ==============================================================================
+# ORION UNIVERSAL COMMAND CORE v21.5 (PROD-READY MODEL ROUTER)
 # PREFERRED MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // LAWS: INCLUDED
 # PERFORMANCE MODE: ULTRA FAST REAL-TIME RESPONDER // ALL-IN-ONE HUB
-# FIX: AUTO-FALLBACK ROUTER FOR GROQ MODELS (ZERO 404 ERRORS)
+# FIX: UPDATED ACTIVE GROQ MODELS + DETAILED ERROR DIAGNOSTICS
 # ==============================================================================
 
 import streamlit as st
@@ -15,7 +15,7 @@ except ImportError:
 
 # 1. CORE STREAMLIT PAGE CONFIG
 st.set_page_config(
-    page_title="ORION COMMANDER v21.4",
+    page_title="ORION COMMANDER v21.5",
     page_icon="🪐",
     layout="wide"
 )
@@ -79,7 +79,7 @@ if "user_role" not in st.session_state:
     st.session_state.user_role = None # 'commander' oder 'customer'
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
-        {"role": "orion", "text": "Core v21.4 gesichert. Multi-Model-Router aktiv."}
+        {"role": "orion", "text": "Core v21.5 gesichert. Aktive Modelle geladen."}
     ]
 if "last_processed_audio" not in st.session_state:
     st.session_state.last_processed_audio = None
@@ -88,17 +88,17 @@ if "last_processed_audio" not in st.session_state:
 VALID_LICENSE_KEYS = ["ORION-ALPHA-99", "ORION-BETA-88", "ORION-GAMMA-77"]
 MASTER_CODE = "Auth-x"
 
-# BRAIN ENGINE WITH AUTOMATIC FAILSAFE ROUTER
+# BRAIN ENGINE WITH UPDATED GROQ MODELS
 def ask_orion_groq(user_text):
     if not ai_active:
-        return "FEHLER: Groq-Key fehlt in den Secrets!"
+        return "FEHLER: GROQ_API_KEY fehlt in den Streamlit Secrets!"
     
-    # Liste aller stabilen Modelle als Backup-Kette
+    # Aktuell gültige Modell-Namen auf der Groq Plattform
     AVAILABLE_MODELS = [
+        "llama-3.3-70b-versatile",
         "llama-3.1-8b-instant",
-        "llama3-70b-8192",
-        "llama3-8b-8192",
-        "mixtral-8x7b-32768"
+        "mixtral-8x7b-32768",
+        "gemma2-9b-it"
     ]
     
     messages = [
@@ -113,20 +113,23 @@ def ask_orion_groq(user_text):
         
     messages.append({"role": "user", "content": user_text})
 
-    # PROBIERE JEDES MODELL AUTOMATISCH DURCH
+    errors_log = []
+    # PROBIERE JEDES AKTUELLERES MODELL NAEINANDER DURCH
     for model_name in AVAILABLE_MODELS:
         try:
             response = client.chat.completions.create(
                 model=model_name,
                 messages=messages,
-                max_tokens=200,
+                max_tokens=250,
                 temperature=0.7
             )
             return response.choices[0].message.content
-        except Exception:
-            continue # Bei Fehler direkt zum nächsten Modell springen!
+        except Exception as err:
+            errors_log.append(f"{model_name}: {str(err)}")
+            continue
             
-    return "[GROQ-MATRIX-FEHLER]: Keines der Standard-Modelle konnte erreicht werden. Bitte API-Key prüfen."
+    # Falls gar kein Modell geklappt hat, zeige das Log an:
+    return f"[GROQ-MATRIX-FEHLER]: Keines der Modelle erreichbar. Log:\n" + "\n".join(errors_log)
 
 
 # ==============================================================================
@@ -178,7 +181,7 @@ with st.sidebar:
     else:
         st.markdown("<p style='color: #10b981; font-size: 11px; font-family: monospace;'><span class='pulsing-led-green'></span>RANK: LICENSED CUSTOMER</p>", unsafe_allow_html=True)
         
-    st.markdown("<p style='color: #64748b; font-size: 11px; font-family: monospace;'>CORE: v21.4 // Auth-x Active</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #64748b; font-size: 11px; font-family: monospace;'>CORE: v21.5 // Auth-x Active</p>", unsafe_allow_html=True)
     st.divider()
     
     available_sectors = [
@@ -200,7 +203,7 @@ with st.sidebar:
         st.rerun()
 
 # MAIN INTERFACE
-st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION MAIN CORE v21.4</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION MAIN CORE v21.5</h1>", unsafe_allow_html=True)
 st.divider()
 
 
@@ -290,5 +293,5 @@ elif module_selection == "📝 Missions-Notizbuch":
 # EXKLUSIVER COMMANDER SEKTOR 5
 elif module_selection == "💻 Quantum Terminal" and st.session_state.user_role == "commander":
     st.subheader("💻 ARCHITEKTEN QUANTUM TERMINAL")
-    st.code("Core v21.4 Online. Multi-Model Failsafe aktiv. Master-Bypass bereit.", language="text")
+    st.code("Core v21.5 Online. Aktive Groq-Modelle: llama-3.3-70b-versatile, llama-3.1-8b-instant.", language="text")
     st.write("Gültige Kunden-Keys im Speicher:", VALID_LICENSE_KEYS)
