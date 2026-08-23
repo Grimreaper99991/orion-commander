@@ -1,8 +1,8 @@
 # ==============================================================================
-# ORION UNIVERSAL COMMAND CORE v21.0 (SECURE GATEWAY ARCHITECTURE)
+# ORION UNIVERSAL COMMAND CORE v21.1 (REPAIRED MODEL CONNECTOR)
 # PREFERRED MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // LAWS: INCLUDED
 # PERFORMANCE MODE: ULTRA FAST REAL-TIME RESPONDER // ALL-IN-ONE HUB
-# UPGRADE: SCI-FI SECURITY GATEWAY MASK WITH LICENSE KEY & ADMIN BYPASS
+# FIX: UPDATED GROQ AI MODEL TO LLAMA-3.3-70B-VERSATILE (NO MORE DEPRECATED ERRORS)
 # ==============================================================================
 
 import streamlit as st
@@ -15,7 +15,7 @@ except ImportError:
 
 # 1. CORE STREAMLIT PAGE CONFIG
 st.set_page_config(
-    page_title="ORION COMMANDER v21.0",
+    page_title="ORION COMMANDER v21.1",
     page_icon="🪐",
     layout="wide"
 )
@@ -79,19 +79,19 @@ if "user_role" not in st.session_state:
     st.session_state.user_role = None # 'commander' oder 'customer'
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
-        {"role": "orion", "text": "Core v21.0 gesichert. Schleusen-Protokoll aktiv. System verschlüsselt."}
+        {"role": "orion", "text": "Core v21.1 gesichert. AI-Modell neu kalibriert. Schleusen-Protokoll aktiv."}
     ]
 if "last_processed_audio" not in st.session_state:
     st.session_state.last_processed_audio = None
 
-# GÜLTIGE KUNDEN-LIZENZKEYS (Hier kannst du Keys hinzufügen oder löschen!)
+# GÜLTIGE KUNDEN-LIZENZKEYS
 VALID_LICENSE_KEYS = ["ORION-ALPHA-99", "ORION-BETA-88", "ORION-GAMMA-77"]
 MASTER_CODE = "Auth-x"
 
-# BRAIN ENGINE (GROQ LLAMA 3.1)
+# BRAIN ENGINE (GROQ LLAMA 3.3 POWER CORE)
 def ask_orion_groq(user_text):
     if not ai_active:
-        return "FEHLER: Groq-Key fehlt!"
+        return "FEHLER: Groq-Key fehlt in den Secrets!"
     try:
         messages = [
             {
@@ -105,8 +105,9 @@ def ask_orion_groq(user_text):
             
         messages.append({"role": "user", "content": user_text})
         
+        # AKTUALISIERTES MODELL: llama-3.3-70b-versatile
         response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",  
+            model="llama-3.3-70b-versatile",
             messages=messages,
             max_tokens=200,
             temperature=0.7
@@ -120,7 +121,6 @@ def ask_orion_groq(user_text):
 # SEKTOR 0: DIE DESIGNTE SCI-FI SCHLEUSE (LOGIN MASK)
 # ==============================================================================
 if not st.session_state.access_granted:
-    # Zentrierter Login-Bereich
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
@@ -136,7 +136,6 @@ if not st.session_state.access_granted:
         </div>
         """, unsafe_allow_html=True)
         
-        # Das stylische Eingabefeld
         gate_key = st.text_input("ENTER ACCESS CODE OR LICENSE KEY:", type="password", key="gateway_key_input")
         
         if st.button("DEKODIEREN & ZUGANG ANFORDERN", use_container_width=True):
@@ -153,25 +152,23 @@ if not st.session_state.access_granted:
             else:
                 st.error("❌ ZUGRIFF VERWEIGERT: Code oder Lizenz-Key ungültig. Die Firewall hält.")
                 
-    st.stop() # Stoppt die App hier, falls man nicht eingeloggt ist!
+    st.stop()
 
 
 # ==============================================================================
-# SIDEBAR NAVIGATION (Wird erst NACH dem Login sichtbar!)
+# SIDEBAR NAVIGATION (NACH LOGIN)
 # ==============================================================================
 with st.sidebar:
     st.markdown("<h2 style='color: #00d2ff; letter-spacing: 2px;'>🪐 ORION CENTRAL</h2>", unsafe_allow_html=True)
     
-    # Zeigt an, wer eingeloggt ist
     if st.session_state.user_role == "commander":
         st.markdown("<p style='color: #00d2ff; font-size: 11px; font-family: monospace;'><span class='pulsing-led-green'></span>RANK: ARCHITECT (Michael)</p>", unsafe_allow_html=True)
     else:
         st.markdown("<p style='color: #10b981; font-size: 11px; font-family: monospace;'><span class='pulsing-led-green'></span>RANK: LICENSED CUSTOMER</p>", unsafe_allow_html=True)
         
-    st.markdown("<p style='color: #64748b; font-size: 11px; font-family: monospace;'>CORE: v21.0 // Auth-x Active</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #64748b; font-size: 11px; font-family: monospace;'>CORE: v21.1 // Auth-x Active</p>", unsafe_allow_html=True)
     st.divider()
     
-    # Sektoren-Auswahl
     available_sectors = [
         "🎙️ REINER FUNKRAUM (Audio Only)",
         "💻 REINE TEXT-ZENTRALE",
@@ -179,7 +176,6 @@ with st.sidebar:
         "📝 Missions-Notizbuch"
     ]
     
-    # Nur der Commander sieht das kritische Quantum Terminal
     if st.session_state.user_role == "commander":
         available_sectors.append("💻 Quantum Terminal")
         
@@ -191,8 +187,8 @@ with st.sidebar:
         st.session_state.user_role = None
         st.rerun()
 
-# MAIN MAINMAIN INTERFACE (NACH LOGIN)
-st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION MAIN CORE v21.0</h1>", unsafe_allow_html=True)
+# MAIN INTERFACE
+st.markdown("<h1 style='color: #00d2ff; letter-spacing: 3px; margin-bottom: 0;'>ORION MAIN CORE v21.1</h1>", unsafe_allow_html=True)
 st.divider()
 
 
@@ -200,7 +196,7 @@ st.divider()
 # MODULE SELECTION EXECUTION
 # ==============================================================================
 
-# SEKTOR 1: DER REINE FUNKRAUM (NATIVE AUDIO ENGINE)
+# SEKTOR 1: DER REINE FUNKRAUM
 if module_selection == "🎙️ REINER FUNKRAUM (Audio Only)":
     st.subheader("🎙️ Isolierter Audio-Sektor (Synchronized)")
     
@@ -226,7 +222,6 @@ if module_selection == "🎙️ REINER FUNKRAUM (Audio Only)":
                 except Exception as audio_err:
                     st.error(f"Audio-Dekodierungsfehler: {str(audio_err)}")
 
-    # Audio-Output für ORIONs Stimme
     if st.session_state.chat_history and st.session_state.chat_history[-1]["role"] == "orion":
         last_orion_text = st.session_state.chat_history[-1]["text"]
         st.components.v1.html(f"""
@@ -283,5 +278,5 @@ elif module_selection == "📝 Missions-Notizbuch":
 # EXKLUSIVER COMMANDER SEKTOR 5
 elif module_selection == "💻 Quantum Terminal" and st.session_state.user_role == "commander":
     st.subheader("💻 ARCHITEKTEN QUANTUM TERMINAL")
-    st.code("Core v21.0 Online. Master-Bypass aktiv. Alle Systeme laufen nominal.", language="text")
+    st.code("Core v21.1 Online. Llama-3.3-70b Engine aktiv. Master-Bypass bereit.", language="text")
     st.write("Gültige Kunden-Keys im Speicher:", VALID_LICENSE_KEYS)
