@@ -1,11 +1,12 @@
 # ==============================================================================
-# ORION COMMAND CORE v29.0 (PURE HTML/CSS HOTSPOT OVERLAY)
+# ORION COMMAND CORE v30.0 (TRUE ABSOLUTE LAYER OVERLAY)
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX
 # ASSETS PATH: assets/Frame 0.jpg bis Frame 6.jpg
 # ==============================================================================
 
 import streamlit as st
 import os
+import base64
 
 st.set_page_config(
     page_title="ORION BASE COMMANDER",
@@ -14,63 +15,19 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom Styling: Unsichtbare Hotspot-Buttons absolut über dem Hintergrundbild
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
-    
-    * { font-family: 'JetBrains Mono', monospace !important; }
-    
-    .stApp { background-color: #040404; color: #FFFFFF; }
+def get_base64_image(image_path):
+    """Konvertiert lokales Bild in Base64 für direkte HTML-Einbindung"""
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    return None
 
-    /* Standard Streamlit Padding entfernen für exakte Positionierung */
-    .block-container {
-        padding-top: 1rem !important;
-        padding-bottom: 0rem !important;
-        max-width: 1000px !important;
-    }
-
-    /* Der Rahmen, der das Hintergrundbild enthält */
-    .canvas-card {
-        position: relative;
-        width: 100%;
-        /* Seitenverhältnis deines Figma-Frames (Höhe / Breite) */
-        padding-top: 56.25%; /* 16:9 Standard. Falls deine Figma-Bilder höher sind, passe % an */
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: center top;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-    /* Unsichtbare Klickzonen */
-    .hotspot-btn .stButton > button {
-        background-color: transparent !important;
-        color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        width: 100% !important;
-        height: 100% !important;
-        cursor: pointer !important;
-    }
-
-    /* Optional: Beim Drüberfahren zeigt ein grüner Schein die Klickzone */
-    .hotspot-btn .stButton > button:hover {
-        background-color: rgba(0, 255, 0, 0.15) !important;
-        border: 1px dashed #00FF00 !important;
-    }
-
-    /* Transparente Passwort-Eingabe direkt im Feld */
-    .pw-overlay input {
-        background-color: rgba(255, 255, 255, 0.9) !important;
-        color: #000000 !important;
-        font-weight: bold !important;
-        border: 2px solid #00FF00 !important;
-        border-radius: 4px !important;
-        height: 40px !important;
-    }
-</style>
-""", unsafe_allow_html=True)
+def get_asset_path(filename):
+    paths = [f"assets/{filename}", f"assets/{filename.lower()}", f"assets/{filename.replace(' ', '_')}"]
+    for p in paths:
+        if os.path.exists(p):
+            return p
+    return None
 
 if "current_frame" not in st.session_state:
     st.session_state.current_frame = "frame_0"
@@ -81,34 +38,64 @@ def navigate_to(frame):
     st.session_state.current_frame = frame
     st.rerun()
 
-def get_asset_path(filename):
-    paths = [f"assets/{filename}", f"assets/{filename.lower()}", f"assets/{filename.replace(' ', '_')}"]
-    for p in paths:
-        if os.path.exists(p):
-            return p
-    return None
+# CSS für echte Layer-Überlagerung
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+    * { font-family: 'JetBrains Mono', monospace !important; }
+    .stApp { background-color: #040404; color: #FFFFFF; }
+    .block-container { padding: 0rem !important; max-width: 100% !important; }
+    
+    /* Der Wrapper setzt den Bild-Hintergrund */
+    .overlay-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .overlay-wrapper img {
+        width: 100%;
+        display: block;
+    }
+
+    /* Unsichtbare Klickzone direkt auf dem Bild */
+    .click-zone {
+        position: absolute;
+        cursor: pointer;
+        z-index: 999;
+        /* Zum Ausrichten: leicht rot einfärben / gestrichelt anzeigen */
+        border: 1px dashed rgba(0, 255, 0, 0.4);
+        background: rgba(0, 255, 0, 0.05);
+    }
+    
+    .click-zone:hover {
+        border: 2px solid #00FF00;
+        background: rgba(0, 255, 0, 0.2);
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # ==============================================================================
 # FRAME 0: LOGIN OVERLAY
 # ==============================================================================
 if st.session_state.current_frame == "frame_0":
-    img = get_asset_path("Frame 0.jpg")
+    img_path = get_asset_path("Frame 0.jpg")
+    img_b64 = get_base64_image(img_path) if img_path else ""
     
-    # 1. Bild als Hintergrund rendern
-    if img:
-        st.markdown(f'<div class="canvas-card" style="background-image: url(\'app/static/{img}\');">', unsafe_allow_html=True)
-        # Notfalls direktes Bild laden falls Static Pfad in Streamlit Cloud abweicht
-        st.image(img, use_container_width=True)
+    # HTML Layout: Bild + Eingabefeld & Button im selben Div-Container
+    st.markdown(f"""
+    <div class="overlay-wrapper">
+        <img src="data:image/jpeg;base64,{img_b64}">
+    </div>
+    """, unsafe_allow_html=True)
     
-    # 2. Eingabefeld & Enter Button über Prozentwerte direkt platzieren
+    # Streamlit Widgets über Spalten direkt platzieren
     col1, col2 = st.columns([1.2, 1])
     with col2:
-        st.markdown("<div style='margin-top: -280px;' class='pw-overlay'>", unsafe_allow_html=True)
-        pwd = st.text_input("", type="password", placeholder="Passwort...", key="login_pwd")
-        st.markdown("</div>", unsafe_allow_html=True)
-        
-        st.markdown("<div style='margin-top: 10px; height: 45px;' class='hotspot-btn'>", unsafe_allow_html=True)
-        if st.button("LOGIN_SUBMIT", use_container_width=True):
+        st.markdown("<div style='margin-top: -35%; position: relative; z-index: 1000;'>", unsafe_allow_html=True)
+        pwd = st.text_input("", type="password", placeholder="Passwort...", key="pwd_input")
+        if st.button("ENTER CORE", use_container_width=True):
             if pwd == MASTER_CODE:
                 navigate_to("frame_1")
             else:
@@ -116,66 +103,69 @@ if st.session_state.current_frame == "frame_0":
         st.markdown("</div>", unsafe_allow_html=True)
 
 # ==============================================================================
-# FRAME 1: GALACTA HUB (Dashboard Button Hotspot)
+# FRAME 1: GALACTA HUB (Dashboard Klickzone direkt im Bild)
 # ==============================================================================
 elif st.session_state.current_frame == "frame_1":
-    img = get_asset_path("Frame 1.jpg")
-    if img:
-        st.image(img, use_container_width=True)
-        
-    # Unsichtbarer Button exakt auf deinem gezeichneten Dashboard-Button
-    # Passe 'margin-top' und die Spaltenbreite an, bis er genau deckungsgleich ist
-    c1, c2, c3 = st.columns([0.35, 0.3, 1.35])
+    img_path = get_asset_path("Frame 1.jpg")
+    img_b64 = get_base64_image(img_path) if img_path else ""
+    
+    # Dashboard Klickzone über Prozentwerte (top%, left%, width%, height%)
+    st.markdown(f"""
+    <div class="overlay-wrapper">
+        <img src="data:image/jpeg;base64,{img_b64}">
+        <a href="javascript:void(0);" onclick="window.parent.postMessage({{type: 'streamlit:setComponentValue'}, '*'});">
+            <div class="click-zone" style="top: 70%; left: 8%; width: 22%; height: 10%;"></div>
+        </a>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Ausweich-Button direkt auf der Höhenaustausch-Ebene
+    c1, c2 = st.columns([0.4, 1])
     with c1:
-        st.markdown("<div style='margin-top: -180px; height: 60px;' class='hotspot-btn'>", unsafe_allow_html=True)
-        if st.button("DASHBOARD_HOTSPOT", use_container_width=True):
+        st.markdown("<div style='margin-top: -15%; position: relative; z-index: 1000;'>", unsafe_allow_html=True)
+        if st.button("➔ DASHBOARD ÖFFNEN", use_container_width=True):
             navigate_to("frame_2")
         st.markdown("</div>", unsafe_allow_html=True)
 
 # ==============================================================================
-# FRAME 2: DASHBOARD NAVIGATION (Sektor Klick-Felder)
+# FRAME 2: DASHBOARD SEKTOREN
 # ==============================================================================
 elif st.session_state.current_frame == "frame_2":
-    img = get_asset_path("Frame 2.jpg")
-    if img:
-        st.image(img, use_container_width=True)
-        
+    img_path = get_asset_path("Frame 2.jpg")
+    img_b64 = get_base64_image(img_path) if img_path else ""
+    
+    st.markdown(f"""
+    <div class="overlay-wrapper">
+        <img src="data:image/jpeg;base64,{img_b64}">
+    </div>
+    """, unsafe_allow_html=True)
+    
     col1, col2 = st.columns([1, 1])
     with col1:
-        # Zord Crew Hotspot
-        st.markdown("<div style='margin-top: -260px; height: 45px;' class='hotspot-btn'>", unsafe_allow_html=True)
-        if st.button("HS_ZORD", use_container_width=True): navigate_to("frame_3")
-        st.markdown("</div>", unsafe_allow_html=True)
-        
-        # Zeus Hotspot
-        st.markdown("<div style='margin-top: 15px; height: 45px;' class='hotspot-btn'>", unsafe_allow_html=True)
-        if st.button("HS_ZEUS", use_container_width=True): navigate_to("frame_4")
-        st.markdown("</div>", unsafe_allow_html=True)
-        
-        # Funkraum Hotspot
-        st.markdown("<div style='margin-top: 15px; height: 45px;' class='hotspot-btn'>", unsafe_allow_html=True)
-        if st.button("HS_FUNK", use_container_width=True): navigate_to("frame_5")
-        st.markdown("</div>", unsafe_allow_html=True)
-        
-        # Ghost Simulator Hotspot
-        st.markdown("<div style='margin-top: 15px; height: 45px;' class='hotspot-btn'>", unsafe_allow_html=True)
-        if st.button("HS_GHOST", use_container_width=True): navigate_to("frame_6")
+        st.markdown("<div style='margin-top: -40%; position: relative; z-index: 1000;'>", unsafe_allow_html=True)
+        if st.button("➔ Zord Crew", use_container_width=True): navigate_to("frame_3")
+        if st.button("➔ Zeus Details", use_container_width=True): navigate_to("frame_4")
+        if st.button("➔ Funkraum", use_container_width=True): navigate_to("frame_5")
+        if st.button("➔ Ghost Room Simulator", use_container_width=True): navigate_to("frame_6")
         st.markdown("</div>", unsafe_allow_html=True)
 
 # ==============================================================================
-# FRAME 3, 4, 5, 6: ZURÜCK-BUTTON HOTSPOT
+# FRAME 3, 4, 5, 6: SEKTOR RÄUME
 # ==============================================================================
 elif st.session_state.current_frame in ["frame_3", "frame_4", "frame_5", "frame_6"]:
-    frame_id = st.session_state.current_frame
-    frame_num = frame_id.split("_")[1]
-    img = get_asset_path(f"Frame {frame_num}.jpg")
+    frame_num = st.session_state.current_frame.split("_")[1]
+    img_path = get_asset_path(f"Frame {frame_num}.jpg")
+    img_b64 = get_base64_image(img_path) if img_path else ""
     
-    if img:
-        st.image(img, use_container_width=True)
-        
-    col1, col2 = st.columns([0.4, 1.6])
+    st.markdown(f"""
+    <div class="overlay-wrapper">
+        <img src="data:image/jpeg;base64,{img_b64}">
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([0.4, 1])
     with col1:
-        st.markdown("<div style='margin-top: -120px; height: 50px;' class='hotspot-btn'>", unsafe_allow_html=True)
-        if st.button("HS_BACK", use_container_width=True):
+        st.markdown("<div style='margin-top: -12%; position: relative; z-index: 1000;'>", unsafe_allow_html=True)
+        if st.button("↩ Zurück Zur Navigation", use_container_width=True):
             navigate_to("frame_2")
         st.markdown("</div>", unsafe_allow_html=True)
