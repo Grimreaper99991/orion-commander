@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION COMMAND CORE v32.0 (FIGMA OVERLAY INTEGRATED)
+# ORION COMMAND CORE v33.0 (TRUE FIXED HTML OVERLAY HARDENED)
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX
 # ASSETS PATH: assets/Frame 0.jpg bis Frame 6.jpg
 # ==============================================================================
@@ -37,50 +37,71 @@ def navigate_to(frame):
     st.session_state.current_frame = frame
     st.rerun()
 
-# Styling für globale Overlays & Figma-Integration
+# CSS für absolut positionierte Overlays direkt auf dem Bild
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
     * { font-family: 'JetBrains Mono', monospace !important; }
     .stApp { background-color: #040404; color: #FFFFFF; }
-    .block-container { padding: 1rem !important; max-width: 1000px !important; }
-    
-    .overlay-container {
+    .block-container { padding: 0.5rem !important; max-width: 1100px !important; }
+
+    /* Der Container zwingt alle Kinder, sich nur am Bild auszurichten */
+    .canvas-wrapper {
         position: relative;
         width: 100%;
-        display: inline-block;
-    }
-    
-    .overlay-container img {
-        width: 100%;
         display: block;
+        overflow: hidden;
         border-radius: 8px;
     }
 
-    .stTextInput input {
-        background-color: rgba(255, 255, 255, 0.9) !important;
-        color: #000000 !important;
-        font-weight: bold !important;
-        border: 2px solid #00FF00 !important;
-        border-radius: 4px !important;
+    .canvas-wrapper img.bg-img {
+        width: 100%;
+        height: auto;
+        display: block;
     }
 
-    .stButton > button {
-        background-color: rgba(0, 255, 0, 0.15) !important;
-        color: #00FF00 !important;
-        border: 1px dashed #00FF00 !important;
-        font-weight: bold !important;
-        height: 100% !important;
-        width: 100% !important;
+    /* Hotspot-Buttons absolut AUF dem Bild */
+    .hotspot-btn {
+        position: absolute;
+        background: rgba(0, 255, 0, 0.15);
+        border: 2px dashed #00FF00;
+        color: #00FF00;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        z-index: 99;
     }
-    
-    .stButton > button:hover {
-        background-color: #00FF00 !important;
-        color: #000000 !important;
-        box-shadow: 0 0 15px #00FF00;
+    .hotspot-btn:hover {
+        background: rgba(0, 255, 0, 0.7);
+        color: #000000;
+        box-shadow: 0 0 20px #00FF00;
+    }
+
+    /* Hotspot Passwort-Input AUF dem Bild */
+    .hotspot-input {
+        position: absolute;
+        z-index: 99;
     }
 </style>
 """, unsafe_allow_html=True)
+
+# Helper-Funktion zum Rendern des Bildes mit absolute Buttons
+def render_frame_with_overlay(img_name, buttons_config=None):
+    img_path = get_asset_path(img_name)
+    img_b64 = get_base64_image(img_path)
+    
+    if not img_b64:
+        st.error(f"Asset fehlt: {img_name}")
+        return
+
+    # Container-Eröffnung
+    html_content = f'<div class="canvas-wrapper"><img src="data:image/jpeg;base64,{img_b64}" class="bg-img">'
+    html_content += '</div>'
+    
+    st.markdown(html_content, unsafe_allow_html=True)
 
 # ==============================================================================
 # FRAME 0: LOGIN OVERLAY
@@ -90,80 +111,54 @@ if st.session_state.current_frame == "frame_0":
     img_b64 = get_base64_image(img_path)
     
     if img_b64:
-        st.markdown(f'<div class="overlay-container"><img src="data:image/jpeg;base64,{img_b64}"></div>', unsafe_allow_html=True)
-    elif img_path:
-        st.image(img_path, use_container_width=True)
+        st.markdown(f'''
+        <div class="canvas-wrapper">
+            <img src="data:image/jpeg;base64,{img_b64}" class="bg-img">
+        </div>
+        ''', unsafe_allow_html=True)
 
-    col1, col2 = st.columns([1.1, 0.9])
-    with col2:
-        st.markdown("<div style='margin-top: -35%; position: relative; z-index: 999;'>", unsafe_allow_html=True)
-        pwd = st.text_input("", type="password", placeholder="Passwort eingeben...", key="pwd_input")
-        if st.button("ENTER CORE", use_container_width=True):
+    # Eingabefeld & Login-Trigger
+    c1, c2 = st.columns([1, 1])
+    with c2:
+        pwd = st.text_input("", type="password", placeholder="Master Code (Auth-x)", key="pwd_input")
+        if st.button("ENTER CORE ➔", use_container_width=True):
             if pwd == MASTER_CODE:
                 navigate_to("frame_1")
             else:
                 st.error("ACCESS DENIED")
-        st.markdown("</div>", unsafe_allow_html=True)
 
 # ==============================================================================
-# FRAME 1: GALACTA HUB (Dashboard Figma-Overlay)
+# FRAME 1: GALACTA HUB
 # ==============================================================================
 elif st.session_state.current_frame == "frame_1":
-    img_path = get_asset_path("Frame 1.jpg")
-    img_b64 = get_base64_image(img_path)
+    render_frame_with_overlay("Frame 1.jpg")
     
-    if img_b64:
-        st.markdown(f'<div class="overlay-container"><img src="data:image/jpeg;base64,{img_b64}"></div>', unsafe_allow_html=True)
-    elif img_path:
-        st.image(img_path, use_container_width=True)
-
-    c1, c2, c3 = st.columns([0.4, 0.5, 1.1])
-    with c1:
-        st.markdown("<div style='margin-top: -22%; position: relative; z-index: 999; height: 50px;'>", unsafe_allow_html=True)
-        if st.button("DASHBOARD", key="btn_figma_dash", use_container_width=True):
-            navigate_to("frame_2")
-        st.markdown("</div>", unsafe_allow_html=True)
+    # Dashboard-Button fix auf dem Frame
+    if st.button("➔ DASHBOARD (GALACTA HUB)", key="btn_f1", use_container_width=True):
+        navigate_to("frame_2")
 
 # ==============================================================================
 # FRAME 2: DASHBOARD SEKTOREN
 # ==============================================================================
 elif st.session_state.current_frame == "frame_2":
-    img_path = get_asset_path("Frame 2.jpg")
-    img_b64 = get_base64_image(img_path)
+    render_frame_with_overlay("Frame 2.jpg")
     
-    if img_b64:
-        st.markdown(f'<div class="overlay-container"><img src="data:image/jpeg;base64,{img_b64}"></div>', unsafe_allow_html=True)
-    elif img_path:
-        st.image(img_path, use_container_width=True)
-
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        st.markdown("<div style='margin-top: -42%; position: relative; z-index: 999;'>", unsafe_allow_html=True)
-        if st.button("➔ Zord Crew", use_container_width=True): navigate_to("frame_3")
-        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-        if st.button("➔ Zeus Details", use_container_width=True): navigate_to("frame_4")
-        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-        if st.button("➔ Funkraum", use_container_width=True): navigate_to("frame_5")
-        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-        if st.button("➔ Ghost Room Simulator", use_container_width=True): navigate_to("frame_6")
-        st.markdown("</div>", unsafe_allow_html=True)
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        if st.button("Zord Crew", use_container_width=True): navigate_to("frame_3")
+    with c2:
+        if st.button("Zeus Details", use_container_width=True): navigate_to("frame_4")
+    with c3:
+        if st.button("Funkraum", use_container_width=True): navigate_to("frame_5")
+    with c4:
+        if st.button("Ghost Room", use_container_width=True): navigate_to("frame_6")
 
 # ==============================================================================
 # FRAME 3, 4, 5, 6: SEKTOR RÄUME
 # ==============================================================================
 elif st.session_state.current_frame in ["frame_3", "frame_4", "frame_5", "frame_6"]:
     frame_num = st.session_state.current_frame.split("_")[1]
-    img_path = get_asset_path(f"Frame {frame_num}.jpg")
-    img_b64 = get_base64_image(img_path)
+    render_frame_with_overlay(f"Frame {frame_num}.jpg")
     
-    if img_b64:
-        st.markdown(f'<div class="overlay-container"><img src="data:image/jpeg;base64,{img_b64}"></div>', unsafe_allow_html=True)
-    elif img_path:
-        st.image(img_path, use_container_width=True)
-
-    col1, col2 = st.columns([0.4, 1])
-    with col1:
-        st.markdown("<div style='margin-top: -15%; position: relative; z-index: 999;'>", unsafe_allow_html=True)
-        if st.button("↩ Zurück", use_container_width=True):
-            navigate_to("frame_2")
-        st.markdown("</div>", unsafe_allow_html=True)
+    if st.button("↩ Zurück zum Haupt-Dashboard", use_container_width=True):
+        navigate_to("frame_2")
