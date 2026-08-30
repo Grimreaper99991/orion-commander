@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION COMMAND CORE v25.0 (ABSOLUTE OVERLAY POSITIONING)
+# ORION COMMAND CORE v26.0 (1:1 FIGMA PIXEL OVERLAY)
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX
 # ASSETS PATH: assets/Frame 0.jpg bis Frame 6.jpg
 # ==============================================================================
@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom Styling für absolute Positionierung über den Bildern
+# GLOBAL STYLES & OVERLAY CANVAS LOGIC
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
@@ -23,34 +23,47 @@ st.markdown("""
     
     .stApp { background-color: #040404; color: #FFFFFF; }
     
-    /* Frame Container mit relativem Layout für Layer-Positionierung */
-    .frame-container {
+    /* Haupt-Canvas Container (Skaliert exakt mit dem Bild) */
+    .figma-canvas {
         position: relative;
         width: 100%;
-        max-width: 1100px;
+        max-width: 1000px;
         margin: 0 auto;
     }
     
-    .frame-bg {
+    .figma-bg {
         width: 100%;
         display: block;
         border-radius: 8px;
     }
 
-    /* Style für Overlay-Buttons (Sci-Fi Look) */
+    /* Unsichtbare / Neon-Interaktive Klickzonen */
+    .overlay-btn {
+        position: absolute;
+        z-index: 10;
+    }
+
+    /* Streamlit Input Styling Transparenz Anpassung */
+    .stTextInput input {
+        background-color: rgba(255, 255, 255, 0.9) !important;
+        color: #000000 !important;
+        font-weight: bold !important;
+        border-radius: 4px !important;
+    }
+    
+    /* Streamlit Custom Transparent Overlay Buttons */
     .stButton > button {
-        background-color: rgba(0, 255, 0, 0.15) !important;
+        background-color: rgba(0, 255, 0, 0.2) !important;
         color: #00FF00 !important;
         border: 2px solid #00FF00 !important;
-        border-radius: 6px !important;
         font-weight: bold !important;
+        border-radius: 6px !important;
         transition: all 0.2s ease;
-        box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
     }
     .stButton > button:hover {
         background-color: #00FF00 !important;
         color: #000000 !important;
-        box-shadow: 0 0 20px #00FF00;
+        box-shadow: 0 0 15px #00FF00;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -72,98 +85,85 @@ def get_asset_path(filename):
     return None
 
 # ==============================================================================
-# FRAME 0: LOGIN (Eingabefeld & Enter-Button exakt rechts positioniert)
+# FRAME 0: LOGIN OVERLAY
 # ==============================================================================
 if st.session_state.current_frame == "frame_0":
     img = get_asset_path("Frame 0.jpg")
     
+    st.markdown("<div class='figma-canvas'>", unsafe_allow_html=True)
     if img:
         st.image(img, use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
     
-    # Positionierung über Spalten genau auf dem Feld aus Screenshot Frame 0
-    col_left, col_right = st.columns([1.3, 1])
-    with col_right:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        pwd = st.text_input("", type="password", placeholder="Enter Password", key="login_pwd")
-        if st.button("Enter", use_container_width=True):
+    # Eingabefeld & Enter Button exakt auf die weißen Felder positioniert
+    col1, col2 = st.columns([1.2, 1])
+    with col2:
+        st.markdown("<div style='margin-top: -300px; position: relative; z-index: 99;'>", unsafe_allow_html=True)
+        pwd = st.text_input("", type="password", placeholder="Password...", key="login_pwd")
+        if st.button("ENTER CORE", use_container_width=True):
             if pwd == MASTER_CODE:
                 navigate_to("frame_1")
             else:
                 st.error("ACCESS DENIED")
+        st.markdown("</div>", unsafe_allow_html=True)
 
 # ==============================================================================
-# FRAME 1: GALACTA (Dashboard-Button exakt über dem grünen Feld)
+# FRAME 1: GALACTA MAIN HUB (Dashboard Button exakt über der grünen Fläche)
 # ==============================================================================
 elif st.session_state.current_frame == "frame_1":
     img = get_asset_path("Frame 1.jpg")
+    
+    st.markdown("<div class='figma-canvas'>", unsafe_allow_html=True)
     if img:
         st.image(img, use_container_width=True)
-        
-    col1, col2, col3 = st.columns([0.4, 0.6, 1])
-    with col1:
-        # Erzeugt den Klick-Button direkt an der Stelle deines grünen Figma-Buttons
-        if st.button("➔ Dashboard Öffnen", use_container_width=True):
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    # Der Klick-Button legt sich genau über den neongrünen Dashboard-Button
+    c1, c2, c3 = st.columns([0.45, 0.45, 1])
+    with c1:
+        st.markdown("<div style='margin-top: -240px; position: relative; z-index: 99;'>", unsafe_allow_html=True)
+        if st.button("DASHBOARD ➔", use_container_width=True):
             navigate_to("frame_2")
+        st.markdown("</div>", unsafe_allow_html=True)
 
 # ==============================================================================
-# FRAME 2: DASHBOARD NAVIGATION (Sektor-Auswahl)
+# FRAME 2: DASHBOARD NAVIGATION
 # ==============================================================================
 elif st.session_state.current_frame == "frame_2":
     img = get_asset_path("Frame 2.jpg")
+    
+    st.markdown("<div class='figma-canvas'>", unsafe_allow_html=True)
     if img:
         st.image(img, use_container_width=True)
-        
-    st.markdown("### 🎯 Sektor Ansteuern:")
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        if st.button("[-Zord Crew]", use_container_width=True): navigate_to("frame_3")
-    with c2:
-        if st.button("[-Zeus Details]", use_container_width=True): navigate_to("frame_4")
-    with c3:
-        if st.button("[-Funkraum]", use_container_width=True): navigate_to("frame_5")
-    with c4:
-        if st.button("[-Ghost Simulator]", use_container_width=True): navigate_to("frame_6")
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    # Positionierung direkt auf der Klick-Liste des Dashboards
+    col1, col2 = st.columns([1.2, 1])
+    with col1:
+        st.markdown("<div style='margin-top: -220px; position: relative; z-index: 99;'>", unsafe_allow_html=True)
+        if st.button("➔ Zord Crew", use_container_width=True): navigate_to("frame_3")
+        if st.button("➔ Zeus Details", use_container_width=True): navigate_to("frame_4")
+        if st.button("➔ Funkraum", use_container_width=True): navigate_to("frame_5")
+        if st.button("➔ Ghost Room Simulator", use_container_width=True): navigate_to("frame_6")
+        st.markdown("</div>", unsafe_allow_html=True)
 
 # ==============================================================================
-# FRAME 3: ZORD CREW
+# FRAME 3, 4, 5, 6: SEKTOR RÄUME (Zurück-Button exakt über Text)
 # ==============================================================================
-elif st.session_state.current_frame == "frame_3":
-    img = get_asset_path("Frame 3.jpg")
+elif st.session_state.current_frame in ["frame_3", "frame_4", "frame_5", "frame_6"]:
+    frame_id = st.session_state.current_frame
+    frame_num = frame_id.split("_")[1]
+    img = get_asset_path(f"Frame {frame_num}.jpg")
+    
+    st.markdown("<div class='figma-canvas'>", unsafe_allow_html=True)
     if img:
         st.image(img, use_container_width=True)
-        
-    if st.button("↩ Zurück Zur Navigation"):
-        navigate_to("frame_2")
-
-# ==============================================================================
-# FRAME 4: ZEUS DETAILS
-# ==============================================================================
-elif st.session_state.current_frame == "frame_4":
-    img = get_asset_path("Frame 4.jpg")
-    if img:
-        st.image(img, use_container_width=True)
-        
-    if st.button("↩ Zurück Zur Navigation"):
-        navigate_to("frame_2")
-
-# ==============================================================================
-# FRAME 5: FUNKRAUM
-# ==============================================================================
-elif st.session_state.current_frame == "frame_5":
-    img = get_asset_path("Frame 5.jpg")
-    if img:
-        st.image(img, use_container_width=True)
-        
-    if st.button("↩ Zurück Zur Navigation"):
-        navigate_to("frame_2")
-
-# ==============================================================================
-# FRAME 6: GHOST GAME SIMULATOR
-# ==============================================================================
-elif st.session_state.current_frame == "frame_6":
-    img = get_asset_path("Frame 6.jpg")
-    if img:
-        st.image(img, use_container_width=True)
-        
-    if st.button("↩ Zurück Zur Navigation"):
-        navigate_to("frame_2")
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    # Zurück-Button wird im unteren Drittel direkt über deinen Figma-Text gelegt
+    col1, col2 = st.columns([1.2, 1])
+    with col1:
+        st.markdown("<div style='margin-top: -140px; position: relative; z-index: 99;'>", unsafe_allow_html=True)
+        if st.button("↩ Zurück Zur Navigation", use_container_width=True):
+            navigate_to("frame_2")
+        st.markdown("</div>", unsafe_allow_html=True)
