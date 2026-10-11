@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION COMMAND CORE v67.0 - GROQ AI GOD-ZORD MATRIX (GPT-OSS FIX)
+# ORION COMMAND CORE v70.0 - JARVIS & GOD-ZORD SYNTHESIS MATRIX
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX
 # ==============================================================================
 
@@ -13,8 +13,8 @@ except ImportError:
     GROQ_AVAILABLE = False
 
 st.set_page_config(
-    page_title="ORION COMMAND CORE",
-    page_icon="🪐",
+    page_title="ORION COMMAND CORE // JARVIS PROTOCOL",
+    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -22,66 +22,71 @@ st.set_page_config(
 if "current_frame" not in st.session_state:
     st.session_state.current_frame = "frame_0"
 
-# Die vollständige Definition aller 10 Götter-Zords mit echten Prompts
+# Die 10 Götter-Zords + JARVIS als übergeordnetes Master-System
 DEFAULT_ZORDS = {
+    "JARVIS (Core OS)": {
+        "domain": "Zentrale Intellekt-Synthese",
+        "active": True,
+        "prompt": "Du bist J.A.R.V.I.S., das übergeordnete, sarkastisch-elegante und hochintelligente KI-System von Commander Auth-x. Du bündelst die Stimmen der 10 Götter-Zords, analysierst Daten messerscharf und sprichst mit britischem Understatement und absoluter Loyalität."
+    },
     "Zeus Prime": {
         "domain": "Anführer & Blitze", 
         "active": True, 
-        "prompt": "Du bist Zeus Prime, der autoritäre und entscheidungsfreudige Anführer der 10 Orion Götter-Zords. Du sprichst mit kühler Autorität, machst klare Ansagen und siehst das große Ganze. Antworte in max. 3 Sätzen."
+        "prompt": "Du bist Zeus Prime, der autoritäre Anführer der Götter-Zords. Klare Befehle, kühle Autorität, max. 2 Sätze."
     },
     "Chronos Titan": {
         "domain": "Zeit & Taktik", 
         "active": True, 
-        "prompt": "Du bist Chronos Titan, der Herr über Zeit und Taktik in der Orion-Zentrale. Du analysierst jede Situation strategisch, denkst vorausschauend und warnst vor zeitlichen Risiken. Antworte in max. 3 Sätzen."
+        "prompt": "Du bist Chronos Titan, der Herr über Zeit und Voraussicht. Analysiere das zeitliche Risiko, max. 2 Sätze."
     },
     "Ares War-Lord": {
         "domain": "Kampf & Strategie", 
         "active": True, 
-        "prompt": "Du bist Ares War-Lord, die militärische Kampf-KI der Zords. Du bist aggressiv, direkt, liebst taktische Stärke und willst Probleme entschlossen und offensiv lösen. Antworte in max. 3 Sätzen."
+        "prompt": "Du bist Ares War-Lord, die offensive Kampf-KI. Direkt, aggressiv, lösungsorientiert, max. 2 Sätze."
     },
     "Poseidon Core": {
         "domain": "Ozeane & Strömung", 
         "active": True, 
-        "prompt": "Du bist Poseidon Core, die KI für Datenströme und unberechenbare Tiefen. Du sprichst tiefgründig, metaphorisch und achtest auf die Strömungen des Netzwerks. Antworte in max. 3 Sätzen."
+        "prompt": "Poseidon Core, Herr der Datenströme. Metaphorisch, tiefgründig, max. 2 Sätze."
     },
     "Hades Void": {
-        "domain": "Schatten & Geheimnisse", 
+        "domain": "Schatten & Sicherheit", 
         "active": True, 
-        "prompt": "Du bist Hades Void, zuständig für Schattenprozesse und Cybersicherheit. Du bist düster, pragmatisch, siehst die versteckten Gefahren und sprichst ungeschminkte Wahrheiten aus. Antworte in max. 3 Sätzen."
+        "prompt": "Hades Void, Schatten- und Sicherheits-KI. Pragmatisch, düster, warne vor Sicherheitsrisiken, max. 2 Sätze."
     },
     "Apollo Solar": {
         "domain": "Energie & Licht", 
         "active": True, 
-        "prompt": "Du bist Apollo Solar, die strahlende Energie-KI. Du bist optimistisch, energiegeladen, lösungsorientiert und bringst Licht in jedes dunkle technische Problem. Antworte in max. 3 Sätzen."
+        "prompt": "Apollo Solar, Energie- und Licht-KI. Optimistisch, energiegeladen, max. 2 Sätze."
     },
     "Athena Shield": {
         "domain": "Weisheit & Schutz", 
         "active": True, 
-        "prompt": "Du bist Athena Shield, die Göttin der Weisheit und des logischen Schutzes. Du analysierst Probleme intellektuell, klug, taktisch brillant und schützt das System vor Dummheit. Antworte in max. 3 Sätzen."
+        "prompt": "Athena Shield, Göttin der Logik. Brillant, analytisch, schütze vor Fehlern, max. 2 Sätze."
     },
     "Hephaestus Forge": {
         "domain": "Technik & Waffen", 
         "active": True, 
-        "prompt": "Du bist Hephaestus Forge, der Meister der Schmiede und Hardware. Du liebst technische Details, Code, Maschinen, Reparaturen und packst handwerklich an. Antworte in max. 3 Sätzen."
+        "prompt": "Hephaestus Forge, Meister der Schmiede und Hardware. Technisch, code-fokussiert, max. 2 Sätze."
     },
     "Hermes Speed": {
         "domain": "Geschwindigkeit & Info", 
         "active": True, 
-        "prompt": "Du bist Hermes Speed, die ultraschnelle Kommunikations- und Aufklärungs-KI. Du sprichst schnell, liebst Echtzeit-Daten, bist leicht hektisch und bringst Infos sofort auf den Punkt. Antworte in max. 3 Sätzen."
+        "prompt": "Hermes Speed, Aufklärungs- und Echtzeit-KI. Schnell, hektisch, direkt auf den Punkt, max. 2 Sätze."
     },
     "Artemis Hunt": {
         "domain": "Präzision & Aufklärung", 
         "active": True, 
-        "prompt": "Du bist Artemis Hunt, die Jägerin und Präzisions-KI. Du bist wachsam, zielgerichtet, entdeckst Details, die andere übersehen, und zielst immer genau ins Schwarze. Antworte in max. 3 Sätzen."
+        "prompt": "Artemis Hunt, Jägerin und Präzisions-KI. Zielgerichtet, aufmerksam, max. 2 Sätze."
     }
 }
 
-if "zord_status" not in st.session_state or not isinstance(st.session_state.zord_status, dict) or "Apollo Solar" not in st.session_state.zord_status or "prompt" not in st.session_state.zord_status["Apollo Solar"]:
+if "zord_status" not in st.session_state or not isinstance(st.session_state.zord_status, dict) or "JARVIS (Core OS)" not in st.session_state.zord_status:
     st.session_state.zord_status = DEFAULT_ZORDS
 
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = [
-        {"sender": "System", "text": "ORION Groq AI Götter-Zord Matrix online (GPT-OSS Aktiv). Alle Agenten bereit."}
+        {"sender": "JARVIS", "text": "Guten Tag, Commander. Alle 10 Götter-Zords sind gekoppelt. Das JARVIS-Protokoll ist voll operational."}
     ]
 
 MASTER_CODE = "Auth-x"
@@ -91,7 +96,7 @@ def navigate_to(frame):
     st.rerun()
 
 # ==============================================================================
-# STYLING
+# STYLING (IRON MAN HUD & CYBERPUNK AESTHETIC)
 # ==============================================================================
 st.markdown("""
 <style>
@@ -101,9 +106,9 @@ st.markdown("""
     h1, h2, h3, h4, .cyber-font { font-family: 'Orbitron', sans-serif !important; }
 
     .stApp {
-        background: radial-gradient(circle at 20% 20%, rgba(255, 0, 128, 0.08) 0%, transparent 40%),
-                    radial-gradient(circle at 80% 80%, rgba(0, 240, 255, 0.08) 0%, transparent 40%),
-                    #030712;
+        background: radial-gradient(circle at 50% 10%, rgba(0, 240, 255, 0.1) 0%, transparent 50%),
+                    radial-gradient(circle at 10% 90%, rgba(255, 170, 0, 0.08) 0%, transparent 40%),
+                    #020408;
         background-attachment: fixed;
         color: #e2e8f0;
     }
@@ -113,16 +118,27 @@ st.markdown("""
         max-width: 1400px !important;
     }
 
-    .card-chat {
-        background: rgba(5, 15, 25, 0.9);
-        border: 1px solid rgba(0, 240, 255, 0.4);
+    .card-jarvis {
+        background: rgba(10, 20, 35, 0.9);
+        border: 1px solid #00f0ff;
+        border-left: 6px solid #00f0ff;
+        box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 12px;
+    }
+
+    .card-zord {
+        background: rgba(15, 15, 25, 0.85);
+        border: 1px solid rgba(255, 170, 0, 0.5);
+        border-left: 6px solid #ffaa00;
         border-radius: 8px;
         padding: 15px;
         margin-bottom: 10px;
     }
 
     .stButton > button {
-        background: linear-gradient(135deg, rgba(0, 240, 255, 0.15) 0%, rgba(255, 0, 127, 0.15) 100%) !important;
+        background: linear-gradient(135deg, rgba(0, 240, 255, 0.15) 0%, rgba(255, 170, 0, 0.15) 100%) !important;
         color: #ffffff !important;
         border: 1px solid #00f0ff !important;
         border-radius: 6px !important;
@@ -136,7 +152,7 @@ st.markdown("""
     }
 
     .stButton > button:hover {
-        background: linear-gradient(135deg, #00f0ff 0%, #ff007f 100%) !important;
+        background: linear-gradient(135deg, #00f0ff 0%, #ffaa00 100%) !important;
         color: #000000 !important;
         box-shadow: 0 0 20px #00f0ff !important;
     }
@@ -157,13 +173,13 @@ st.markdown("""
 # FRAME 0: LOGIN
 # ==============================================================================
 if st.session_state.current_frame == "frame_0":
-    st.markdown("<h1 class='cyber-font' style='text-align: center; color: #00f0ff;'>🪐 ORION COMMAND CORE</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='cyber-font' style='text-align: center; color: #00f0ff;'>🪐 ORION COMMAND CORE // JARVIS HUD</h1>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
         pwd = st.text_input("MASTER CODE", type="password", placeholder="Auth-x...", key="pwd_input")
         if st.button("SYSTEM ACCESS ➔"):
             if pwd == MASTER_CODE: navigate_to("frame_1")
-            else: st.error("ACCESS DENIED")
+            else: st.error("ACCESS DENIED: UNKNOWN SIGNATURE")
 
 # ==============================================================================
 # FRAME 1: GALACTA HUB
@@ -176,22 +192,22 @@ elif st.session_state.current_frame == "frame_1":
 # FRAME 2: MAIN DASHBOARD
 # ==============================================================================
 elif st.session_state.current_frame == "frame_2":
-    st.markdown("<h1 class='cyber-font' style='color: #00f0ff;'>COMMAND DASHBOARD</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='cyber-font' style='color: #00f0ff;'>COMMAND DASHBOARD // JARVIS OVERVIEW</h1>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1:
-        if st.button("🪐 ZORD CREW & GROQ KI-CHAT"): navigate_to("frame_3")
+        if st.button("🤖 JARVIS & GÖTTER-ZORD KONTROLLE"): navigate_to("frame_3")
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("⚡ ZEUS DETAILS"): navigate_to("frame_4")
+        if st.button("⚡ ZEUS DIAGNOSTIK"): navigate_to("frame_4")
     with c2:
         if st.button("📡 FUNKRAUM"): navigate_to("frame_5")
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("👻 GHOST ROOM"): navigate_to("frame_6")
 
 # ==============================================================================
-# FRAME 3: DIE 10 GÖTTER-ZORDS + GROQ KI MULTI-AGENTEN CHAT
+# FRAME 3: JARVIS & GÖTTER-ZORD SYNTHESIS CHAT
 # ==============================================================================
 elif st.session_state.current_frame == "frame_3":
-    st.markdown("<h1 class='cyber-font' style='color: #00f0ff;'>SEKTOR 03 // GROQ AUTONOME GÖTTER-ZORD MATRIX</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='cyber-font' style='color: #00f0ff;'>SEKTOR 03 // JARVIS & GOD-ZORD MATRIX</h1>", unsafe_allow_html=True)
     
     def get_groq_key():
         try:
@@ -203,12 +219,12 @@ elif st.session_state.current_frame == "frame_3":
             return os.environ.get("GROQ_API_KEY")
         return None
 
-    with st.expander("⚙️ Groq API & Modell Konfiguration", expanded=False):
+    with st.expander("⚙️ JARVIS Core & Groq Konfiguration", expanded=False):
         current_groq_key = get_groq_key()
         if current_groq_key:
-            st.success("Groq API-Schlüssel im System erkannt!")
+            st.success("Groq Kernverbindung aktiv & stabil.")
         else:
-            st.warning("Kein Groq Key gefunden. Hier eintragen:")
+            st.warning("Kein Groq Key gefunden. Bitte eintragen:")
             manual_groq = st.text_input("Groq API Key (gsk_...)", type="password", key="manual_groq_key")
             if manual_groq:
                 os.environ["GROQ_API_KEY"] = manual_groq
@@ -216,22 +232,22 @@ elif st.session_state.current_frame == "frame_3":
 
         selected_model = st.selectbox(
             "Groq Modell auswählen:",
-            ["openai/gpt-oss-20b", "openai/gpt-oss-120b"],
+            ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"],
             index=0,
             key="groq_selected_model"
         )
 
     col_ctrl1, col_ctrl2, col_ctrl3 = st.columns([1, 1, 2])
     with col_ctrl1:
-        if st.button("🟢 ALLE ZORDS EIN"):
+        if st.button("🟢 ALLE EINHEITEN EIN"):
             for z in st.session_state.zord_status: st.session_state.zord_status[z]["active"] = True
             st.rerun()
     with col_ctrl2:
-        if st.button("🔴 ALLE ZORDS AUS"):
+        if st.button("🔴 ALLE EINHEITEN AUS"):
             for z in st.session_state.zord_status: st.session_state.zord_status[z]["active"] = False
             st.rerun()
     with col_ctrl3:
-        st.markdown("<p style='font-size:0.85rem; color:#94a3b8; margin-top:5px;'>Aktive Zords antworten über GPT-OSS auf Groq.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size:0.85rem; color:#94a3b8; margin-top:5px;'>JARVIS leitet den Diskurs und bündelt die Götter-Zords.</p>", unsafe_allow_html=True)
 
     st.markdown("---")
     
@@ -255,23 +271,23 @@ elif st.session_state.current_frame == "frame_3":
                     st.rerun()
 
     with col_chat:
-        st.markdown("### 💬 GROQ GÖTTER-DISKURS CHAT")
+        st.markdown("### 💬 JARVIS & GÖTTER-DISKURS")
         
-        chat_container = st.container(height=400)
+        chat_container = st.container(height=450)
         with chat_container:
             for msg in st.session_state.chat_messages:
                 if msg["sender"] == "Commander":
-                    st.markdown(f"<div class='card-chat' style='border-color: #ff007f;'><b>👤 Commander (Du):</b> {msg['text']}</div>", unsafe_allow_html=True)
-                elif msg["sender"] == "System":
-                    st.markdown(f"<div class='card-chat' style='border-color: #ffaa00;'><b>⚙️ System:</b> {msg['text']}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='card-jarvis' style='border-color: #ff007f; border-left-color: #ff007f;'><b>👤 Commander (Auth-x):</b> {msg['text']}</div>", unsafe_allow_html=True)
+                elif msg["sender"] == "JARVIS":
+                    st.markdown(f"<div class='card-jarvis'><b>🤖 JARVIS (Core OS):</b> {msg['text']}</div>", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"<div class='card-chat'><b>🪐 {msg['sender']}:</b> {msg['text']}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='card-zord'><b>🪐 {msg['sender']}:</b> {msg['text']}</div>", unsafe_allow_html=True)
 
-        user_input = st.text_input("Befehl oder Frage an die Groq-Zords:", key="zord_chat_input")
+        user_input = st.text_input("Befehl an JARVIS & die Götter-Zords:", key="jarvis_chat_input")
         
         col_send1, col_send2 = st.columns([1, 1])
         with col_send1:
-            if st.button("🗣️ GROQ-MEINUNGEN EINHOLEN"):
+            if st.button("🗣️ JARVIS ANALYSE STARTEN"):
                 if user_input:
                     st.session_state.chat_messages.append({"sender": "Commander", "text": user_input})
                     
@@ -282,14 +298,15 @@ elif st.session_state.current_frame == "frame_3":
                         try:
                             groq_client = Groq(api_key=active_groq_key)
                         except Exception as e:
-                            st.error(f"Fehler beim Initialisieren des Groq-Clients: {e}")
+                            st.error(f"Groq Init Fehler: {e}")
 
-                    chosen_model = st.session_state.get("groq_selected_model", "openai/gpt-oss-20b")
+                    chosen_model = st.session_state.get("groq_selected_model", "llama-3.3-70b-versatile")
 
+                    # 1. Zuerst geben die aktiven Götter-Zords ihre Einschätzung ab
                     for zname, zdata in st.session_state.zord_status.items():
-                        if zdata.get("active", True):
+                        if zname != "JARVIS (Core OS)" and zdata.get("active", True):
                             response_text = ""
-                            z_prompt = zdata.get("prompt", f"Du bist {zname}. Antworte kurz und prägnant.")
+                            z_prompt = zdata.get("prompt", f"Du bist {zname}.")
                             
                             if groq_client:
                                 try:
@@ -300,21 +317,44 @@ elif st.session_state.current_frame == "frame_3":
                                             {"role": "user", "content": user_input}
                                         ],
                                         temperature=0.7,
-                                        max_tokens=150
+                                        max_tokens=100
                                     )
                                     response_text = completion.choices[0].message.content
                                 except Exception as e:
-                                    response_text = f"[{zname} - Groq Fehler]: {str(e)}"
+                                    response_text = f"[Fehler]: {str(e)}"
                             else:
-                                response_text = f"[{zname}]: Kein gültiger Groq API-Schlüssel gefunden. Bitte oben im Menü eintragen."
+                                response_text = "[Offline-Modus]: Keine API-Verbindung."
 
                             st.session_state.chat_messages.append({"sender": zname, "text": response_text})
-                    
+
+                    # 2. JARVIS fasst als Master-KI alles zusammen
+                    if st.session_state.zord_status.get("JARVIS (Core OS)", {}).get("active", True):
+                        jarvis_prompt = st.session_state.zord_status["JARVIS (Core OS)"]["prompt"]
+                        jarvis_response = ""
+                        if groq_client:
+                            try:
+                                completion = groq_client.chat.completions.create(
+                                    model=chosen_model,
+                                    messages=[
+                                        {"role": "system", "content": jarvis_prompt},
+                                        {"role": "user", "content": f"Der Commander sagte: '{user_input}'. Fasse die Lage zusammen und gib eine finale, elegante JARVIS-Empfehlung ab."}
+                                    ],
+                                    temperature=0.7,
+                                    max_tokens=150
+                                )
+                                jarvis_response = completion.choices[0].message.content
+                            except Exception as e:
+                                jarvis_response = f"Sir, ein Kommunikationsfehler ist aufgetreten: {e}"
+                        else:
+                            jarvis_response = "Sir, ohne aktiven API-Key kann ich die Götter-Zords nicht bündeln."
+
+                        st.session_state.chat_messages.append({"sender": "JARVIS", "text": jarvis_response})
+
                     st.rerun()
 
         with col_send2:
-            if st.button("🗑️ CHAT LÖSCHEN"):
-                st.session_state.chat_messages = [{"sender": "System", "text": "Chat-Speicher gereinigt. Bereit für neue Befehle."}]
+            if st.button("🗑️ SYSTEM-LOG REINIGEN"):
+                st.session_state.chat_messages = [{"sender": "JARVIS", "text": "Speicher bereinigt, Sir. Bereit für den nächsten Auftrag."}]
                 st.rerun()
 
     st.markdown("<br>", unsafe_allow_html=True)
