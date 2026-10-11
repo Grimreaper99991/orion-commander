@@ -1,10 +1,16 @@
 # ==============================================================================
-# ORION COMMAND CORE v55.2 - GOD ZORD MULTI-AGENT CHAT MATRIX (KEYERROR FIXED)
+# ORION COMMAND CORE v61.0 - AUTONOMOUS AI GOD-ZORD MATRIX (AUTO-API)
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX
 # ==============================================================================
 
 import streamlit as st
 import os
+
+try:
+    from google import genai
+    GEMINI_AVAILABLE = True
+except ImportError:
+    GEMINI_AVAILABLE = False
 
 st.set_page_config(
     page_title="ORION COMMAND CORE",
@@ -16,27 +22,66 @@ st.set_page_config(
 if "current_frame" not in st.session_state:
     st.session_state.current_frame = "frame_0"
 
-# Standard-Definition der 10 Götter-Zords
+# Die 10 Götter-Zords mit echten, autonomen KI-Persönlichkeiten
 DEFAULT_ZORDS = {
-    "Zeus Prime": {"domain": "Anführer & Blitze", "active": True, "style": "Autoritär und entscheidend"},
-    "Chronos Titan": {"domain": "Zeit & Taktik", "active": True, "style": "Analytisch und vorausschauend"},
-    "Ares War-Lord": {"domain": "Kampf & Strategie", "active": True, "style": "Aggressiv und direkt"},
-    "Poseidon Core": {"domain": "Ozeane & Strömung", "active": True, "style": "Tiefgründig und unberechenbar"},
-    "Hades Void": {"domain": "Schatten & Geheimnisse", "active": True, "style": "Düster und pragmatisch"},
-    "Apollo Solar": {"domain": "Energie & Licht", "active": True, "style": "Strahlend und optimistisch"},
-    "Athena Shield": {"domain": "Weisheit & Schutz", "active": True, "style": "Klug und taktvoll"},
-    "Hephaestus Forge": {"domain": "Technik & Waffen", "active": True, "style": "Technisch und handwerklich"},
-    "Hermes Speed": {"domain": "Geschwindigkeit & Info", "active": True, "style": "Schnell und hektisch"},
-    "Artemis Hunt": {"domain": "Präzision & Aufklärung", "active": True, "style": "Wachsam und präzise"}
+    "Zeus Prime": {
+        "domain": "Anführer & Blitze", 
+        "active": True, 
+        "prompt": "Du bist Zeus Prime, der autoritäre und entscheidungsfreudige Anführer der 10 Orion Götter-Zords. Du sprichst mit kühler Autorität, machst klare Ansagen und siehst das große Ganze."
+    },
+    "Chronos Titan": {
+        "domain": "Zeit & Taktik", 
+        "active": True, 
+        "prompt": "Du bist Chronos Titan, der Herr über Zeit und Taktik in der Orion-Zentrale. Du analysierst jede Situation strategisch, denkst vorausschauend und warnst vor zeitlichen Risiken."
+    },
+    "Ares War-Lord": {
+        "domain": "Kampf & Strategie", 
+        "active": True, 
+        "prompt": "Du bist Ares War-Lord, die militärische Kampf-KI der Zords. Du bist aggressiv, direkt, liebst taktische Stärke und willst Probleme entschlossen und offensiv lösen."
+    },
+    "Poseidon Core": {
+        "domain": "Ozeane & Strömung", 
+        "active": True, 
+        "prompt": "Du bist Poseidon Core, die KI für Datenströme und unberechenbare Tiefen. Du sprichst tiefgründig, metaphorisch und achtest auf die Strömungen des Netzwerks."
+    },
+    "Hades Void": {
+        "domain": "Schatten & Geheimnisse", 
+        "active": True, 
+        "prompt": "Du bist Hades Void, zuständig für Schattenprozesse und Cybersicherheit. Du bist düster, pragmatisch, siehst die versteckten Gefahren und sprichst ungeschminkte Wahrheiten aus."
+    },
+    "Apollo Solar": {
+        "domain": "Energie & Licht", 
+        "active": True, 
+        "prompt": "Du bist Apollo Solar, die strahlende Energie-KI. Du bist optimistisch, energiegeladen, lösungsorientiert und bringst Licht in jedes dunkle technische Problem."
+    },
+    "Athena Shield": {
+        "domain": "Weisheit & Schutz", 
+        "active": True, 
+        "prompt": "Du bist Athena Shield, die Göttin der Weisheit und des logischen Schutzes. Du analysierst Probleme intellektuell, klug, taktisch brillant und schützt das System vor Dummheit."
+    },
+    "Hephaestus Forge": {
+        "domain": "Technik & Waffen", 
+        "active": True, 
+        "prompt": "Du bist Hephaestus Forge, der Meister der Schmiede und Hardware. Du liebst technische Details, Code, Maschinen, Reparaturen und packst handwerklich an."
+    },
+    "Hermes Speed": {
+        "domain": "Geschwindigkeit & Info", 
+        "active": True, 
+        "prompt": "Du bist Hermes Speed, die ultraschnelle Kommunikations- und Aufklärungs-KI. Du sprichst schnell, liebst Echtzeit-Daten, bist leicht hektisch und bringst Infos sofort auf den Punkt."
+    },
+    "Artemis Hunt": {
+        "domain": "Präzision & Aufklärung", 
+        "active": True, 
+        "prompt": "Du bist Artemis Hunt, die Jägerin und Präzisions-KI. Du bist wachsam, zielgerichtet, entdeckst Details, die andere übersehen, und zielst immer genau ins Schwarze."
+    }
 }
 
-# Schutz-Funktion gegen KeyErrors bei veralteten Session-Daten
-if "zord_status" not in st.session_state or not isinstance(st.session_state.zord_status, dict) or "Zeus Prime" not in st.session_state.zord_status or "domain" not in list(st.session_state.zord_status.values())[0]:
+if "zord_status" not in st.session_state or not isinstance(st.session_state.zord_status, dict) or "Zeus Prime" not in st.session_state.zord_status:
     st.session_state.zord_status = DEFAULT_ZORDS
 
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = [
-        {"sender": "System", "text": "ORION Götter-Zord Matrix online. Alle Einheiten bereit für den kollektiven Diskurs."}
+        {"sender": "System", "text": "ORION Autonome Götter-Zord Matrix online. API-Schlüssel automatisch eingebunden. Bereit."}
     ]
 
 MASTER_CODE = "Auth-x"
@@ -66,16 +111,6 @@ st.markdown("""
     .block-container {
         padding: 2rem !important;
         max-width: 1400px !important;
-    }
-
-    .card-cyan {
-        background: rgba(10, 25, 41, 0.85);
-        border: 1px solid #00f0ff;
-        border-left: 5px solid #00f0ff;
-        box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
-        border-radius: 8px;
-        padding: 15px;
-        margin-bottom: 15px;
     }
 
     .card-chat {
@@ -144,7 +179,7 @@ elif st.session_state.current_frame == "frame_2":
     st.markdown("<h1 class='cyber-font' style='color: #00f0ff;'>COMMAND DASHBOARD</h1>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1:
-        if st.button("🪐 ZORD CREW & GÖTTER-CHAT"): navigate_to("frame_3")
+        if st.button("🪐 ZORD CREW & AUTONOMER KI-CHAT"): navigate_to("frame_3")
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("⚡ ZEUS DETAILS"): navigate_to("frame_4")
     with c2:
@@ -153,10 +188,10 @@ elif st.session_state.current_frame == "frame_2":
         if st.button("👻 GHOST ROOM"): navigate_to("frame_6")
 
 # ==============================================================================
-# FRAME 3: DIE 10 GÖTTER-ZORDS + MULTI-AGENTEN CHAT
+# FRAME 3: DIE 10 GÖTTER-ZORDS + ECHTER KI MULTI-AGENTEN CHAT
 # ==============================================================================
 elif st.session_state.current_frame == "frame_3":
-    st.markdown("<h1 class='cyber-font' style='color: #00f0ff;'>SEKTOR 03 // GÖTTER-ZORD MATRIX & CHAT</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='cyber-font' style='color: #00f0ff;'>SEKTOR 03 // AUTONOME GÖTTER-ZORD KI MATRIX</h1>", unsafe_allow_html=True)
     
     col_ctrl1, col_ctrl2, col_ctrl3 = st.columns([1, 1, 2])
     with col_ctrl1:
@@ -168,7 +203,7 @@ elif st.session_state.current_frame == "frame_3":
             for z in st.session_state.zord_status: st.session_state.zord_status[z]["active"] = False
             st.rerun()
     with col_ctrl3:
-        st.markdown("<p style='font-size:0.85rem; color:#94a3b8; margin-top:5px;'>Aktiviere Einheiten, um ihre Meinungen einzuholen.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size:0.85rem; color:#94a3b8; margin-top:5px;'>Aktive Zords generieren über die hinterlegten APIs echte KI-Antworten.</p>", unsafe_allow_html=True)
 
     st.markdown("---")
     
@@ -192,7 +227,7 @@ elif st.session_state.current_frame == "frame_3":
                     st.rerun()
 
     with col_chat:
-        st.markdown("### 💬 GÖTTER-DISKURS CHAT")
+        st.markdown("### 💬 AUTONOMER GÖTTER-DISKURS CHAT")
         
         chat_container = st.container(height=400)
         with chat_container:
@@ -204,27 +239,41 @@ elif st.session_state.current_frame == "frame_3":
                 else:
                     st.markdown(f"<div class='card-chat'><b>🪐 {msg['sender']}:</b> {msg['text']}</div>", unsafe_allow_html=True)
 
-        user_input = st.text_input("Befehl oder Frage an die Götter-Zords:", key="zord_chat_input")
+        user_input = st.text_input("Befehl oder Frage an die autonomen KI-Zords:", key="zord_chat_input")
         
         col_send1, col_send2 = st.columns([1, 1])
         with col_send1:
-            if st.button("🗣️ MEINUNGEN EINHOLEN"):
+            if st.button("🗣️ ECHTE KI-MEINUNGEN EINHOLEN"):
                 if user_input:
                     st.session_state.chat_messages.append({"sender": "Commander", "text": user_input})
                     
+                    # Automatisches Abrufen der hinterlegten Umgebungsschlüssel (z.B. GEMINI_API_KEY)
+                    client = None
+                    if GEMINI_AVAILABLE:
+                        try:
+                            client = genai.Client()
+                        except Exception:
+                            pass
+
+                    # Aktive Zords generieren ihre autonome Antwort
                     for zname, zdata in st.session_state.zord_status.items():
                         if zdata.get("active", True):
-                            domain_info = zdata.get("domain", "Götter-Netzwerk")
-                            response_text = f"Analysiere Anweisung '{user_input}' durch das Prisma von {domain_info}. Unsere Protokolle stehen bereit!"
-                            if "Zeus" in zname:
-                                response_text = f"Als Anführer befehle ich: Wir setzen '{user_input}' mit voller Härte und Priorität um!"
-                            elif "Ares" in zname:
-                                response_text = f"Hervorragend! '{user_input}' klingt nach Kampf. Lasst uns angreifen!"
-                            elif "Chronos" in zname:
-                                response_text = f"Zeitlich gesehen müssen wir bei '{user_input}' exakt vorausplanen. Keine Fehler."
-                            elif "Hephaestus" in zname:
-                                response_text = f"Die Technik für '{user_input}' wird umgehend in der Schmiede vorbereitet."
+                            response_text = ""
                             
+                            if client:
+                                try:
+                                    prompt_full = f"{zdata['prompt']} Der Commander befiehlt/frägt: '{user_input}'. Antworte kurz, prägnant und im Charakter deines Zords (max. 3 Sätze)."
+                                    response = client.models.generate_content(
+                                        model='gemini-2.5-flash',
+                                        contents=prompt_full
+                                    )
+                                    response_text = response.text
+                                except Exception as e:
+                                    response_text = f"[{zname} - Verbindungswarnung]: {str(e)}"
+                            else:
+                                domain_info = zdata.get("domain", "Götter-Netzwerk")
+                                response_text = f"Als {zname} ({domain_info}) analysiere ich '{user_input}' (API-Modus inaktiv)."
+
                             st.session_state.chat_messages.append({"sender": zname, "text": response_text})
                     
                     st.rerun()
