@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION COMMAND CORE v70.0 - JARVIS & GOD-ZORD SYNTHESIS MATRIX
+# ORION COMMAND CORE v70.1 - JARVIS & GOD-ZORD MATRIX (404 FALLBACK SAFE)
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX
 # ==============================================================================
 
@@ -86,7 +86,7 @@ if "zord_status" not in st.session_state or not isinstance(st.session_state.zord
 
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = [
-        {"sender": "JARVIS", "text": "Guten Tag, Commander. Alle 10 Götter-Zords sind gekoppelt. Das JARVIS-Protokoll ist voll operational."}
+        {"sender": "JARVIS", "text": "Guten Tag, Commander. Alle Systemkanäle sind gereinigt und bereit für Ihre Befehle."}
     ]
 
 MASTER_CODE = "Auth-x"
@@ -232,7 +232,7 @@ elif st.session_state.current_frame == "frame_3":
 
         selected_model = st.selectbox(
             "Groq Modell auswählen:",
-            ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"],
+            ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "mixtral-8x7b-32768"],
             index=0,
             key="groq_selected_model"
         )
@@ -285,6 +285,27 @@ elif st.session_state.current_frame == "frame_3":
 
         user_input = st.text_input("Befehl an JARVIS & die Götter-Zords:", key="jarvis_chat_input")
         
+        # Sichere Aufruffunktion mit automatischem Fallback
+        def call_groq_safe(client, primary_model, system_prompt, user_msg):
+            models_to_try = [primary_model, "llama-3.1-8b-instant", "mixtral-8x7b-32768"]
+            for model in models_to_try:
+                try:
+                    completion = client.chat.completions.create(
+                        model=model,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_msg}
+                        ],
+                        temperature=0.7,
+                        max_tokens=150
+                    )
+                    return completion.choices[0].message.content
+                except Exception as e:
+                    if "404" in str(e) or "model_not_found" in str(e):
+                        continue  # Versuche das nächste Modell in der Liste
+                    return f"[Fehler]: {str(e)}"
+            return "[Fehler]: Keines der eingestellten Groq-Modelle konnte erreicht werden."
+
         col_send1, col_send2 = st.columns([1, 1])
         with col_send1:
             if st.button("🗣️ JARVIS ANALYSE STARTEN"):
@@ -300,7 +321,7 @@ elif st.session_state.current_frame == "frame_3":
                         except Exception as e:
                             st.error(f"Groq Init Fehler: {e}")
 
-                    chosen_model = st.session_state.get("groq_selected_model", "llama-3.3-70b-versatile")
+                    chosen_model = st.session_state.get("groq_selected_model", "llama-3.1-8b-instant")
 
                     # 1. Zuerst geben die aktiven Götter-Zords ihre Einschätzung ab
                     for zname, zdata in st.session_state.zord_status.items():
@@ -309,19 +330,7 @@ elif st.session_state.current_frame == "frame_3":
                             z_prompt = zdata.get("prompt", f"Du bist {zname}.")
                             
                             if groq_client:
-                                try:
-                                    completion = groq_client.chat.completions.create(
-                                        model=chosen_model,
-                                        messages=[
-                                            {"role": "system", "content": z_prompt},
-                                            {"role": "user", "content": user_input}
-                                        ],
-                                        temperature=0.7,
-                                        max_tokens=100
-                                    )
-                                    response_text = completion.choices[0].message.content
-                                except Exception as e:
-                                    response_text = f"[Fehler]: {str(e)}"
+                                response_text = call_groq_safe(groq_client, chosen_model, z_prompt, user_input)
                             else:
                                 response_text = "[Offline-Modus]: Keine API-Verbindung."
 
@@ -332,19 +341,8 @@ elif st.session_state.current_frame == "frame_3":
                         jarvis_prompt = st.session_state.zord_status["JARVIS (Core OS)"]["prompt"]
                         jarvis_response = ""
                         if groq_client:
-                            try:
-                                completion = groq_client.chat.completions.create(
-                                    model=chosen_model,
-                                    messages=[
-                                        {"role": "system", "content": jarvis_prompt},
-                                        {"role": "user", "content": f"Der Commander sagte: '{user_input}'. Fasse die Lage zusammen und gib eine finale, elegante JARVIS-Empfehlung ab."}
-                                    ],
-                                    temperature=0.7,
-                                    max_tokens=150
-                                )
-                                jarvis_response = completion.choices[0].message.content
-                            except Exception as e:
-                                jarvis_response = f"Sir, ein Kommunikationsfehler ist aufgetreten: {e}"
+                            jarvis_user_msg = f"Der Commander sagte: '{user_input}'. Fasse die Lage zusammen und gib eine finale, elegante JARVIS-Empfehlung ab."
+                            jarvis_response = call_groq_safe(groq_client, chosen_model, jarvis_prompt, jarvis_user_msg)
                         else:
                             jarvis_response = "Sir, ohne aktiven API-Key kann ich die Götter-Zords nicht bündeln."
 
