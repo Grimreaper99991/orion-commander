@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION COMMAND CORE v55.0 - GOD ZORD MULTI-AGENT CHAT MATRIX
+# ORION COMMAND CORE v55.1 - GOD ZORD MULTI-AGENT CHAT MATRIX (FIXED)
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX
 # ==============================================================================
 
@@ -179,9 +179,9 @@ elif st.session_state.current_frame == "frame_3":
             sub_c1, sub_c2 = st.columns([3, 1])
             with sub_c1:
                 status_color = "badge-cyan" if zdata["active"] else "badge-gold"
-                st.markdown(f"**{zname}** <span class='{status_color}'>{'AKTIV' : OFF}</span><br><span style='font-size:0.75rem; color:#8ab4f8;'>Domäne: {zdata['domain']}</span>", unsafe_allow_html=True)
+                status_text = "AKTIV" if zdata["active"] else "OFF"
+                st.markdown(f"**{zname}** <span class='{status_color}'>{status_text}</span><br><span style='font-size:0.75rem; color:#8ab4f8;'>Domäne: {zdata['domain']}</span>", unsafe_allow_html=True)
             with sub_c2:
-                # Toggle Button für jeden Zord einzeln
                 btn_label = "🔌" if zdata["active"] else "⚡"
                 if st.button(btn_label, key=f"toggle_{zname}"):
                     st.session_state.zord_status[zname]["active"] = not zdata["active"]
@@ -190,7 +190,6 @@ elif st.session_state.current_frame == "frame_3":
     with col_chat:
         st.markdown("### 💬 GÖTTER-DISKURS CHAT")
         
-        # Chatfenster Container
         chat_container = st.container(height=400)
         with chat_container:
             for msg in st.session_state.chat_messages:
@@ -201,20 +200,16 @@ elif st.session_state.current_frame == "frame_3":
                 else:
                     st.markdown(f"<div class='card-chat'><b>🪐 {msg['sender']}:</b> {msg['text']}</div>", unsafe_allow_html=True)
 
-        # Eingabefeld für den User-Befehl
         user_input = st.text_input("Befehl oder Frage an die Götter-Zords:", key="zord_chat_input")
         
         col_send1, col_send2 = st.columns([1, 1])
         with col_send1:
             if st.button("🗣️ MEINUNGEN EINHOLEN"):
                 if user_input:
-                    # User Nachricht speichern
                     st.session_state.chat_messages.append({"sender": "Commander", "text": user_input})
                     
-                    # Alle aktiven Zords geben nacheinander ihre Meinung ab
                     for zname, zdata in st.session_state.zord_status.items():
                         if zdata["active"]:
-                            # Simulierte Götter-Antwort basierend auf ihrer Domäne
                             response_text = f"Analysiere Anweisung '{user_input}' durch das Prisma von {zdata['domain']}. Unsere Protokolle stehen bereit!"
                             if "Zeus" in zname:
                                 response_text = f"Als Anführer befehle ich: Wir setzen '{user_input}' mit voller Härte und Priorität um!"
