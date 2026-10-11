@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION COMMAND CORE v65.0 - GROQ AI GOD-ZORD MATRIX (DYNAMIC MODEL FIX)
+# ORION COMMAND CORE v66.0 - GROQ AI GOD-ZORD MATRIX (UPDATED MODELS)
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX
 # ==============================================================================
 
@@ -81,7 +81,7 @@ if "zord_status" not in st.session_state or not isinstance(st.session_state.zord
 
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = [
-        {"sender": "System", "text": "ORION Groq AI Götter-Zord Matrix online. Alle Agenten bereit für den Diskurs."}
+        {"sender": "System", "text": "ORION Groq AI Götter-Zord Matrix online. Aktuelle Modelle synchronisiert."}
     ]
 
 MASTER_CODE = "Auth-x"
@@ -216,7 +216,7 @@ elif st.session_state.current_frame == "frame_3":
 
         selected_model = st.selectbox(
             "Groq Modell auswählen:",
-            ["llama3-8b-8192", "llama3-70b-8192", "mixtral-8x7b-32768", "gemma2-9b-it"],
+            ["llama-3.3-70b-versatile", "openai/gpt-oss-20b", "openai/gpt-oss-120b"],
             index=0,
             key="groq_selected_model"
         )
@@ -284,7 +284,7 @@ elif st.session_state.current_frame == "frame_3":
                         except Exception as e:
                             st.error(f"Fehler beim Initialisieren des Groq-Clients: {e}")
 
-                    chosen_model = st.session_state.get("groq_selected_model", "llama3-8b-8192")
+                    chosen_model = st.session_state.get("groq_selected_model", "llama-3.3-70b-versatile")
 
                     for zname, zdata in st.session_state.zord_status.items():
                         if zdata.get("active", True):
