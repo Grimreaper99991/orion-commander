@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION COMMAND CORE v70.1 - JARVIS & GOD-ZORD MATRIX (404 FALLBACK SAFE)
+# ORION COMMAND CORE v71.0 - JARVIS & GOD-ZORD MATRIX (DECOMMISSION SAFE)
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX
 # ==============================================================================
 
@@ -22,7 +22,7 @@ st.set_page_config(
 if "current_frame" not in st.session_state:
     st.session_state.current_frame = "frame_0"
 
-# Die 10 Götter-Zords + JARVIS als übergeordnetes Master-System
+# Die 10 Götter-Zords + JARVIS Master-System
 DEFAULT_ZORDS = {
     "JARVIS (Core OS)": {
         "domain": "Zentrale Intellekt-Synthese",
@@ -86,7 +86,7 @@ if "zord_status" not in st.session_state or not isinstance(st.session_state.zord
 
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = [
-        {"sender": "JARVIS", "text": "Guten Tag, Commander. Alle Systemkanäle sind gereinigt und bereit für Ihre Befehle."}
+        {"sender": "JARVIS", "text": "Guten Tag, Commander. Modell-Sicherungen sind aktiv. Bereit für den Diskurs."}
     ]
 
 MASTER_CODE = "Auth-x"
@@ -96,7 +96,7 @@ def navigate_to(frame):
     st.rerun()
 
 # ==============================================================================
-# STYLING (IRON MAN HUD & CYBERPUNK AESTHETIC)
+# STYLING
 # ==============================================================================
 st.markdown("""
 <style>
@@ -232,7 +232,7 @@ elif st.session_state.current_frame == "frame_3":
 
         selected_model = st.selectbox(
             "Groq Modell auswählen:",
-            ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "mixtral-8x7b-32768"],
+            ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "openai/gpt-oss-20b", "openai/gpt-oss-120b"],
             index=0,
             key="groq_selected_model"
         )
@@ -285,10 +285,12 @@ elif st.session_state.current_frame == "frame_3":
 
         user_input = st.text_input("Befehl an JARVIS & die Götter-Zords:", key="jarvis_chat_input")
         
-        # Sichere Aufruffunktion mit automatischem Fallback
         def call_groq_safe(client, primary_model, system_prompt, user_msg):
-            models_to_try = [primary_model, "llama-3.1-8b-instant", "mixtral-8x7b-32768"]
-            for model in models_to_try:
+            models_to_try = [primary_model, "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "openai/gpt-oss-20b", "openai/gpt-oss-120b"]
+            seen = set()
+            ordered_models = [m for m in models_to_try if not (m in seen or seen.add(m))]
+            
+            for model in ordered_models:
                 try:
                     completion = client.chat.completions.create(
                         model=model,
@@ -301,10 +303,11 @@ elif st.session_state.current_frame == "frame_3":
                     )
                     return completion.choices[0].message.content
                 except Exception as e:
-                    if "404" in str(e) or "model_not_found" in str(e):
-                        continue  # Versuche das nächste Modell in der Liste
-                    return f"[Fehler]: {str(e)}"
-            return "[Fehler]: Keines der eingestellten Groq-Modelle konnte erreicht werden."
+                    err_str = str(e)
+                    if any(k in err_str for k in ["404", "400", "model_not_found", "model_decommissioned"]):
+                        continue
+                    return f"[Fehler]: {err_str}"
+            return "[Fehler]: Keines der Fallback-Modelle konnte auf Groq erreicht werden."
 
         col_send1, col_send2 = st.columns([1, 1])
         with col_send1:
@@ -321,14 +324,11 @@ elif st.session_state.current_frame == "frame_3":
                         except Exception as e:
                             st.error(f"Groq Init Fehler: {e}")
 
-                    chosen_model = st.session_state.get("groq_selected_model", "llama-3.1-8b-instant")
+                    chosen_model = st.session_state.get("groq_selected_model", "llama-3.3-70b-versatile")
 
-                    # 1. Zuerst geben die aktiven Götter-Zords ihre Einschätzung ab
                     for zname, zdata in st.session_state.zord_status.items():
                         if zname != "JARVIS (Core OS)" and zdata.get("active", True):
-                            response_text = ""
                             z_prompt = zdata.get("prompt", f"Du bist {zname}.")
-                            
                             if groq_client:
                                 response_text = call_groq_safe(groq_client, chosen_model, z_prompt, user_input)
                             else:
@@ -336,10 +336,8 @@ elif st.session_state.current_frame == "frame_3":
 
                             st.session_state.chat_messages.append({"sender": zname, "text": response_text})
 
-                    # 2. JARVIS fasst als Master-KI alles zusammen
                     if st.session_state.zord_status.get("JARVIS (Core OS)", {}).get("active", True):
                         jarvis_prompt = st.session_state.zord_status["JARVIS (Core OS)"]["prompt"]
-                        jarvis_response = ""
                         if groq_client:
                             jarvis_user_msg = f"Der Commander sagte: '{user_input}'. Fasse die Lage zusammen und gib eine finale, elegante JARVIS-Empfehlung ab."
                             jarvis_response = call_groq_safe(groq_client, chosen_model, jarvis_prompt, jarvis_user_msg)
