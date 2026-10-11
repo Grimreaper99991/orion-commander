@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION COMMAND CORE v64.0 - GROQ AI GOD-ZORD MATRIX (CURRENT MODELS)
+# ORION COMMAND CORE v65.0 - GROQ AI GOD-ZORD MATRIX (DYNAMIC MODEL FIX)
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX
 # ==============================================================================
 
@@ -81,7 +81,7 @@ if "zord_status" not in st.session_state or not isinstance(st.session_state.zord
 
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = [
-        {"sender": "System", "text": "ORION Groq AI Götter-Zord Matrix online (Aktuelles Modell aktiv). Alle Agenten bereit."}
+        {"sender": "System", "text": "ORION Groq AI Götter-Zord Matrix online. Alle Agenten bereit für den Diskurs."}
     ]
 
 MASTER_CODE = "Auth-x"
@@ -144,7 +144,7 @@ st.markdown("""
     .badge-cyan { background: #00f0ff22; color: #00f0ff; border: 1px solid #00f0ff; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
     .badge-gold { background: #ffaa0022; color: #ffaa00; border: 1px solid #ffaa00; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
 
-    .stTextInput input {
+    .stTextInput input, .stSelectbox div {
         background-color: rgba(5, 12, 22, 0.9) !important;
         color: #00f0ff !important;
         border: 1px solid #00f0ff !important;
@@ -203,16 +203,23 @@ elif st.session_state.current_frame == "frame_3":
             return os.environ.get("GROQ_API_KEY")
         return None
 
-    with st.expander("⚙️ Groq API Konfiguration", expanded=False):
+    with st.expander("⚙️ Groq API & Modell Konfiguration", expanded=False):
         current_groq_key = get_groq_key()
         if current_groq_key:
             st.success("Groq API-Schlüssel im System erkannt!")
         else:
-            st.warning("Kein Groq Key gefunden. Hier eintragen (oder in den Secrets hinterlegen):")
+            st.warning("Kein Groq Key gefunden. Hier eintragen:")
             manual_groq = st.text_input("Groq API Key (gsk_...)", type="password", key="manual_groq_key")
             if manual_groq:
                 os.environ["GROQ_API_KEY"] = manual_groq
                 st.rerun()
+
+        selected_model = st.selectbox(
+            "Groq Modell auswählen:",
+            ["llama3-8b-8192", "llama3-70b-8192", "mixtral-8x7b-32768", "gemma2-9b-it"],
+            index=0,
+            key="groq_selected_model"
+        )
 
     col_ctrl1, col_ctrl2, col_ctrl3 = st.columns([1, 1, 2])
     with col_ctrl1:
@@ -277,6 +284,8 @@ elif st.session_state.current_frame == "frame_3":
                         except Exception as e:
                             st.error(f"Fehler beim Initialisieren des Groq-Clients: {e}")
 
+                    chosen_model = st.session_state.get("groq_selected_model", "llama3-8b-8192")
+
                     for zname, zdata in st.session_state.zord_status.items():
                         if zdata.get("active", True):
                             response_text = ""
@@ -285,7 +294,7 @@ elif st.session_state.current_frame == "frame_3":
                             if groq_client:
                                 try:
                                     completion = groq_client.chat.completions.create(
-                                        model="llama-3.1-8b-instant",  # Auf das stabile, absolut aktuelle High-Speed-Modell umgestellt
+                                        model=chosen_model,
                                         messages=[
                                             {"role": "system", "content": z_prompt},
                                             {"role": "user", "content": user_input}
