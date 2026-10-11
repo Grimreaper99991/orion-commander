@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION COMMAND CORE v63.1 - GROQ AI GOD-ZORD MATRIX (FIXED)
+# ORION COMMAND CORE v64.0 - GROQ AI GOD-ZORD MATRIX (CURRENT MODELS)
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX
 # ==============================================================================
 
@@ -76,13 +76,12 @@ DEFAULT_ZORDS = {
     }
 }
 
-# Erzwinge immer das komplette, fehlerfreie Zord-Dictionary im Session State
 if "zord_status" not in st.session_state or not isinstance(st.session_state.zord_status, dict) or "Apollo Solar" not in st.session_state.zord_status or "prompt" not in st.session_state.zord_status["Apollo Solar"]:
     st.session_state.zord_status = DEFAULT_ZORDS
 
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = [
-        {"sender": "System", "text": "ORION Groq AI Götter-Zord Matrix online. Alle Agenten-Prompts synchronisiert."}
+        {"sender": "System", "text": "ORION Groq AI Götter-Zord Matrix online (Aktuelles Modell aktiv). Alle Agenten bereit."}
     ]
 
 MASTER_CODE = "Auth-x"
@@ -286,7 +285,7 @@ elif st.session_state.current_frame == "frame_3":
                             if groq_client:
                                 try:
                                     completion = groq_client.chat.completions.create(
-                                        model="llama-3.3-70b-versatile",
+                                        model="llama-3.1-8b-instant",  # Auf das stabile, absolut aktuelle High-Speed-Modell umgestellt
                                         messages=[
                                             {"role": "system", "content": z_prompt},
                                             {"role": "user", "content": user_input}
