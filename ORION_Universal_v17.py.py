@@ -1,9 +1,10 @@
 # ==============================================================================
-# ORION COMMAND CORE v40.0 - PURE CYBERPUNK WEB INTERFACE
+# ORION COMMAND CORE v50.0 - GOD ZORD COMMAND NETWORK
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX
 # ==============================================================================
 
 import streamlit as st
+import os
 
 st.set_page_config(
     page_title="ORION COMMAND CORE",
@@ -15,249 +16,238 @@ st.set_page_config(
 if "current_frame" not in st.session_state:
     st.session_state.current_frame = "frame_0"
 
+# Initialisierung der 10 Götter-Zords Status-Matrix
+if "zord_status" not in st.session_state:
+    st.session_state.zord_status = {
+        f"Zord 0{i+1}" if i+1 < 10 else f"Zord {i+1}": {
+            "name": name,
+            "status": "BEREIT",
+            "power": 100,
+            "mode": "STANDBY"
+        } for i, name in enumerate([
+            "Zeus Prime", "Chronos Titan", "Ares War-Lord", "Poseidon Core", 
+            "Hades Void", "Apollo Solar", "Athena Shield", "Hephaestus Forge", 
+            "Hermes Speed", "Artemis Hunt"
+        ])
+    }
+
 MASTER_CODE = "Auth-x"
 
 def navigate_to(frame):
     st.session_state.current_frame = frame
     st.rerun()
 
+def get_asset_path(filename):
+    paths = [f"assets/{filename}", f"assets/{filename.lower()}", f"assets/{filename.replace(' ', '_')}"]
+    for p in paths:
+        if os.path.exists(p):
+            return p
+    return None
+
 # ==============================================================================
-# PURE SCI-FI / CYBERPUNK STYLING (Hologramm & Terminal Look)
+# STYLING (HIGH-TECH CYBERPUNK)
 # ==============================================================================
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=JetBrains+Mono:wght@400;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
 
     * { font-family: 'JetBrains Mono', monospace !important; }
     h1, h2, h3, h4, .cyber-font { font-family: 'Orbitron', sans-serif !important; }
 
     .stApp {
-        background-color: #020509;
-        background-image: 
-            linear-gradient(rgba(0, 255, 128, 0.02) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 255, 128, 0.02) 1px, transparent 1px);
-        background-size: 20px 20px;
-        color: #c0d0e0;
+        background: radial-gradient(circle at 20% 20%, rgba(255, 0, 128, 0.08) 0%, transparent 40%),
+                    radial-gradient(circle at 80% 80%, rgba(0, 240, 255, 0.08) 0%, transparent 40%),
+                    #030712;
+        background-attachment: fixed;
+        color: #e2e8f0;
     }
 
     .block-container {
-        padding: 2.5rem !important;
-        max-width: 1300px !important;
+        padding: 2rem !important;
+        max-width: 1400px !important;
     }
 
-    /* Cyber Card / Paneele */
-    .cyber-box {
-        background: rgba(5, 12, 22, 0.85);
-        border: 1px solid rgba(0, 255, 128, 0.3);
-        box-shadow: 0 0 20px rgba(0, 255, 128, 0.08), inset 0 0 15px rgba(0, 255, 128, 0.03);
-        border-radius: 6px;
-        padding: 25px;
-        position: relative;
-        margin-bottom: 20px;
-        backdrop-filter: blur(10px);
-    }
-    
-    .cyber-box::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0;
-        width: 12px; height: 12px;
-        border-top: 2px solid #00ff80;
-        border-left: 2px solid #00ff80;
-    }
-    
-    .cyber-box::after {
-        content: '';
-        position: absolute;
-        bottom: 0; right: 0;
-        width: 12px; height: 12px;
-        border-bottom: 2px solid #00ff80;
-        border-right: 2px solid #00ff80;
+    .card-cyan {
+        background: rgba(10, 25, 41, 0.8);
+        border: 1px solid #00f0ff;
+        border-left: 5px solid #00f0ff;
+        box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 15px;
     }
 
-    /* Leuchtende Cyber Buttons */
+    .card-gold {
+        background: rgba(30, 25, 10, 0.8);
+        border: 1px solid #ffaa00;
+        border-left: 5px solid #ffaa00;
+        box-shadow: 0 0 15px rgba(255, 170, 0, 0.2);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 15px;
+    }
+
     .stButton > button {
-        background: rgba(0, 255, 128, 0.08) !important;
-        color: #00ff80 !important;
-        border: 1px solid #00ff80 !important;
-        border-radius: 4px !important;
+        background: linear-gradient(135deg, rgba(0, 240, 255, 0.15) 0%, rgba(255, 0, 127, 0.15) 100%) !important;
+        color: #ffffff !important;
+        border: 1px solid #00f0ff !important;
+        border-radius: 6px !important;
         font-family: 'Orbitron', sans-serif !important;
         font-weight: 700 !important;
-        letter-spacing: 2px !important;
-        padding: 14px 24px !important;
+        letter-spacing: 1px !important;
+        padding: 10px 15px !important;
         width: 100% !important;
-        transition: all 0.25s ease-in-out !important;
+        transition: all 0.2s ease-in-out !important;
         text-transform: uppercase;
-        box-shadow: 0 0 10px rgba(0, 255, 128, 0.15);
     }
 
     .stButton > button:hover {
-        background: #00ff80 !important;
-        color: #020509 !important;
-        box-shadow: 0 0 25px #00ff80, 0 0 10px #00ff80 !important;
-        transform: translateY(-2px);
+        background: linear-gradient(135deg, #00f0ff 0%, #ff007f 100%) !important;
+        color: #000000 !important;
+        box-shadow: 0 0 20px #00f0ff !important;
     }
 
-    /* Input Felder */
+    .badge-cyan { background: #00f0ff22; color: #00f0ff; border: 1px solid #00f0ff; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+    .badge-gold { background: #ffaa0022; color: #ffaa00; border: 1px solid #ffaa00; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+    .badge-green { background: #00ff8822; color: #00ff88; border: 1px solid #00ff88; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+    .badge-red { background: #ff005522; color: #ff0055; border: 1px solid #ff0055; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+
     .stTextInput input {
-        background-color: rgba(2, 8, 15, 0.9) !important;
-        color: #00ff80 !important;
-        border: 1px solid rgba(0, 255, 128, 0.5) !important;
-        border-radius: 4px !important;
-        padding: 12px !important;
-        font-size: 1.2rem !important;
-        letter-spacing: 2px;
-    }
-    .stTextInput input:focus {
-        border-color: #00ff80 !important;
-        box-shadow: 0 0 15px rgba(0, 255, 128, 0.4) !important;
-    }
-
-    .status-badge {
-        display: inline-block;
-        padding: 4px 10px;
-        background: rgba(0, 255, 128, 0.1);
-        border: 1px solid #00ff80;
-        color: #00ff80;
-        font-size: 0.8rem;
-        border-radius: 3px;
-        text-shadow: 0 0 5px #00ff80;
+        background-color: rgba(5, 12, 22, 0.9) !important;
+        color: #00f0ff !important;
+        border: 1px solid #00f0ff !important;
+        border-radius: 6px !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# FRAME 0: SECURE LOGIN TERMINAL
+# FRAME 0: LOGIN
 # ==============================================================================
 if st.session_state.current_frame == "frame_0":
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 1.5, 1])
-    
+    st.markdown("<h1 class='cyber-font' style='text-align: center; color: #00f0ff;'>🪐 ORION COMMAND CORE</h1>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
-        st.markdown("""
-        <div class="cyber-box" style="text-align: center;">
-            <h2 class="cyber-font" style="color: #00ff80; margin-bottom: 5px;">ORION CORE</h2>
-            <p style="font-size: 0.85rem; color: #7090b0; letter-spacing: 1px;">SYSTEM ACCESS PROTOCOL V4.0</p>
-            <div style="margin: 20px 0;"><span class="status-badge">SECURITY LEVEL 5</span></div>
-        </div>
-        """, unsafe_allow_html=True)
-        
         pwd = st.text_input("MASTER CODE", type="password", placeholder="Auth-x...", key="pwd_input")
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        if st.button("SYSTEM STARTEN"):
-            if pwd == MASTER_CODE:
-                navigate_to("frame_1")
-            else:
-                st.error("ACCESS DENIED // UNGÜLTIGER CODE")
+        if st.button("SYSTEM ACCESS ➔"):
+            if pwd == MASTER_CODE: navigate_to("frame_1")
+            else: st.error("ACCESS DENIED")
 
 # ==============================================================================
 # FRAME 1: GALACTA HUB
 # ==============================================================================
 elif st.session_state.current_frame == "frame_1":
-    st.markdown("""
-    <div class="cyber-box">
-        <h1 class="cyber-font" style="color: #00ff80; margin: 0;">SEKTOR 01 // GALACTA HUB</h1>
-        <p style="color: #7090b0; margin-top: 5px;">Zentrale Navigations- und Überwachungsschnittstelle</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.markdown("""
-        <div class="cyber-box">
-            <h3 class="cyber-font" style="color: #fff;">TELEMETRIE & DIAGNOSE</h3>
-            <p>Kern-Status: <span style="color: #00ff80; font-weight: bold;">STABIL</span></p>
-            <p>Memory-Matrix: <span style="color: #00ff80; font-weight: bold;">ELEPHANT ACTIVE</span></p>
-            <p>Verschlüsselung: <span style="color: #00ff80; font-weight: bold;">AKTIV (Auth-x)</span></p>
-            <br>
-            <p style="font-size: 0.9rem; color: #80a0c0;">Alle Sub-Sektionen sind voll funktionsfähig. Bereit für den Übergang in das Haupt-Dashboard.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        if st.button("ZUM DASHBOARD ➔"):
-            navigate_to("frame_2")
+    st.markdown("<h1 class='cyber-font' style='color: #00f0ff;'>SEKTOR 01 // GALACTA HUB</h1>", unsafe_allow_html=True)
+    if st.button("➔ HAUPT-DASHBOARD BETRETEN"): navigate_to("frame_2")
 
 # ==============================================================================
-# FRAME 2: MAIN COMMAND DASHBOARD
+# FRAME 2: MAIN DASHBOARD
 # ==============================================================================
 elif st.session_state.current_frame == "frame_2":
+    st.markdown("<h1 class='cyber-font' style='color: #00f0ff;'>COMMAND DASHBOARD</h1>", unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("🪐 ZORD CREW (10 GÖTTER-ZORDS)"): navigate_to("frame_3")
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("⚡ ZEUS DETAILS"): navigate_to("frame_4")
+    with c2:
+        if st.button("📡 FUNKRAUM"): navigate_to("frame_5")
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("👻 GHOST ROOM"): navigate_to("frame_6")
+
+# ==============================================================================
+# FRAME 3: DIE 10 GÖTTER-ZORDS STEUERUNG
+# ==============================================================================
+elif st.session_state.current_frame == "frame_3":
+    st.markdown("<h1 class='cyber-font' style='color: #00f0ff;'>SEKTOR 03 // 10 GÖTTER-ZORD CREW</h1>", unsafe_allow_html=True)
+    
+    # GLOBAL COMMAND CONTROL (ALLE ZORDS SAMMELN)
     st.markdown("""
-    <div class="cyber-box">
-        <h1 class="cyber-font" style="color: #00ff80; margin: 0;">COMMAND DASHBOARD</h1>
-        <p style="color: #7090b0; margin-top: 5px;">Wähle einen Sektor für den Zugriff auf die Sub-Systeme.</p>
+    <div class='card-gold'>
+        <h3 class='cyber-font' style='color: #ffaa00; margin:0;'>⚡ GLOBAL ZORD COMMAND CONTROL</h3>
+        <p style='font-size:0.85rem; color:#cbd5e1;'>Steuere alle 10 Einheiten gleichzeitig oder löse die Haupt-Sync aus.</p>
     </div>
     """, unsafe_allow_html=True)
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("""
-        <div class="cyber-box">
-            <h4 class="cyber-font" style="color: #00ff80;">🪐 ZORD CREW</h4>
-            <p style="font-size: 0.9rem; color: #80a0c0;">Verwaltung und Status der autonomen Agenten-Einheiten.</p>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("SEKTOR 3 ÖFFNEN"): navigate_to("frame_3")
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        st.markdown("""
-        <div class="cyber-box">
-            <h4 class="cyber-font" style="color: #00ff80;">⚡ ZEUS DETAILS</h4>
-            <p style="font-size: 0.9rem; color: #80a0c0;">Client-Architektur, Kommunikationsprotokolle und Logfiles.</p>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("SEKTOR 4 ÖFFNEN"): navigate_to("frame_4")
 
-    with col2:
-        st.markdown("""
-        <div class="cyber-box">
-            <h4 class="cyber-font" style="color: #00ff80;">📡 FUNKRAUM</h4>
-            <p style="font-size: 0.9rem; color: #80a0c0;">Interne Frequenzen, Sprach-Synthese und Kanalüberwachung.</p>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("SEKTOR 5 ÖFFNEN"): navigate_to("frame_5")
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        st.markdown("""
-        <div class="cyber-box">
-            <h4 class="cyber-font" style="color: #00ff80;">👻 GHOST ROOM SIMULATOR</h4>
-            <p style="font-size: 0.9rem; color: #80a0c0;">Schattenprozesse, Simulationen und Ghost-Node Logs.</p>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("SEKTOR 6 ÖFFNEN"): navigate_to("frame_6")
+    gc1, gc2, gc3, gc4 = st.columns(4)
+    with gc1:
+        if st.button("🔥 ALL ZORDS: FULL POWER"):
+            for zid in st.session_state.zord_status:
+                st.session_state.zord_status[zid]["power"] = 100
+                st.session_state.zord_status[zid]["mode"] = "ATTACK"
+                st.session_state.zord_status[zid]["status"] = "MAX POWER"
+            st.success("ALLE ZORDS AUF MAXIMALER LEISTUNG!")
+            st.rerun()
+
+    with gc2:
+        if st.button("🛡️ ALL ZORDS: SHIELD MODE"):
+            for zid in st.session_state.zord_status:
+                st.session_state.zord_status[zid]["mode"] = "DEFENSE"
+                st.session_state.zord_status[zid]["status"] = "SHIELD UP"
+            st.info("SCHUTZSCHILDE FÜR ALLE ZORDS AKTIVIERT!")
+            st.rerun()
+
+    with gc3:
+        if st.button("💤 ALL ZORDS: STANDBY"):
+            for zid in st.session_state.zord_status:
+                st.session_state.zord_status[zid]["mode"] = "STANDBY"
+                st.session_state.zord_status[zid]["status"] = "BEREIT"
+            st.warning("ALLE ZORDS IM STANDBY-MODUS.")
+            st.rerun()
+
+    with gc4:
+        if st.button("👑 MEGA-FORMATION"):
+            for zid in st.session_state.zord_status:
+                st.session_state.zord_status[zid]["mode"] = "FUSED"
+                st.session_state.zord_status[zid]["status"] = "TITAN GOD COMBINED"
+            st.error("⚡ GÖTTER-ZORD MEGA-FORMATION GEKOPPELT!")
+            st.rerun()
+
+    st.markdown("---")
+    st.markdown("### 🤖 EINZEL-ZORD STEUERUNG")
+
+    # GRID MIT ALLEN 10 ZORDS
+    zord_items = list(st.session_state.zord_status.items())
+    
+    # Render in 2 Fünfer-Reihen
+    for row in range(2):
+        cols = st.columns(5)
+        for idx in range(5):
+            z_idx = row * 5 + idx
+            zid, data = zord_items[z_idx]
+            
+            with cols[idx]:
+                mode_color = "badge-green" if data["mode"] == "ATTACK" else "badge-cyan" if data["mode"] == "DEFENSE" else "badge-gold" if data["mode"] == "STANDBY" else "badge-red"
+                
+                st.markdown(f"""
+                <div class='card-cyan' style='padding: 12px;'>
+                    <span class='{mode_color}'>{zid}</span>
+                    <h4 class='cyber-font' style='color: #00f0ff; margin: 8px 0 2px 0; font-size: 0.95rem;'>{data['name']}</h4>
+                    <p style='font-size: 0.75rem; margin: 0;'>Status: <strong>{data['status']}</strong></p>
+                    <p style='font-size: 0.75rem; margin: 0;'>Power: {data['power']}%</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                c_btn1, c_btn2 = st.columns(2)
+                with c_btn1:
+                    if st.button("⚡", key=f"pwr_{zid}", help="Power Up"):
+                        st.session_state.zord_status[zid]["power"] = min(100, data["power"] + 10)
+                        st.rerun()
+                with c_btn2:
+                    if st.button("🔄", key=f"mode_{zid}", help="Modus wechseln"):
+                        next_mode = "ATTACK" if data["mode"] == "STANDBY" else "DEFENSE" if data["mode"] == "ATTACK" else "STANDBY"
+                        st.session_state.zord_status[zid]["mode"] = next_mode
+                        st.session_state.zord_status[zid]["status"] = f"MODUS: {next_mode}"
+                        st.rerun()
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("↩ ZURÜCK ZUM MAIN DASHBOARD"):
+        navigate_to("frame_2")
 
 # ==============================================================================
-# FRAMES 3 BIS 6: SEKTOR RÄUME
+# ÜBRIGE FRAMES
 # ==============================================================================
-elif st.session_state.current_frame in ["frame_3", "frame_4", "frame_5", "frame_6"]:
-    sector_data = {
-        "frame_3": {"title": "ZORD CREW", "icon": "🪐", "desc": "Agenten-Netzwerk aktiv. Alle Protokolle laufen fehlerfrei."},
-        "frame_4": {"title": "ZEUS DETAILS", "icon": "⚡", "desc": "Client-Verbindungen und Socket-Status im grünen Bereich."},
-        "frame_5": {"title": "FUNKRAUM", "icon": "📡", "desc": "Audio-Streams und Sprach-Schnittstellen bereit."},
-        "frame_6": {"title": "GHOST ROOM SIMULATOR", "icon": "👻", "desc": "Ghost-Prozess läuft isoliert im Hintergrund."}
-    }
-    
-    current_f = st.session_state.current_frame
-    info = sector_data[current_f]
-    
-    st.markdown(f"""
-    <div class="cyber-box">
-        <h1 class="cyber-font" style="color: #00ff80; margin: 0;">{info['icon']} {info['title']}</h1>
-        <p style="color: #7090b0; margin-top: 5px;">{info['desc']}</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        if st.button("↩ ZURÜCK ZUM DASHBOARD"):
-            navigate_to("frame_2")
-    with col2:
-        st.markdown("""
-        <div class="cyber-box">
-            <h4 class="cyber-font" style="color: #fff;">DIAGNOSE MELDUNG</h4>
-            <p style="font-size: 0.9rem; color: #00ff80;">Sub-System läuft stabil. Keine Anomalien im Datenstrom festgestellt.</p>
-        </div>
-        """, unsafe_allow_html=True)
+elif st.session_state.current_frame in ["frame_4", "frame_5", "frame_6"]:
+    st.markdown(f"<h1 class='cyber-font' style='color: #00f0ff;'>SEKTOR {st.session_state.current_frame.split('_')[1]}</h1>", unsafe_allow_html=True)
+    if st.button("↩ ZURÜCK ZUM MAIN DASHBOARD"):
+        navigate_to("frame_2")
