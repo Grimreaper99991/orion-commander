@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION COMMAND CORE v63.0 - GROQ AI GOD-ZORD MATRIX
+# ORION COMMAND CORE v63.1 - GROQ AI GOD-ZORD MATRIX (FIXED)
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX
 # ==============================================================================
 
@@ -22,7 +22,7 @@ st.set_page_config(
 if "current_frame" not in st.session_state:
     st.session_state.current_frame = "frame_0"
 
-# Die 10 Götter-Zords mit einzigartigen Groq-System-Prompts
+# Die vollständige Definition aller 10 Götter-Zords mit echten Prompts
 DEFAULT_ZORDS = {
     "Zeus Prime": {
         "domain": "Anführer & Blitze", 
@@ -76,12 +76,13 @@ DEFAULT_ZORDS = {
     }
 }
 
-if "zord_status" not in st.session_state or not isinstance(st.session_state.zord_status, dict) or "Zeus Prime" not in st.session_state.zord_status:
+# Erzwinge immer das komplette, fehlerfreie Zord-Dictionary im Session State
+if "zord_status" not in st.session_state or not isinstance(st.session_state.zord_status, dict) or "Apollo Solar" not in st.session_state.zord_status or "prompt" not in st.session_state.zord_status["Apollo Solar"]:
     st.session_state.zord_status = DEFAULT_ZORDS
 
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = [
-        {"sender": "System", "text": "ORION Groq AI Götter-Zord Matrix online. Ultraschnelle Agenten bereit."}
+        {"sender": "System", "text": "ORION Groq AI Götter-Zord Matrix online. Alle Agenten-Prompts synchronisiert."}
     ]
 
 MASTER_CODE = "Auth-x"
@@ -193,7 +194,6 @@ elif st.session_state.current_frame == "frame_2":
 elif st.session_state.current_frame == "frame_3":
     st.markdown("<h1 class='cyber-font' style='color: #00f0ff;'>SEKTOR 03 // GROQ AUTONOME GÖTTER-ZORD MATRIX</h1>", unsafe_allow_html=True)
     
-    # Hilfsfunktion zum Abrufen des Groq API Keys (Secrets, Env oder manuell)
     def get_groq_key():
         try:
             if "GROQ_API_KEY" in st.secrets:
@@ -269,7 +269,6 @@ elif st.session_state.current_frame == "frame_3":
                 if user_input:
                     st.session_state.chat_messages.append({"sender": "Commander", "text": user_input})
                     
-                    # Groq Client initialisieren
                     groq_client = None
                     active_groq_key = get_groq_key()
                     
@@ -279,17 +278,17 @@ elif st.session_state.current_frame == "frame_3":
                         except Exception as e:
                             st.error(f"Fehler beim Initialisieren des Groq-Clients: {e}")
 
-                    # Aktive Zords generieren ihre autonome Antwort über Groq
                     for zname, zdata in st.session_state.zord_status.items():
                         if zdata.get("active", True):
                             response_text = ""
+                            z_prompt = zdata.get("prompt", f"Du bist {zname}. Antworte kurz und prägnant.")
                             
                             if groq_client:
                                 try:
                                     completion = groq_client.chat.completions.create(
-                                        model="llama-3.3-70b-versatile", # Ultraschnelles & starkes Modell auf Groq
+                                        model="llama-3.3-70b-versatile",
                                         messages=[
-                                            {"role": "system", "content": zdata['prompt']},
+                                            {"role": "system", "content": z_prompt},
                                             {"role": "user", "content": user_input}
                                         ],
                                         temperature=0.7,
