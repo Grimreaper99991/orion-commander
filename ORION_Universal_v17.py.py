@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION COMMAND CORE v55.1 - GOD ZORD MULTI-AGENT CHAT MATRIX (FIXED)
+# ORION COMMAND CORE v55.2 - GOD ZORD MULTI-AGENT CHAT MATRIX (KEYERROR FIXED)
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX
 # ==============================================================================
 
@@ -16,20 +16,23 @@ st.set_page_config(
 if "current_frame" not in st.session_state:
     st.session_state.current_frame = "frame_0"
 
-# Initialisierung der 10 Götter-Zords & Chat-Historie
-if "zord_status" not in st.session_state:
-    st.session_state.zord_status = {
-        "Zeus Prime": {"domain": "Anführer & Blitze", "active": True, "style": "Autoritär und entscheidend"},
-        "Chronos Titan": {"domain": "Zeit & Taktik", "active": True, "style": "Analytisch und vorausschauend"},
-        "Ares War-Lord": {"domain": "Kampf & Strategie", "active": True, "style": "Aggressiv und direkt"},
-        "Poseidon Core": {"domain": "Ozeane & Strömung", "active": True, "style": "Tiefgründig und unberechenbar"},
-        "Hades Void": {"domain": "Schatten & Geheimnisse", "active": True, "style": "Düster und pragmatisch"},
-        "Apollo Solar": {"domain": "Energie & Licht", "active": True, "style": "Strahlend und optimistisch"},
-        "Athena Shield": {"domain": "Weisheit & Schutz", "active": True, "style": "Klug und taktvoll"},
-        "Hephaestus Forge": {"domain": "Technik & Waffen", "active": True, "style": "Technisch und handwerklich"},
-        "Hermes Speed": {"domain": "Geschwindigkeit & Info", "active": True, "style": "Schnell und hektisch"},
-        "Artemis Hunt": {"domain": "Präzision & Aufklärung", "active": True, "style": "Wachsam und präzise"}
-    }
+# Standard-Definition der 10 Götter-Zords
+DEFAULT_ZORDS = {
+    "Zeus Prime": {"domain": "Anführer & Blitze", "active": True, "style": "Autoritär und entscheidend"},
+    "Chronos Titan": {"domain": "Zeit & Taktik", "active": True, "style": "Analytisch und vorausschauend"},
+    "Ares War-Lord": {"domain": "Kampf & Strategie", "active": True, "style": "Aggressiv und direkt"},
+    "Poseidon Core": {"domain": "Ozeane & Strömung", "active": True, "style": "Tiefgründig und unberechenbar"},
+    "Hades Void": {"domain": "Schatten & Geheimnisse", "active": True, "style": "Düster und pragmatisch"},
+    "Apollo Solar": {"domain": "Energie & Licht", "active": True, "style": "Strahlend und optimistisch"},
+    "Athena Shield": {"domain": "Weisheit & Schutz", "active": True, "style": "Klug und taktvoll"},
+    "Hephaestus Forge": {"domain": "Technik & Waffen", "active": True, "style": "Technisch und handwerklich"},
+    "Hermes Speed": {"domain": "Geschwindigkeit & Info", "active": True, "style": "Schnell und hektisch"},
+    "Artemis Hunt": {"domain": "Präzision & Aufklärung", "active": True, "style": "Wachsam und präzise"}
+}
+
+# Schutz-Funktion gegen KeyErrors bei veralteten Session-Daten
+if "zord_status" not in st.session_state or not isinstance(st.session_state.zord_status, dict) or "Zeus Prime" not in st.session_state.zord_status or "domain" not in list(st.session_state.zord_status.values())[0]:
+    st.session_state.zord_status = DEFAULT_ZORDS
 
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = [
@@ -155,7 +158,6 @@ elif st.session_state.current_frame == "frame_2":
 elif st.session_state.current_frame == "frame_3":
     st.markdown("<h1 class='cyber-font' style='color: #00f0ff;'>SEKTOR 03 // GÖTTER-ZORD MATRIX & CHAT</h1>", unsafe_allow_html=True)
     
-    # Steuerung: Alle ein- oder ausschalten
     col_ctrl1, col_ctrl2, col_ctrl3 = st.columns([1, 1, 2])
     with col_ctrl1:
         if st.button("🟢 ALLE ZORDS EIN"):
@@ -170,21 +172,23 @@ elif st.session_state.current_frame == "frame_3":
 
     st.markdown("---")
     
-    # Layout: Links die Zord-Schalter, Rechts der Götter-Chat
     col_zords, col_chat = st.columns([1, 1.8])
 
     with col_zords:
         st.markdown("### 🤖 EINHEITEN STATUS")
         for zname, zdata in st.session_state.zord_status.items():
             sub_c1, sub_c2 = st.columns([3, 1])
+            domain_info = zdata.get("domain", "Sektor-Einheit")
+            is_active = zdata.get("active", True)
+            
             with sub_c1:
-                status_color = "badge-cyan" if zdata["active"] else "badge-gold"
-                status_text = "AKTIV" if zdata["active"] else "OFF"
-                st.markdown(f"**{zname}** <span class='{status_color}'>{status_text}</span><br><span style='font-size:0.75rem; color:#8ab4f8;'>Domäne: {zdata['domain']}</span>", unsafe_allow_html=True)
+                status_color = "badge-cyan" if is_active else "badge-gold"
+                status_text = "AKTIV" if is_active else "OFF"
+                st.markdown(f"**{zname}** <span class='{status_color}'>{status_text}</span><br><span style='font-size:0.75rem; color:#8ab4f8;'>Domäne: {domain_info}</span>", unsafe_allow_html=True)
             with sub_c2:
-                btn_label = "🔌" if zdata["active"] else "⚡"
+                btn_label = "🔌" if is_active else "⚡"
                 if st.button(btn_label, key=f"toggle_{zname}"):
-                    st.session_state.zord_status[zname]["active"] = not zdata["active"]
+                    st.session_state.zord_status[zname]["active"] = not is_active
                     st.rerun()
 
     with col_chat:
@@ -209,8 +213,9 @@ elif st.session_state.current_frame == "frame_3":
                     st.session_state.chat_messages.append({"sender": "Commander", "text": user_input})
                     
                     for zname, zdata in st.session_state.zord_status.items():
-                        if zdata["active"]:
-                            response_text = f"Analysiere Anweisung '{user_input}' durch das Prisma von {zdata['domain']}. Unsere Protokolle stehen bereit!"
+                        if zdata.get("active", True):
+                            domain_info = zdata.get("domain", "Götter-Netzwerk")
+                            response_text = f"Analysiere Anweisung '{user_input}' durch das Prisma von {domain_info}. Unsere Protokolle stehen bereit!"
                             if "Zeus" in zname:
                                 response_text = f"Als Anführer befehle ich: Wir setzen '{user_input}' mit voller Härte und Priorität um!"
                             elif "Ares" in zname:
