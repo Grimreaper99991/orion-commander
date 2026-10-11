@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION COMMAND CORE v66.0 - GROQ AI GOD-ZORD MATRIX (UPDATED MODELS)
+# ORION COMMAND CORE v67.0 - GROQ AI GOD-ZORD MATRIX (GPT-OSS FIX)
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX
 # ==============================================================================
 
@@ -81,7 +81,7 @@ if "zord_status" not in st.session_state or not isinstance(st.session_state.zord
 
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = [
-        {"sender": "System", "text": "ORION Groq AI Götter-Zord Matrix online. Aktuelle Modelle synchronisiert."}
+        {"sender": "System", "text": "ORION Groq AI Götter-Zord Matrix online (GPT-OSS Aktiv). Alle Agenten bereit."}
     ]
 
 MASTER_CODE = "Auth-x"
@@ -216,7 +216,7 @@ elif st.session_state.current_frame == "frame_3":
 
         selected_model = st.selectbox(
             "Groq Modell auswählen:",
-            ["llama-3.3-70b-versatile", "openai/gpt-oss-20b", "openai/gpt-oss-120b"],
+            ["openai/gpt-oss-20b", "openai/gpt-oss-120b"],
             index=0,
             key="groq_selected_model"
         )
@@ -231,7 +231,7 @@ elif st.session_state.current_frame == "frame_3":
             for z in st.session_state.zord_status: st.session_state.zord_status[z]["active"] = False
             st.rerun()
     with col_ctrl3:
-        st.markdown("<p style='font-size:0.85rem; color:#94a3b8; margin-top:5px;'>Aktive Zords antworten blitzschnell über die Groq API.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size:0.85rem; color:#94a3b8; margin-top:5px;'>Aktive Zords antworten über GPT-OSS auf Groq.</p>", unsafe_allow_html=True)
 
     st.markdown("---")
     
@@ -284,7 +284,7 @@ elif st.session_state.current_frame == "frame_3":
                         except Exception as e:
                             st.error(f"Fehler beim Initialisieren des Groq-Clients: {e}")
 
-                    chosen_model = st.session_state.get("groq_selected_model", "llama-3.3-70b-versatile")
+                    chosen_model = st.session_state.get("groq_selected_model", "openai/gpt-oss-20b")
 
                     for zname, zdata in st.session_state.zord_status.items():
                         if zdata.get("active", True):
