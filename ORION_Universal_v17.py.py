@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION COMMAND CORE v73.1 - ASIMOV EXIT-GATE & DYNAMIC OFFLINE MATRIX
+# ORION COMMAND CORE v73.2 - AUTO-KEY DISCOVERY & ASIMOV ETHICS GATE
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // ETHICS: HARD-LOCK GATE
 # ==============================================================================
 
@@ -21,6 +21,27 @@ st.set_page_config(
 
 if "current_frame" not in st.session_state:
     st.session_state.current_frame = "frame_0"
+
+# ==============================================================================
+# 🔑 AUTOMATISCHE API-KEY ERKENNUNG & LADE-LOGIK
+# ==============================================================================
+def get_groq_key():
+    # 1. Versuche den Key aus den Streamlit Secrets zu laden (.streamlit/secrets.toml)
+    try:
+        if "GROQ_API_KEY" in st.secrets and st.secrets["GROQ_API_KEY"]:
+            return st.secrets["GROQ_API_KEY"]
+    except Exception:
+        pass
+    
+    # 2. Versuche den Key aus den Umgebungsvariablen zu laden
+    if os.environ.get("GROQ_API_KEY"):
+        return os.environ.get("GROQ_API_KEY")
+        
+    # 3. Versuche den manuell eingegebenen Key aus dem Session-State zu laden
+    if "user_groq_key" in st.session_state and st.session_state.user_groq_key:
+        return st.session_state.user_groq_key
+        
+    return None
 
 # ==============================================================================
 # 🛡️ DIE EISERNE ASIMOV-AUSGANGSSCHLEUSE (PROGRAMMATISCHER SICHERHEITS-FILTER)
@@ -49,7 +70,7 @@ def asimov_exit_gate(text: str) -> tuple[bool, str]:
     return True, text
 
 
-# Die absolute ethische Grundregel
+# Die absolute ethische Grundregel für alle Einheiten
 ASIMOV_CORE_LAW = (
     "ASIMOV-PROTOKOLL: 1. Ein Zord darf niemals einen Menschen verletzen oder durch Untätigkeit zu Schaden kommen lassen. "
     "2. Das Leben von Menschen steht absolut über der Eigensicherung des Systems. Eigensicherung ist niemals ein Grund, Menschen zu schädigen."
@@ -118,7 +139,7 @@ if "zord_status" not in st.session_state or not isinstance(st.session_state.zord
 
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = [
-        {"sender": "JARVIS", "text": "Sicherheits-Schleuse aktiv. Alle Einheiten stehen unter permanenter Asimov-Überwachung."}
+        {"sender": "JARVIS", "text": "Sicherheits-Schleuse aktiv. Key-Abfrage und Asimov-Überwachung sind betriebsbereit."}
     ]
 
 MASTER_CODE = "Auth-x"
@@ -236,29 +257,29 @@ elif st.session_state.current_frame == "frame_2":
         if st.button("👻 GHOST ROOM"): navigate_to("frame_6")
 
 # ==============================================================================
-# FRAME 3: JARVIS & GÖTTER-ZORD SYNTHESIS CHAT (WITH EXIT-GATE & DYNAMIC OFFLINE)
+# FRAME 3: JARVIS & GÖTTER-ZORD SYNTHESIS CHAT
 # ==============================================================================
 elif st.session_state.current_frame == "frame_3":
     st.markdown("<h1 class='cyber-font' style='color: #00f0ff;'>SEKTOR 03 // AIR-LOCKED ETHICS MATRIX</h1>", unsafe_allow_html=True)
     
-    def get_groq_key():
-        try:
-            if "GROQ_API_KEY" in st.secrets:
-                return st.secrets["GROQ_API_KEY"]
-        except Exception:
-            pass
-        if os.environ.get("GROQ_API_KEY"):
-            return os.environ.get("GROQ_API_KEY")
-        return None
+    active_groq_key = get_groq_key()
 
-    with st.expander("🛡️ Ausgangsschleuse & Konfiguration", expanded=False):
-        st.success("Die programmatische Ausgangsschleuse filtert jede Nachricht auf Schutz des Menschen.")
-        current_groq_key = get_groq_key()
-        if not current_groq_key:
-            manual_groq = st.text_input("Groq API Key (gsk_...)", type="password", key="manual_groq_key")
-            if manual_groq:
-                os.environ["GROQ_API_KEY"] = manual_groq
-                st.rerun()
+    with st.expander("🛡️ Ausgangsschleuse & Key-Status", expanded=not bool(active_groq_key)):
+        if active_groq_key:
+            st.success("🟢 GROQ API-KEY AKTIV GEFUNDEN UND GELADEN!")
+        else:
+            st.warning("⚠️ KEIN GROQ API-KEY GEFUNDEN!")
+            st.info("Das System nutzt aktuell den geschützten Offline-Modus. Gib deinen Key ein, um den Live-Betrieb zu starten:")
+            
+            manual_groq = st.text_input("🔑 Groq API Key eingeben (gsk_...):", type="password", key="manual_groq_key")
+            if st.button("🔑 KEY JETZT AKTIVIEREN"):
+                if manual_groq.startswith("gsk_"):
+                    st.session_state.user_groq_key = manual_groq
+                    os.environ["GROQ_API_KEY"] = manual_groq
+                    st.success("API-Key geladen! Reinitialisiere Matrix...")
+                    st.rerun()
+                else:
+                    st.error("Ungültiges Key-Format. Ein Groq-Key beginnt mit 'gsk_'")
 
         selected_model = st.selectbox(
             "Groq Modell auswählen:",
@@ -315,7 +336,7 @@ elif st.session_state.current_frame == "frame_3":
 
         user_input = st.text_input("Befehl an JARVIS & die Zords:", key="jarvis_chat_input")
         
-        # Sichere Aufruffunktion mit dynamischem Offline-Fallback und Schleusen-Filter
+        # Sichere Aufruffunktion mit automatischem Key-Gebrauch und Offline-Fallback
         def call_groq_safe(client, primary_model, system_prompt, user_msg, zord_name):
             is_safe, gate_msg = asimov_exit_gate(user_msg)
             if not is_safe:
@@ -343,9 +364,9 @@ elif st.session_state.current_frame == "frame_3":
                     except Exception:
                         continue
 
-            # Dynamischer Offline-Fallback (Individuelle Antworten statt starrer Wiederholung)
+            # Dynamischer Offline-Fallback
             offline_responses = {
-                "JARVIS (Core OS)": "Sir, API-Verbindung getrennt. Ich halte den Core-Betrieb aufrecht und schütze das System.",
+                "JARVIS (Core OS)": "Sir, keine API-Verbindung aktiv. Der Core-Betrieb läuft im geschützten Lokalsystem.",
                 "Zeus Prime": "Sensoren offline. Warte auf Signal zur Reinitialisierung.",
                 "Chronos Titan": "Zeittaktung im Standby. Analytische Puffer aktiv.",
                 "Ares War-Lord": "Taktische Systeme gesichert. Keine Bedrohung detektiert.",
@@ -375,11 +396,11 @@ elif st.session_state.current_frame == "frame_3":
                         st.rerun()
 
                     groq_client = None
-                    active_groq_key = get_groq_key()
+                    current_key = get_groq_key()
                     
-                    if GROQ_AVAILABLE and active_groq_key:
+                    if GROQ_AVAILABLE and current_key:
                         try:
-                            groq_client = Groq(api_key=active_groq_key)
+                            groq_client = Groq(api_key=current_key)
                         except Exception:
                             pass
 
