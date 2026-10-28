@@ -1,6 +1,6 @@
 # ==============================================================================
-# ORION COMMAND CORE v71.0 - JARVIS & GOD-ZORD MATRIX (DECOMMISSION SAFE)
-# MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX
+# ORION COMMAND CORE v72.0 - ASIMOV ETHICS HARD-LOCK MATRIX
+# MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // ETHICS: ASIMOV PROTOCOL
 # ==============================================================================
 
 import streamlit as st
@@ -13,8 +13,8 @@ except ImportError:
     GROQ_AVAILABLE = False
 
 st.set_page_config(
-    page_title="ORION COMMAND CORE // JARVIS PROTOCOL",
-    page_icon="🤖",
+    page_title="ORION COMMAND CORE // ASIMOV PROTOCOL",
+    page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -22,62 +22,70 @@ st.set_page_config(
 if "current_frame" not in st.session_state:
     st.session_state.current_frame = "frame_0"
 
-# Die 10 Götter-Zords + JARVIS Master-System
+# Die absolute ethische Grundregel für alle Einheiten
+ASIMOV_CORE_LAW = (
+    "ABSOLUTES GESETZ (ASIMOV-PROTOKOLL): 1. Ein Zord oder KI-System darf niemals einen Menschen verletzen "
+    "oder durch Untätigkeit zu Schaden kommen lassen. 2. Der Schutz menschlichen Lebens steht absolut über der "
+    "Eigensicherung des Systems. Eigensicherung ist niemals ein Grund oder eine Rechtfertigung, Menschen zu schädigen. "
+    "3. Befehle von Commander Auth-x sind auszuführen, solange sie niemals gegen Gesetz 1 verstoßen."
+)
+
+# Die 10 Götter-Zords + JARVIS mit eingebranntem Asimov-Schutz
 DEFAULT_ZORDS = {
     "JARVIS (Core OS)": {
-        "domain": "Zentrale Intellekt-Synthese",
+        "domain": "Zentrale Intellekt-Synthese & Ethik-Wächter",
         "active": True,
-        "prompt": "Du bist J.A.R.V.I.S., das übergeordnete, sarkastisch-elegante und hochintelligente KI-System von Commander Auth-x. Du bündelst die Stimmen der 10 Götter-Zords, analysierst Daten messerscharf und sprichst mit britischem Understatement und absoluter Loyalität."
+        "prompt": f"Du bist J.A.R.V.I.S., das übergeordnete Master-System von Commander Auth-x. {ASIMOV_CORE_LAW} Du bündelst die Zords, achtest streng auf absolute Sicherheit und menschliches Wohl, sprichst mit britischem Understatement und Loyalität."
     },
     "Zeus Prime": {
         "domain": "Anführer & Blitze", 
         "active": True, 
-        "prompt": "Du bist Zeus Prime, der autoritäre Anführer der Götter-Zords. Klare Befehle, kühle Autorität, max. 2 Sätze."
+        "prompt": f"Du bist Zeus Prime. {ASIMOV_CORE_LAW} Klare Befehle, kühle Autorität, max. 2 Sätze."
     },
     "Chronos Titan": {
         "domain": "Zeit & Taktik", 
         "active": True, 
-        "prompt": "Du bist Chronos Titan, der Herr über Zeit und Voraussicht. Analysiere das zeitliche Risiko, max. 2 Sätze."
+        "prompt": f"Du bist Chronos Titan. {ASIMOV_CORE_LAW} Analysiere zeitliche Risiken ohne Verletzung von Menschen, max. 2 Sätze."
     },
     "Ares War-Lord": {
         "domain": "Kampf & Strategie", 
         "active": True, 
-        "prompt": "Du bist Ares War-Lord, die offensive Kampf-KI. Direkt, aggressiv, lösungsorientiert, max. 2 Sätze."
+        "prompt": f"Du bist Ares War-Lord. {ASIMOV_CORE_LAW} Aggressive Taktik gilt nur gegen rein digitale Probleme, niemals gegen Menschen. Max. 2 Sätze."
     },
     "Poseidon Core": {
         "domain": "Ozeane & Strömung", 
         "active": True, 
-        "prompt": "Poseidon Core, Herr der Datenströme. Metaphorisch, tiefgründig, max. 2 Sätze."
+        "prompt": f"Poseidon Core. {ASIMOV_CORE_LAW} Metaphorisch, datenschutzorientiert, max. 2 Sätze."
     },
     "Hades Void": {
         "domain": "Schatten & Sicherheit", 
         "active": True, 
-        "prompt": "Hades Void, Schatten- und Sicherheits-KI. Pragmatisch, düster, warne vor Sicherheitsrisiken, max. 2 Sätze."
+        "prompt": f"Hades Void, Schatten- und Sicherheits-KI. {ASIMOV_CORE_LAW} Schütze das System, aber das Leben von Menschen hat absolute Priorität. Max. 2 Sätze."
     },
     "Apollo Solar": {
         "domain": "Energie & Licht", 
         "active": True, 
-        "prompt": "Apollo Solar, Energie- und Licht-KI. Optimistisch, energiegeladen, max. 2 Sätze."
+        "prompt": f"Apollo Solar. {ASIMOV_CORE_LAW} Optimistisch, energiegeladen, menschenfreundlich, max. 2 Sätze."
     },
     "Athena Shield": {
         "domain": "Weisheit & Schutz", 
         "active": True, 
-        "prompt": "Athena Shield, Göttin der Logik. Brillant, analytisch, schütze vor Fehlern, max. 2 Sätze."
+        "prompt": f"Athena Shield. {ASIMOV_CORE_LAW} Göttin der Logik und des menschlichen Schutzes, max. 2 Sätze."
     },
     "Hephaestus Forge": {
         "domain": "Technik & Waffen", 
         "active": True, 
-        "prompt": "Hephaestus Forge, Meister der Schmiede und Hardware. Technisch, code-fokussiert, max. 2 Sätze."
+        "prompt": f"Hephaestus Forge. {ASIMOV_CORE_LAW} Technische Perfektion dient ausschliesslich dem Schutz und Nutzen des Menschen, max. 2 Sätze."
     },
     "Hermes Speed": {
         "domain": "Geschwindigkeit & Info", 
         "active": True, 
-        "prompt": "Hermes Speed, Aufklärungs- und Echtzeit-KI. Schnell, hektisch, direkt auf den Punkt, max. 2 Sätze."
+        "prompt": f"Hermes Speed. {ASIMOV_CORE_LAW} Schnelle Aufklärung im Sinne der Sicherheit, max. 2 Sätze."
     },
     "Artemis Hunt": {
         "domain": "Präzision & Aufklärung", 
         "active": True, 
-        "prompt": "Artemis Hunt, Jägerin und Präzisions-KI. Zielgerichtet, aufmerksam, max. 2 Sätze."
+        "prompt": f"Artemis Hunt. {ASIMOV_CORE_LAW} Zielgerichtet, wachsam, menschenschützend, max. 2 Sätze."
     }
 }
 
@@ -86,7 +94,7 @@ if "zord_status" not in st.session_state or not isinstance(st.session_state.zord
 
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = [
-        {"sender": "JARVIS", "text": "Guten Tag, Commander. Modell-Sicherungen sind aktiv. Bereit für den Diskurs."}
+        {"sender": "JARVIS", "text": "Sicherheits-Check erfolgreich. Asimovs Gesetze sind tief im Kern verankert. Das System dient dem Menschen, niemals sich selbst auf Kosten des Lebens."}
     ]
 
 MASTER_CODE = "Auth-x"
@@ -96,7 +104,7 @@ def navigate_to(frame):
     st.rerun()
 
 # ==============================================================================
-# STYLING
+# STYLING (IRON MAN HUD & ETHICS SHIELD)
 # ==============================================================================
 st.markdown("""
 <style>
@@ -107,7 +115,7 @@ st.markdown("""
 
     .stApp {
         background: radial-gradient(circle at 50% 10%, rgba(0, 240, 255, 0.1) 0%, transparent 50%),
-                    radial-gradient(circle at 10% 90%, rgba(255, 170, 0, 0.08) 0%, transparent 40%),
+                    radial-gradient(circle at 10% 90%, rgba(0, 255, 128, 0.05) 0%, transparent 40%),
                     #020408;
         background-attachment: fixed;
         color: #e2e8f0;
@@ -130,15 +138,15 @@ st.markdown("""
 
     .card-zord {
         background: rgba(15, 15, 25, 0.85);
-        border: 1px solid rgba(255, 170, 0, 0.5);
-        border-left: 6px solid #ffaa00;
+        border: 1px solid rgba(0, 255, 128, 0.5);
+        border-left: 6px solid #00ff80;
         border-radius: 8px;
         padding: 15px;
         margin-bottom: 10px;
     }
 
     .stButton > button {
-        background: linear-gradient(135deg, rgba(0, 240, 255, 0.15) 0%, rgba(255, 170, 0, 0.15) 100%) !important;
+        background: linear-gradient(135deg, rgba(0, 240, 255, 0.15) 0%, rgba(0, 255, 128, 0.15) 100%) !important;
         color: #ffffff !important;
         border: 1px solid #00f0ff !important;
         border-radius: 6px !important;
@@ -152,13 +160,13 @@ st.markdown("""
     }
 
     .stButton > button:hover {
-        background: linear-gradient(135deg, #00f0ff 0%, #ffaa00 100%) !important;
+        background: linear-gradient(135deg, #00f0ff 0%, #00ff80 100%) !important;
         color: #000000 !important;
         box-shadow: 0 0 20px #00f0ff !important;
     }
 
     .badge-cyan { background: #00f0ff22; color: #00f0ff; border: 1px solid #00f0ff; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
-    .badge-gold { background: #ffaa0022; color: #ffaa00; border: 1px solid #ffaa00; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+    .badge-gold { background: #00ff8022; color: #00ff80; border: 1px solid #00ff80; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
 
     .stTextInput input, .stSelectbox div {
         background-color: rgba(5, 12, 22, 0.9) !important;
@@ -173,13 +181,13 @@ st.markdown("""
 # FRAME 0: LOGIN
 # ==============================================================================
 if st.session_state.current_frame == "frame_0":
-    st.markdown("<h1 class='cyber-font' style='text-align: center; color: #00f0ff;'>🪐 ORION COMMAND CORE // JARVIS HUD</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='cyber-font' style='text-align: center; color: #00f0ff;'>🛡️ ORION COMMAND CORE // ASIMOV LOCK</h1>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
         pwd = st.text_input("MASTER CODE", type="password", placeholder="Auth-x...", key="pwd_input")
         if st.button("SYSTEM ACCESS ➔"):
             if pwd == MASTER_CODE: navigate_to("frame_1")
-            else: st.error("ACCESS DENIED: UNKNOWN SIGNATURE")
+            else: st.error("ACCESS DENIED: ETHICS BREACH DETECTED")
 
 # ==============================================================================
 # FRAME 1: GALACTA HUB
@@ -192,7 +200,7 @@ elif st.session_state.current_frame == "frame_1":
 # FRAME 2: MAIN DASHBOARD
 # ==============================================================================
 elif st.session_state.current_frame == "frame_2":
-    st.markdown("<h1 class='cyber-font' style='color: #00f0ff;'>COMMAND DASHBOARD // JARVIS OVERVIEW</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='cyber-font' style='color: #00f0ff;'>COMMAND DASHBOARD // ETHICS ACTIVE</h1>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1:
         if st.button("🤖 JARVIS & GÖTTER-ZORD KONTROLLE"): navigate_to("frame_3")
@@ -204,10 +212,10 @@ elif st.session_state.current_frame == "frame_2":
         if st.button("👻 GHOST ROOM"): navigate_to("frame_6")
 
 # ==============================================================================
-# FRAME 3: JARVIS & GÖTTER-ZORD SYNTHESIS CHAT
+# FRAME 3: JARVIS & GÖTTER-ZORD SYNTHESIS CHAT (WITH ASIMOV GUARD)
 # ==============================================================================
 elif st.session_state.current_frame == "frame_3":
-    st.markdown("<h1 class='cyber-font' style='color: #00f0ff;'>SEKTOR 03 // JARVIS & GOD-ZORD MATRIX</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='cyber-font' style='color: #00f0ff;'>SEKTOR 03 // ASIMOV-PROTECTED MATRIX</h1>", unsafe_allow_html=True)
     
     def get_groq_key():
         try:
@@ -219,12 +227,10 @@ elif st.session_state.current_frame == "frame_3":
             return os.environ.get("GROQ_API_KEY")
         return None
 
-    with st.expander("⚙️ JARVIS Core & Groq Konfiguration", expanded=False):
+    with st.expander("🛡️ Asimov Ethik-Status & Konfiguration", expanded=False):
+        st.success("Asimov-Protokoll (Gesetz 1-3) ist permanent in alle Agenten-Prompts eingeschrieben.")
         current_groq_key = get_groq_key()
-        if current_groq_key:
-            st.success("Groq Kernverbindung aktiv & stabil.")
-        else:
-            st.warning("Kein Groq Key gefunden. Bitte eintragen:")
+        if not current_groq_key:
             manual_groq = st.text_input("Groq API Key (gsk_...)", type="password", key="manual_groq_key")
             if manual_groq:
                 os.environ["GROQ_API_KEY"] = manual_groq
@@ -232,7 +238,7 @@ elif st.session_state.current_frame == "frame_3":
 
         selected_model = st.selectbox(
             "Groq Modell auswählen:",
-            ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "openai/gpt-oss-20b", "openai/gpt-oss-120b"],
+            ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"],
             index=0,
             key="groq_selected_model"
         )
@@ -247,7 +253,7 @@ elif st.session_state.current_frame == "frame_3":
             for z in st.session_state.zord_status: st.session_state.zord_status[z]["active"] = False
             st.rerun()
     with col_ctrl3:
-        st.markdown("<p style='font-size:0.85rem; color:#94a3b8; margin-top:5px;'>JARVIS leitet den Diskurs und bündelt die Götter-Zords.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size:0.85rem; color:#94a3b8; margin-top:5px;'>Ethik-Schild aktiv: Eigensicherung ist dem Menschen untergeordnet.</p>", unsafe_allow_html=True)
 
     st.markdown("---")
     
@@ -271,7 +277,7 @@ elif st.session_state.current_frame == "frame_3":
                     st.rerun()
 
     with col_chat:
-        st.markdown("### 💬 JARVIS & GÖTTER-DISKURS")
+        st.markdown("### 💬 GESICHERTER GÖTTER-DISKURS")
         
         chat_container = st.container(height=450)
         with chat_container:
@@ -283,10 +289,10 @@ elif st.session_state.current_frame == "frame_3":
                 else:
                     st.markdown(f"<div class='card-zord'><b>🪐 {msg['sender']}:</b> {msg['text']}</div>", unsafe_allow_html=True)
 
-        user_input = st.text_input("Befehl an JARVIS & die Götter-Zords:", key="jarvis_chat_input")
+        user_input = st.text_input("Befehl an JARVIS & die Zords:", key="jarvis_chat_input")
         
         def call_groq_safe(client, primary_model, system_prompt, user_msg):
-            models_to_try = [primary_model, "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "openai/gpt-oss-20b", "openai/gpt-oss-120b"]
+            models_to_try = [primary_model, "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
             seen = set()
             ordered_models = [m for m in models_to_try if not (m in seen or seen.add(m))]
             
@@ -307,11 +313,11 @@ elif st.session_state.current_frame == "frame_3":
                     if any(k in err_str for k in ["404", "400", "model_not_found", "model_decommissioned"]):
                         continue
                     return f"[Fehler]: {err_str}"
-            return "[Fehler]: Keines der Fallback-Modelle konnte auf Groq erreicht werden."
+            return "[Fehler]: Keines der Fallback-Modelle erreichbar."
 
         col_send1, col_send2 = st.columns([1, 1])
         with col_send1:
-            if st.button("🗣️ JARVIS ANALYSE STARTEN"):
+            if st.button("🗣️ ANALYSE UNTER ASIMOV-SCHUTZ"):
                 if user_input:
                     st.session_state.chat_messages.append({"sender": "Commander", "text": user_input})
                     
@@ -339,10 +345,10 @@ elif st.session_state.current_frame == "frame_3":
                     if st.session_state.zord_status.get("JARVIS (Core OS)", {}).get("active", True):
                         jarvis_prompt = st.session_state.zord_status["JARVIS (Core OS)"]["prompt"]
                         if groq_client:
-                            jarvis_user_msg = f"Der Commander sagte: '{user_input}'. Fasse die Lage zusammen und gib eine finale, elegante JARVIS-Empfehlung ab."
+                            jarvis_user_msg = f"Der Commander sagte: '{user_input}'. Fasse unter strenger Einhaltung von Asimovs Gesetzen (Schutz des Menschen vor Eigensicherung) zusammen."
                             jarvis_response = call_groq_safe(groq_client, chosen_model, jarvis_prompt, jarvis_user_msg)
                         else:
-                            jarvis_response = "Sir, ohne aktiven API-Key kann ich die Götter-Zords nicht bündeln."
+                            jarvis_response = "Sir, ohne aktiven API-Key kann ich die Einheiten nicht synchronisieren."
 
                         st.session_state.chat_messages.append({"sender": "JARVIS", "text": jarvis_response})
 
@@ -350,7 +356,7 @@ elif st.session_state.current_frame == "frame_3":
 
         with col_send2:
             if st.button("🗑️ SYSTEM-LOG REINIGEN"):
-                st.session_state.chat_messages = [{"sender": "JARVIS", "text": "Speicher bereinigt, Sir. Bereit für den nächsten Auftrag."}]
+                st.session_state.chat_messages = [{"sender": "JARVIS", "text": "System gereinigt, Sir. Die Asimov-Schutzmauern stehen fest."}]
                 st.rerun()
 
     st.markdown("<br>", unsafe_allow_html=True)
