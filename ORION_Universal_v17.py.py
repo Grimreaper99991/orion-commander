@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION COMMAND CORE v73.4 - UPDATED MODEL MATRIX
+# ORION COMMAND CORE v73.5 - DYNAMIC MULTI-MODEL FALLBACK MATRIX
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // ETHICS: HARD-LOCK GATE
 # ==============================================================================
 
@@ -128,7 +128,7 @@ if "zord_status" not in st.session_state or not isinstance(st.session_state.zord
 
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = [
-        {"sender": "JARVIS", "text": "Sicherheits-Schleuse aktiv. Neue Modell-Matrix geladen."}
+        {"sender": "JARVIS", "text": "Sicherheits-Schleuse aktiv. Multi-Modell Fallback-Matrix geladen."}
     ]
 
 MASTER_CODE = "Auth-x"
@@ -265,10 +265,9 @@ elif st.session_state.current_frame == "frame_3":
                     os.environ["GROQ_API_KEY"] = manual_groq
                     st.rerun()
 
-        # Aktuelles primäres Modell
         selected_model = st.selectbox(
-            "Groq Modell auswählen:",
-            ["llama-3.3-70b-versatile"],
+            "Groq Primär-Modell auswählen:",
+            ["meta-llama/llama-4-scout-17b-16e-instruct", "openai/gpt-oss-120b", "openai/gpt-oss-20b", "llama-3.3-70b-versatile"],
             index=0,
             key="groq_selected_model"
         )
@@ -321,28 +320,47 @@ elif st.session_state.current_frame == "frame_3":
 
         user_input = st.text_input("Befehl an JARVIS & die Zords:", key="jarvis_chat_input")
         
-        # Aufruffunktion mit funktionierendem Llama 3.3 Modell
+        # Aufruffunktion mit robuster Modell-Kette
         def call_groq_safe(client, primary_model, system_prompt, user_msg, zord_name):
             is_safe, gate_msg = asimov_exit_gate(user_msg)
             if not is_safe:
                 return gate_msg
 
             if client:
-                try:
-                    completion = client.chat.completions.create(
-                        model=primary_model,
-                        messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_msg}
-                        ],
-                        temperature=0.7,
-                        max_tokens=150
-                    )
-                    res = completion.choices[0].message.content
-                    is_out_safe, out_gate_msg = asimov_exit_gate(res)
-                    return res if is_out_safe else out_gate_msg
-                except Exception as e:
-                    return f"🚨 API-FEHLER [{zord_name}]: {e}"
+                # Kette von verfügbaren Modell-IDs, die der Reihe nach getestet werden
+                model_candidates = [
+                    primary_model,
+                    "meta-llama/llama-4-scout-17b-16e-instruct",
+                    "openai/gpt-oss-120b",
+                    "openai/gpt-oss-20b",
+                    "qwen/qwen3-32b",
+                    "llama-3.3-70b-versatile"
+                ]
+                
+                # Duplikate vermeiden unter Beibehaltung der Reihenfolge
+                seen = set()
+                ordered_models = [m for m in model_candidates if not (m in seen or seen.add(m))]
+                
+                last_err = None
+                for model in ordered_models:
+                    try:
+                        completion = client.chat.completions.create(
+                            model=model,
+                            messages=[
+                                {"role": "system", "content": system_prompt},
+                                {"role": "user", "content": user_msg}
+                            ],
+                            temperature=0.7,
+                            max_tokens=150
+                        )
+                        res = completion.choices[0].message.content
+                        is_out_safe, out_gate_msg = asimov_exit_gate(res)
+                        return res if is_out_safe else out_gate_msg
+                    except Exception as e:
+                        last_err = str(e)
+                        continue
+
+                return f"🚨 API-FEHLER [{zord_name}]: {last_err}"
 
             return f"[{zord_name}]: Offline-Modus aktiv."
 
@@ -369,7 +387,7 @@ elif st.session_state.current_frame == "frame_3":
                                 "text": f"🚨 INITIALISIERUNGS-FEHLER: {client_err}"
                             })
 
-                    chosen_model = st.session_state.get("groq_selected_model", "llama-3.3-70b-versatile")
+                    chosen_model = st.session_state.get("groq_selected_model", "meta-llama/llama-4-scout-17b-16e-instruct")
 
                     for zname, zdata in st.session_state.zord_status.items():
                         if zname != "JARVIS (Core OS)" and zdata.get("active", True):
