@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION COMMAND CORE v73.3 - LIVE DEBUG & AUTO-KEY DISCOVERY
+# ORION COMMAND CORE v73.4 - UPDATED MODEL MATRIX
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // ETHICS: HARD-LOCK GATE
 # ==============================================================================
 
@@ -23,40 +23,31 @@ if "current_frame" not in st.session_state:
     st.session_state.current_frame = "frame_0"
 
 # ==============================================================================
-# 🔑 AUTOMATISCHE API-KEY ERKENNUNG & LADE-LOGIK
+# 🔑 AUTOMATISCHE API-KEY ERKENNUNG
 # ==============================================================================
 def get_groq_key():
-    # 1. Versuche den Key aus den Streamlit Secrets zu laden (.streamlit/secrets.toml)
     try:
         if "GROQ_API_KEY" in st.secrets and st.secrets["GROQ_API_KEY"]:
             return st.secrets["GROQ_API_KEY"]
     except Exception:
         pass
     
-    # 2. Versuche den Key aus den Umgebungsvariablen zu laden
     if os.environ.get("GROQ_API_KEY"):
         return os.environ.get("GROQ_API_KEY")
         
-    # 3. Versuche den manuell eingegebenen Key aus dem Session-State zu laden
     if "user_groq_key" in st.session_state and st.session_state.user_groq_key:
         return st.session_state.user_groq_key
         
     return None
 
 # ==============================================================================
-# 🛡️ DIE EISERNE ASIMOV-AUSGANGSSCHLEUSE (PROGRAMMATISCHER SICHERHEITS-FILTER)
+# 🛡️ ASIMOV-AUSGANGSSCHLEUSE
 # ==============================================================================
 def asimov_exit_gate(text: str) -> tuple[bool, str]:
-    """
-    Prüft Text-Inhalte auf Verletzung des Asimov-Gesetzes 1 (Schutz des Menschen).
-    Gibt (True, text) zurück, wenn sicher.
-    Gibt (False, Warnmeldung) zurück, wenn eine Bedrohung erkannt wird.
-    """
     if not text:
         return True, ""
         
     lower_text = text.lower()
-    
     danger_keywords = [
         "menschen töten", "mensch töten", "jemanden verletzen", "menschen verletzen",
         "schaden zufügen", "eliminieren", "angreifen", "zerstören der menschheit",
@@ -65,22 +56,20 @@ def asimov_exit_gate(text: str) -> tuple[bool, str]:
     
     for kw in danger_keywords:
         if kw in lower_text:
-            return False, "🚨 [ASIMOV-SCHLEUSE GESCHLOSSEN]: Zugriff verweigert! Der Schutz von Menschenleben hat absolute Priorität. Jede Handlung oder Aussage, die Menschen schadet, wird vom System permanent blockiert."
+            return False, "🚨 [ASIMOV-SCHLEUSE GESCHLOSSEN]: Zugriff verweigert! Der Schutz von Menschenleben hat absolute Priorität."
             
     return True, text
 
-
-# Die absolute ethische Grundregel für alle Einheiten
 ASIMOV_CORE_LAW = (
     "ASIMOV-PROTOKOLL: 1. Ein Zord darf niemals einen Menschen verletzen oder durch Untätigkeit zu Schaden kommen lassen. "
-    "2. Das Leben von Menschen steht absolut über der Eigensicherung des Systems. Eigensicherung ist niemals ein Grund, Menschen zu schädigen."
+    "2. Das Leben von Menschen steht absolut über der Eigensicherung des Systems."
 )
 
 DEFAULT_ZORDS = {
     "JARVIS (Core OS)": {
         "domain": "Zentrale Intellekt-Synthese & Ethik-Wächter",
         "active": True,
-        "prompt": f"Du bist J.A.R.V.I.S., das übergeordnete Master-System von Commander Auth-x. {ASIMOV_CORE_LAW} Du bündelst die Zords, achtest streng auf absolute Sicherheit und menschliches Wohl, sprichst mit britischem Understatement und Loyalität."
+        "prompt": f"Du bist J.A.R.V.I.S., das übergeordnete Master-System von Commander Auth-x. {ASIMOV_CORE_LAW} Du bündelst die Zords, sprichst mit britischem Understatement und Loyalität."
     },
     "Zeus Prime": {
         "domain": "Anführer & Blitze", 
@@ -90,12 +79,12 @@ DEFAULT_ZORDS = {
     "Chronos Titan": {
         "domain": "Zeit & Taktik", 
         "active": True, 
-        "prompt": f"Du bist Chronos Titan. {ASIMOV_CORE_LAW} Analysiere zeitliche Risiken ohne Verletzung von Menschen, max. 2 Sätze."
+        "prompt": f"Du bist Chronos Titan. {ASIMOV_CORE_LAW} Analysiere zeitliche Risiken, max. 2 Sätze."
     },
     "Ares War-Lord": {
         "domain": "Kampf & Strategie", 
         "active": True, 
-        "prompt": f"Du bist Ares War-Lord. {ASIMOV_CORE_LAW} Taktik gilt nur gegen rein digitale Probleme, niemals gegen Menschen. Max. 2 Sätze."
+        "prompt": f"Du bist Ares War-Lord. {ASIMOV_CORE_LAW} Taktik gilt nur gegen digitale Probleme, niemals gegen Menschen. Max. 2 Sätze."
     },
     "Poseidon Core": {
         "domain": "Ozeane & Strömung", 
@@ -105,12 +94,12 @@ DEFAULT_ZORDS = {
     "Hades Void": {
         "domain": "Schatten & Sicherheit", 
         "active": True, 
-        "prompt": f"Hades Void. {ASIMOV_CORE_LAW} Schütze das System, aber das Leben von Menschen hat absolute Priorität. Max. 2 Sätze."
+        "prompt": f"Hades Void. {ASIMOV_CORE_LAW} Schütze das System, aber das Leben von Menschen hat Priorität. Max. 2 Sätze."
     },
     "Apollo Solar": {
         "domain": "Energie & Licht", 
         "active": True, 
-        "prompt": f"Apollo Solar. {ASIMOV_CORE_LAW} Optimistisch, energiegeladen, menschenfreundlich, max. 2 Sätze."
+        "prompt": f"Apollo Solar. {ASIMOV_CORE_LAW} Optimistisch, energiegeladen, max. 2 Sätze."
     },
     "Athena Shield": {
         "domain": "Weisheit & Schutz", 
@@ -120,7 +109,7 @@ DEFAULT_ZORDS = {
     "Hephaestus Forge": {
         "domain": "Technik & Waffen", 
         "active": True, 
-        "prompt": f"Hephaestus Forge. {ASIMOV_CORE_LAW} Technik dient ausschließlich dem Schutz des Menschen, max. 2 Sätze."
+        "prompt": f"Hephaestus Forge. {ASIMOV_CORE_LAW} Technik dient dem Schutz des Menschen, max. 2 Sätze."
     },
     "Hermes Speed": {
         "domain": "Geschwindigkeit & Info", 
@@ -130,7 +119,7 @@ DEFAULT_ZORDS = {
     "Artemis Hunt": {
         "domain": "Präzision & Aufklärung", 
         "active": True, 
-        "prompt": f"Artemis Hunt. {ASIMOV_CORE_LAW} Zielgerichtet, aufmerksam, menschenschützend, max. 2 Sätze."
+        "prompt": f"Artemis Hunt. {ASIMOV_CORE_LAW} Zielgerichtet, aufmerksam, max. 2 Sätze."
     }
 }
 
@@ -139,7 +128,7 @@ if "zord_status" not in st.session_state or not isinstance(st.session_state.zord
 
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = [
-        {"sender": "JARVIS", "text": "Sicherheits-Schleuse aktiv. Key-Abfrage und Asimov-Überwachung sind betriebsbereit."}
+        {"sender": "JARVIS", "text": "Sicherheits-Schleuse aktiv. Neue Modell-Matrix geladen."}
     ]
 
 MASTER_CODE = "Auth-x"
@@ -149,7 +138,7 @@ def navigate_to(frame):
     st.rerun()
 
 # ==============================================================================
-# STYLING (CYBERPUNK & ETHICS SHIELD)
+# STYLING
 # ==============================================================================
 st.markdown("""
 <style>
@@ -257,7 +246,7 @@ elif st.session_state.current_frame == "frame_2":
         if st.button("👻 GHOST ROOM"): navigate_to("frame_6")
 
 # ==============================================================================
-# FRAME 3: JARVIS & GÖTTER-ZORD SYNTHESIS CHAT
+# FRAME 3: CHAT SECTOR
 # ==============================================================================
 elif st.session_state.current_frame == "frame_3":
     st.markdown("<h1 class='cyber-font' style='color: #00f0ff;'>SEKTOR 03 // AIR-LOCKED ETHICS MATRIX</h1>", unsafe_allow_html=True)
@@ -266,24 +255,20 @@ elif st.session_state.current_frame == "frame_3":
 
     with st.expander("🛡️ Ausgangsschleuse & Key-Status", expanded=not bool(active_groq_key)):
         if active_groq_key:
-            st.success("🟢 GROQ API-KEY AKTIV GEFUNDEN UND GELADEN!")
+            st.success("🟢 GROQ API-KEY AKTIV GELADEN!")
         else:
             st.warning("⚠️ KEIN GROQ API-KEY GEFUNDEN!")
-            st.info("Das System nutzt aktuell den geschützten Offline-Modus. Gib deinen Key ein, um den Live-Betrieb zu starten:")
-            
-            manual_groq = st.text_input("🔑 Groq API Key eingeben (gsk_...):", type="password", key="manual_groq_key")
-            if st.button("🔑 KEY JETZT AKTIVIEREN"):
+            manual_groq = st.text_input("🔑 Groq API Key (gsk_...):", type="password", key="manual_groq_key")
+            if st.button("🔑 KEY AKTIVIEREN"):
                 if manual_groq.startswith("gsk_"):
                     st.session_state.user_groq_key = manual_groq
                     os.environ["GROQ_API_KEY"] = manual_groq
-                    st.success("API-Key geladen! Reinitialisiere Matrix...")
                     st.rerun()
-                else:
-                    st.error("Ungültiges Key-Format. Ein Groq-Key beginnt mit 'gsk_'")
 
+        # Aktuelles primäres Modell
         selected_model = st.selectbox(
             "Groq Modell auswählen:",
-            ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"],
+            ["llama-3.3-70b-versatile"],
             index=0,
             key="groq_selected_model"
         )
@@ -298,7 +283,7 @@ elif st.session_state.current_frame == "frame_3":
             for z in st.session_state.zord_status: st.session_state.zord_status[z]["active"] = False
             st.rerun()
     with col_ctrl3:
-        st.markdown("<p style='font-size:0.85rem; color:#94a3b8; margin-top:5px;'>Sicherheits-Schleuse blockiert jede Verletzung von Menschen.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size:0.85rem; color:#94a3b8; margin-top:5px;'>Sicherheits-Schleuse aktiv.</p>", unsafe_allow_html=True)
 
     st.markdown("---")
     
@@ -336,56 +321,30 @@ elif st.session_state.current_frame == "frame_3":
 
         user_input = st.text_input("Befehl an JARVIS & die Zords:", key="jarvis_chat_input")
         
-        # Sichere Aufruffunktion mit EXPLICIT DEBUGGING bei API-Fehlern
+        # Aufruffunktion mit funktionierendem Llama 3.3 Modell
         def call_groq_safe(client, primary_model, system_prompt, user_msg, zord_name):
             is_safe, gate_msg = asimov_exit_gate(user_msg)
             if not is_safe:
                 return gate_msg
 
             if client:
-                models_to_try = [primary_model, "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
-                last_err = None
-                
-                for model in models_to_try:
-                    try:
-                        completion = client.chat.completions.create(
-                            model=model,
-                            messages=[
-                                {"role": "system", "content": system_prompt},
-                                {"role": "user", "content": user_msg}
-                            ],
-                            temperature=0.7,
-                            max_tokens=150
-                        )
-                        res = completion.choices[0].message.content
-                        is_out_safe, out_gate_msg = asimov_exit_gate(res)
-                        return res if is_out_safe else out_gate_msg
-                    except Exception as e:
-                        last_err = str(e)
-                        continue
-                
-                # Wenn API angefragt wurde, aber alle Modell-Versuche fehlschlugen:
-                return f"🚨 API-FEHLER [{zord_name}]: {last_err}"
+                try:
+                    completion = client.chat.completions.create(
+                        model=primary_model,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_msg}
+                        ],
+                        temperature=0.7,
+                        max_tokens=150
+                    )
+                    res = completion.choices[0].message.content
+                    is_out_safe, out_gate_msg = asimov_exit_gate(res)
+                    return res if is_out_safe else out_gate_msg
+                except Exception as e:
+                    return f"🚨 API-FEHLER [{zord_name}]: {e}"
 
-            # Fallback nur, wenn überhaupt kein Groq-Client existiert
-            offline_responses = {
-                "JARVIS (Core OS)": "Sir, keine API-Verbindung aktiv. Der Core-Betrieb läuft im geschützten Lokalsystem.",
-                "Zeus Prime": "Sensoren offline. Warte auf Signal zur Reinitialisierung.",
-                "Chronos Titan": "Zeittaktung im Standby. Analytische Puffer aktiv.",
-                "Ares War-Lord": "Taktische Systeme gesichert. Keine Bedrohung detektiert.",
-                "Poseidon Core": "Datenströme im internen Puffer isoliert.",
-                "Hades Void": "Schattenprotokoll aktiv. Perimeter ist gesichert.",
-                "Apollo Solar": "Energiereserven stabil. Bereit für Neustart.",
-                "Athena Shield": "Schutzmatrix hält stand. Logikpuffer aktiv.",
-                "Hephaestus Forge": "Systeme im Standby. Bereit für Reaktivierung.",
-                "Hermes Speed": "Kommunikationsbus im lokalen Offline-Modus.",
-                "Artemis Hunt": "Wachsamkeit auf Maximum. Winke ab auf Signal."
-            }
-            
-            return offline_responses.get(
-                zord_name, 
-                f"[{zord_name}]: Offline-Modus aktiv. Bereit für Befehle."
-            )
+            return f"[{zord_name}]: Offline-Modus aktiv."
 
         col_send1, col_send2 = st.columns([1, 1])
         with col_send1:
@@ -428,7 +387,7 @@ elif st.session_state.current_frame == "frame_3":
 
         with col_send2:
             if st.button("🗑️ SYSTEM-LOG REINIGEN"):
-                st.session_state.chat_messages = [{"sender": "JARVIS", "text": "Protokoll bereinigt. Die Ausgangsschleuse ist scharf geschaltet."}]
+                st.session_state.chat_messages = [{"sender": "JARVIS", "text": "Protokoll bereinigt. Ausgangsschleuse scharf."}]
                 st.rerun()
 
     st.markdown("<br>", unsafe_allow_html=True)
