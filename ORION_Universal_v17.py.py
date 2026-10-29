@@ -1,5 +1,5 @@
 # ==============================================================================
-# ORION COMMAND CORE v73.2 - AUTO-KEY DISCOVERY & ASIMOV ETHICS GATE
+# ORION COMMAND CORE v73.3 - LIVE DEBUG & AUTO-KEY DISCOVERY
 # MASTER CODE: Auth-x // MEMORY: ELEPHANT MATRIX // ETHICS: HARD-LOCK GATE
 # ==============================================================================
 
@@ -336,7 +336,7 @@ elif st.session_state.current_frame == "frame_3":
 
         user_input = st.text_input("Befehl an JARVIS & die Zords:", key="jarvis_chat_input")
         
-        # Sichere Aufruffunktion mit automatischem Key-Gebrauch und Offline-Fallback
+        # Sichere Aufruffunktion mit EXPLICIT DEBUGGING bei API-Fehlern
         def call_groq_safe(client, primary_model, system_prompt, user_msg, zord_name):
             is_safe, gate_msg = asimov_exit_gate(user_msg)
             if not is_safe:
@@ -344,10 +344,9 @@ elif st.session_state.current_frame == "frame_3":
 
             if client:
                 models_to_try = [primary_model, "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
-                seen = set()
-                ordered_models = [m for m in models_to_try if not (m in seen or seen.add(m))]
+                last_err = None
                 
-                for model in ordered_models:
+                for model in models_to_try:
                     try:
                         completion = client.chat.completions.create(
                             model=model,
@@ -361,10 +360,14 @@ elif st.session_state.current_frame == "frame_3":
                         res = completion.choices[0].message.content
                         is_out_safe, out_gate_msg = asimov_exit_gate(res)
                         return res if is_out_safe else out_gate_msg
-                    except Exception:
+                    except Exception as e:
+                        last_err = str(e)
                         continue
+                
+                # Wenn API angefragt wurde, aber alle Modell-Versuche fehlschlugen:
+                return f"🚨 API-FEHLER [{zord_name}]: {last_err}"
 
-            # Dynamischer Offline-Fallback
+            # Fallback nur, wenn überhaupt kein Groq-Client existiert
             offline_responses = {
                 "JARVIS (Core OS)": "Sir, keine API-Verbindung aktiv. Der Core-Betrieb läuft im geschützten Lokalsystem.",
                 "Zeus Prime": "Sensoren offline. Warte auf Signal zur Reinitialisierung.",
@@ -401,8 +404,11 @@ elif st.session_state.current_frame == "frame_3":
                     if GROQ_AVAILABLE and current_key:
                         try:
                             groq_client = Groq(api_key=current_key)
-                        except Exception:
-                            pass
+                        except Exception as client_err:
+                            st.session_state.chat_messages.append({
+                                "sender": "JARVIS", 
+                                "text": f"🚨 INITIALISIERUNGS-FEHLER: {client_err}"
+                            })
 
                     chosen_model = st.session_state.get("groq_selected_model", "llama-3.3-70b-versatile")
 
