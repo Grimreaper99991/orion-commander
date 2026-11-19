@@ -10,9 +10,9 @@ import streamlit as st
 # 1. GUMROAD LIZENZ-KONFIGURATION (Hier deine 3 Product IDs einfügen)
 # ==============================================================================
 GUMROAD_PRODUCT_IDS = {
-    "1_tag": "HIER_PRODUCT_ID_1_TAG_EINFUEGEN",
-    "1_woche": "HIER_PRODUCT_ID_1_WOCHE_EINFUEGEN",
-    "1_monat": "HIER_PRODUCT_ID_1_MONAT_EINFUEGEN",
+    "1_tag": "PNXJZNc-Am0n3S5UXK2Iqw==",
+    "1_woche":qZkqQUIlwnUW51EqLZg8gw==",
+    "1_monat": "qftgaG4CJFmDLpp4u6T3fw==",
 }
 
 DURATION_DAYS = {
