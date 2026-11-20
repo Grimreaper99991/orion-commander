@@ -1,5 +1,7 @@
 import datetime
 from datetime import timezone
+import os
+import sqlite3
 import requests
 import streamlit as st
 
@@ -51,7 +53,75 @@ st.markdown(
 )
 
 # ---------------------------------------------------------
-# 2. DIE 10 GÖTTER-ZORDS (ROLLEN & SYSTEM-PROMPTS)
+# 2. ELEPHANT MEMORY DATENBANK (SQLite)
+# ---------------------------------------------------------
+DB_FILE = "zordnet_memory.db"
+
+def init_db():
+    """Erstellt die Datenbank-Tabelle und Grundregeln, falls nicht vorhanden."""
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS memory_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            agent TEXT,
+            user_input TEXT,
+            response TEXT
+        )
+    """)
+    conn.commit()
+
+    # Falls Tabelle ganz neu ist, Standard-Systemgesetze einfügen
+    cursor.execute("SELECT COUNT(*) FROM memory_logs")
+    if cursor.fetchone()[0] == 0:
+        defaults = [
+            ("Master Code", "SYSTEM", "Auth-x aktiv", "System gesichert"),
+            ("Haupt-Architekt", "SYSTEM", "Michael Gautschi", "Architekt autorisiert"),
+            ("Asimov Gesetz 5", "SYSTEM", "Nur Michael darf Code verändern", "Gesetz verankert"),
+        ]
+        for ts, ag, u_in, resp in defaults:
+            cursor.execute(
+                "INSERT INTO memory_logs (timestamp, agent, user_input, response) VALUES (?, ?, ?, ?)",
+                (ts, ag, u_in, resp),
+            )
+        conn.commit()
+    conn.close()
+
+def save_to_elephant_memory(agent: str, user_input: str, response: str):
+    """Speichert jede Interaktion dauerhaft in der SQLite-Datenbank."""
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    cursor.execute(
+        "INSERT INTO memory_logs (timestamp, agent, user_input, response) VALUES (?, ?, ?, ?)",
+        (now_str, agent, user_input, response),
+    )
+    conn.commit()
+    conn.close()
+
+def load_elephant_memory(limit: int = 25):
+    """Liest die letzten Einträge aus der Datenbank aus."""
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT timestamp, agent, user_input, response FROM memory_logs ORDER BY id DESC LIMIT ?",
+        (limit,),
+    )
+    rows = cursor.fetchall()
+    conn.close()
+
+    memory_list = []
+    for ts, agent, u_in, resp in reversed(rows):
+        short_resp = resp.replace("\n", " ")[:100]
+        memory_list.append(f"[{ts}] {agent}: {u_in} -> {short_resp}...")
+    return memory_list
+
+# Datenbank sofort beim Start initialisieren
+init_db()
+
+# ---------------------------------------------------------
+# 3. DIE 10 GÖTTER-ZORDS (ROLLEN & SYSTEM-PROMPTS)
 # ---------------------------------------------------------
 ZORD_ROSTER = {
     "🤖 ORION": {
@@ -129,7 +199,7 @@ ZORD_ROSTER = {
 }
 
 # ---------------------------------------------------------
-# 3. SESSION STATE INITIALIZATION
+# 4. SESSION STATE INITIALIZATION
 # ---------------------------------------------------------
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
@@ -141,18 +211,11 @@ if "expires_at" not in st.session_state:
     st.session_state.expires_at = None
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
-if "elephant_memory" not in st.session_state:
-    st.session_state.elephant_memory = [
-        "Master Code: Auth-x aktiv",
-        "Haupt-Architekt: Michael Gautschi",
-        "Asimov Gesetz 5: Nur Michael darf Code-Änderungen vornehmen.",
-        "System-Standard: Elephant Memory aktiviert.",
-    ]
 if "resolved_models" not in st.session_state:
     st.session_state.resolved_models = {}
 
 # ---------------------------------------------------------
-# 4. GUMROAD LICENSE VALIDATION SYSTEM (OHNE PRODUCT-ID-ZWANG)
+# 5. GUMROAD LICENSE VALIDATION SYSTEM
 # ---------------------------------------------------------
 def _detect_duration_from_purchase(purchase: dict):
     text_blob = " ".join(
@@ -166,7 +229,6 @@ def _detect_duration_from_purchase(purchase: dict):
     if "week" in text_blob or "woche" in text_blob or "weekly" in text_blob or price_cents == 2000:
         return "1_WOCHE", datetime.timedelta(days=7)
     return "1_MONAT", datetime.timedelta(days=30)
-
 
 def verify_orion_license(license_key: str):
     key = license_key.strip()
@@ -212,9 +274,8 @@ def verify_orion_license(license_key: str):
     except Exception as e:
         return False, None, None, f"Fehler bei der Verifizierung: {type(e).__name__}: {e}"
 
-
 # ---------------------------------------------------------
-# 5. DYNAMISCHE API- & MODELL-ERKENNUNG FÜR ALLE 10 ZORDS
+# 6. DYNAMISCHE API-ERKENNUNG & LLM-CALLS
 # ---------------------------------------------------------
 def _collect_secret_values(obj, prefix="", out=None):
     if out is None:
@@ -228,16 +289,13 @@ def _collect_secret_values(obj, prefix="", out=None):
                 out[full_key] = v.strip()
     return out
 
-
 def _normalize_base_url(url: str) -> str:
     clean = str(url).strip().rstrip("/")
     if clean.endswith("/chat/completions"):
         clean = clean[: -len("/chat/completions")].rstrip("/")
     return clean
 
-
 def _fetch_live_model(base_url: str, api_key: str, provider_hint: str, fallback_models: list) -> str:
-    """Fragt /models ab, um garantiert ein aktives Modell des Anbieters zu erwischen."""
     cache_key = f"{base_url}::{provider_hint}"
     if cache_key in st.session_state.resolved_models:
         return st.session_state.resolved_models[cache_key]
@@ -251,32 +309,15 @@ def _fetch_live_model(base_url: str, api_key: str, provider_hint: str, fallback_
         if resp.status_code == 200:
             payload = resp.json()
             raw_models = payload.get("data", []) if isinstance(payload, dict) else []
-            model_ids = [
-                m.get("id") for m in raw_models if isinstance(m, dict) and m.get("id")
-            ]
+            model_ids = [m.get("id") for m in raw_models if isinstance(m, dict) and m.get("id")]
 
             if model_ids:
-                # Bevorzugte aktuelle Modell-Familien zuerst prüfen
-                preferred_prefixes = (
-                    "gpt-4.1",
-                    "gpt-4o",
-                    "o3",
-                    "o4",
-                    "gemini-2.5",
-                    "gemini-2.0",
-                    "llama-3.3",
-                    "llama-3.1",
-                    "deepseek",
-                    "qwen",
-                    "mistral",
-                    "gemma",
-                )
+                preferred_prefixes = ("llama-3.3", "llama-3.1", "gpt-4o", "gemini-2.5", "gemini-2.0")
                 for pref in preferred_prefixes:
                     for mid in model_ids:
                         if pref in mid.lower():
                             st.session_state.resolved_models[cache_key] = mid
                             return mid
-
                 st.session_state.resolved_models[cache_key] = model_ids[0]
                 return model_ids[0]
     except Exception:
@@ -286,10 +327,8 @@ def _fetch_live_model(base_url: str, api_key: str, provider_hint: str, fallback_
     st.session_state.resolved_models[cache_key] = chosen
     return chosen
 
-
 def _build_api_targets(resolve_live: bool = False):
     all_secrets = _collect_secret_values(dict(st.secrets))
-
     candidate_keys = []
     for k, v in all_secrets.items():
         kl = k.lower()
@@ -298,26 +337,13 @@ def _build_api_targets(resolve_live: bool = False):
         ):
             candidate_keys.append((k, v))
 
-    priority = ("groq", "openai", "llm", "gemini", "google", "openrouter", "mistral", "deepseek")
+    priority = ("groq", "openai", "llm", "gemini", "google", "openrouter")
     candidate_keys.sort(
-        key=lambda item: next(
-            (i for i, p in enumerate(priority) if p in item[0].lower()),
-            len(priority),
-        )
+        key=lambda item: next((i for i, p in enumerate(priority) if p in item[0].lower()), len(priority))
     )
 
-    default_base_url = (
-        all_secrets.get("LLM_BASE_URL")
-        or all_secrets.get("OPENAI_BASE_URL")
-        or all_secrets.get("BASE_URL")
-        or ""
-    )
-    default_model = (
-        all_secrets.get("LLM_MODEL")
-        or all_secrets.get("OPENAI_MODEL")
-        or all_secrets.get("MODEL")
-        or ""
-    )
+    default_base_url = all_secrets.get("LLM_BASE_URL") or all_secrets.get("OPENAI_BASE_URL") or ""
+    default_model = all_secrets.get("LLM_MODEL") or all_secrets.get("OPENAI_MODEL") or ""
 
     targets = []
     for key_name, api_key in candidate_keys:
@@ -333,7 +359,7 @@ def _build_api_targets(resolve_live: bool = False):
         elif is_groq:
             base_url = "https://api.groq.com/openai/v1"
             provider_hint = "groq"
-            fallbacks = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "gemma2-9b-it"]
+            fallbacks = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
         elif is_gemini:
             base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
             provider_hint = "gemini"
@@ -341,11 +367,11 @@ def _build_api_targets(resolve_live: bool = False):
         elif is_openrouter:
             base_url = "https://openrouter.ai/api/v1"
             provider_hint = "openrouter"
-            fallbacks = ["openai/gpt-4o-mini", "meta-llama/llama-3.3-70b-instruct:free"]
+            fallbacks = ["openai/gpt-4o-mini"]
         else:
             base_url = "https://api.openai.com/v1"
             provider_hint = "openai"
-            fallbacks = ["gpt-4o-mini", "gpt-4.1-mini"]
+            fallbacks = ["gpt-4o-mini"]
 
         if default_model:
             model = default_model
@@ -365,48 +391,19 @@ def _build_api_targets(resolve_live: bool = False):
                 "model": model,
             }
         )
-
     return targets
-
-
-def _query_openai_compatible(base_url: str, api_key: str, model: str, messages: list) -> str:
-    endpoint = f"{base_url}/chat/completions"
-    resp = requests.post(
-        endpoint,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": model,
-            "messages": messages,
-            "temperature": 0.7,
-        },
-        timeout=35,
-    )
-    if resp.status_code >= 400:
-        detail = ""
-        try:
-            detail = resp.json().get("error", {}).get("message", "") or resp.text[:200]
-        except Exception:
-            detail = resp.text[:200]
-        raise RuntimeError(f"HTTP {resp.status_code} ({endpoint}): {detail}")
-
-    data = resp.json()
-    return data["choices"][0]["message"]["content"].strip()
-
 
 def call_llm_for_zord(zord_name: str, prompt: str) -> str:
     zord_info = ZORD_ROSTER[zord_name]
     targets = _build_api_targets(resolve_live=True)
 
     if not targets:
-        return (
-            f"[{zord_name} | Keine API-Keys erkannt]\n"
-            f"Es wurden in `st.secrets` keine API-Keys gefunden."
-        )
+        return f"[{zord_name} | Keine API-Keys in st.secrets gefunden]"
 
-    recent_memory = "\n".join(f"- {m}" for m in st.session_state.elephant_memory[-20:])
+    # Elephant Memory aus der SQLite-Datenbank ziehen!
+    memory_entries = load_elephant_memory(limit=15)
+    recent_memory = "\n".join(f"- {m}" for m in memory_entries)
+
     recent_chat = []
     for agent, user_msg, ai_msg in st.session_state.chat_history[-6:]:
         recent_chat.append({"role": "user", "content": f"({agent}) {user_msg}"})
@@ -414,7 +411,7 @@ def call_llm_for_zord(zord_name: str, prompt: str) -> str:
 
     system_content = (
         f"{zord_info['system']}\n\n"
-        f"Aktuelles Elephant Memory (Kontext & bisherige Ereignisse):\n{recent_memory}"
+        f"Aktuelles Elephant Memory (Datenbank-Kontext & Historie):\n{recent_memory}"
     )
 
     messages = [{"role": "system", "content": system_content}]
@@ -426,30 +423,33 @@ def call_llm_for_zord(zord_name: str, prompt: str) -> str:
         models_to_try = [target["model"]] + [m for m in target["fallbacks"] if m != target["model"]]
         for m in models_to_try:
             try:
-                st.session_state.resolved_models[f"{target['base_url']}::{target['provider_hint']}"] = m
-                return _query_openai_compatible(target["base_url"], target["api_key"], m, messages)
+                endpoint = f"{target['base_url']}/chat/completions"
+                resp = requests.post(
+                    endpoint,
+                    headers={"Authorization": f"Bearer {target['api_key']}", "Content-Type": "application/json"},
+                    json={"model": m, "messages": messages, "temperature": 0.7},
+                    timeout=35,
+                )
+                if resp.status_code == 200:
+                    st.session_state.resolved_models[f"{target['base_url']}::{target['provider_hint']}"] = m
+                    return resp.json()["choices"][0]["message"]["content"].strip()
+                else:
+                    errors.append(f"{target['name']} [{m}]: HTTP {resp.status_code}")
             except Exception as e:
                 errors.append(f"{target['name']} [{m}]: {e}")
 
-    joined_errors = "\n- ".join(errors)
-    return f"[{zord_name} | Alle API-Versuche fehlgeschlagen]\n- {joined_errors}"
-
+    return f"[{zord_name} | Fehler] \n- " + "\n- ".join(errors)
 
 class ZordNetEngine:
     @staticmethod
     def process_request(agent_name: str, prompt: str) -> str:
-        timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-        st.session_state.elephant_memory.append(f"[{timestamp}] [{agent_name}] Nutzereingabe: {prompt}")
-
         reply = call_llm_for_zord(agent_name, prompt)
-
-        short_reply = reply.replace("\n", " ")[:180]
-        st.session_state.elephant_memory.append(f"[{timestamp}] [{agent_name}] Antwort: {short_reply}")
+        # Sofort dauerhaft in SQLite speichern!
+        save_to_elephant_memory(agent_name, prompt, reply)
         return reply
 
-
 # ---------------------------------------------------------
-# 6. USER INTERFACE (LOGIN & DASHBOARD)
+# 7. USER INTERFACE
 # ---------------------------------------------------------
 if not st.session_state.authenticated:
     st.title("⚡ Orion.Ai — ZordNet Access Portal")
@@ -507,11 +507,7 @@ else:
         remaining_str = f"{days}d {hours}h"
 
     targets = _build_api_targets(resolve_live=False)
-    if targets:
-        api_names = ", ".join(f"{t['name']} ({t['model']})" for t in targets)
-        api_status = f"AKTIV [{len(targets)} APIs: {api_names}]"
-    else:
-        api_status = "KEINE API GEFUNDEN"
+    api_status = f"AKTIV [{len(targets)} APIs]" if targets else "KEINE API GEFUNDEN"
 
     st.markdown(
         f"""
@@ -519,7 +515,7 @@ else:
         <b>Status:</b> <span style="color:#00ff66;">ONLINE</span> |
         <b>Pass Tier:</b> {st.session_state.pass_tier} |
         <b>Gültig für:</b> {remaining_str} |
-        <b>APIs:</b> {api_status} |
+        <b>DB Memory:</b> <span style="color:#00ff66;">SQLite Aktiv</span> |
         <b>Auth-X Master:</b> Michael Gautschi
     </div>
     """,
@@ -527,9 +523,10 @@ else:
     )
 
     with st.sidebar:
-        st.header("🐘 Elephant Memory")
-        st.caption("Protokoll & Kontext für alle 10 Zords")
-        for mem in reversed(st.session_state.elephant_memory[-25:]):
+        st.header("🐘 Elephant Memory (DB)")
+        st.caption("Dauerhaftes Protokoll aus SQLite")
+        db_memory = load_elephant_memory(limit=25)
+        for mem in db_memory:
             st.markdown(f"- {mem}")
 
         st.divider()
@@ -567,6 +564,7 @@ else:
             with st.spinner(f"{selected_agent} denkt nach..."):
                 output = ZordNetEngine.process_request(selected_agent, user_prompt.strip())
             st.session_state.chat_history.append((selected_agent, user_prompt.strip(), output))
+            st.rerun()
         else:
             st.warning("Bitte gib einen Befehl oder eine Frage ein.")
 
