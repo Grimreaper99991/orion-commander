@@ -1,6 +1,7 @@
 import datetime
 from datetime import timezone
 import os
+import re
 import sqlite3
 import requests
 import streamlit as st
@@ -53,13 +54,18 @@ st.markdown(
 )
 
 # ---------------------------------------------------------
-# 2. ELEPHANT MEMORY DATENBANK (SQLite)
+# 2. ELEPHANT MEMORY DATENBANK (SQLite + FAKTEN + SUCHE)
 # ---------------------------------------------------------
 DB_FILE = "zordnet_memory.db"
 
+
+def _connect_db():
+    return sqlite3.connect(DB_FILE)
+
+
 def init_db():
-    """Erstellt die Datenbank-Tabelle und Grundregeln, falls nicht vorhanden."""
-    conn = sqlite3.connect(DB_FILE)
+    """Erstellt Tabelle & Spalten (ohne Datenverlust) und legt Basis-Fakten an."""
+    conn = _connect_db()
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS memory_logs (
@@ -67,55 +73,226 @@ def init_db():
             timestamp TEXT,
             agent TEXT,
             user_input TEXT,
-            response TEXT
+            response TEXT,
+            entry_type TEXT DEFAULT 'CHAT'
         )
     """)
     conn.commit()
 
-    # Falls Tabelle ganz neu ist, Standard-Systemgesetze einfügen
+    # Migration für bestehende Datenbanken ohne entry_type-Spalte
+    cursor.execute("PRAGMA table_info(memory_logs)")
+    columns = [row[1] for row in cursor.fetchall()]
+    if "entry_type" not in columns:
+        cursor.execute("ALTER TABLE memory_logs ADD COLUMN entry_type TEXT DEFAULT 'CHAT'")
+        conn.commit()
+
+    # Alte SYSTEM-Einträge sauber als FACT einstufen
+    cursor.execute("""
+        UPDATE memory_logs
+        SET entry_type = 'FACT'
+        WHERE agent = 'SYSTEM' AND (entry_type IS NULL OR entry_type = 'CHAT')
+    """)
+    conn.commit()
+
+    # Falls Tabelle komplett leer ist, Basis-Fakten & Gesetze setzen
     cursor.execute("SELECT COUNT(*) FROM memory_logs")
     if cursor.fetchone()[0] == 0:
         defaults = [
-            ("Master Code", "SYSTEM", "Auth-x aktiv", "System gesichert"),
-            ("Haupt-Architekt", "SYSTEM", "Michael Gautschi", "Architekt autorisiert"),
-            ("Asimov Gesetz 5", "SYSTEM", "Nur Michael darf Code verändern", "Gesetz verankert"),
+            ("Master Code", "SYSTEM", "Auth-x aktiv", "System gesichert", "FACT"),
+            ("Haupt-Architekt", "SYSTEM", "Michael Gautschi", "Architekt autorisiert", "FACT"),
+            ("Asimov Gesetz 5", "SYSTEM", "Nur Michael darf Code verändern", "Gesetz verankert", "FACT"),
         ]
-        for ts, ag, u_in, resp in defaults:
+        for ts, ag, u_in, resp, etype in defaults:
             cursor.execute(
-                "INSERT INTO memory_logs (timestamp, agent, user_input, response) VALUES (?, ?, ?, ?)",
-                (ts, ag, u_in, resp),
+                """
+                INSERT INTO memory_logs (timestamp, agent, user_input, response, entry_type)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (ts, ag, u_in, resp, etype),
             )
         conn.commit()
     conn.close()
 
-def save_to_elephant_memory(agent: str, user_input: str, response: str):
-    """Speichert jede Interaktion dauerhaft in der SQLite-Datenbank."""
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    cursor.execute(
-        "INSERT INTO memory_logs (timestamp, agent, user_input, response) VALUES (?, ?, ?, ?)",
-        (now_str, agent, user_input, response),
+
+def detect_entry_type(user_input: str, force_fact: bool = False) -> str:
+    """Erkennt automatisch, ob ein Eintrag eine wichtige Tatsache/Regel (FACT) ist."""
+    if force_fact:
+        return "FACT"
+    text_low = user_input.lower()
+    fact_triggers = (
+        "merk dir",
+        "merke dir",
+        "regel",
+        "gesetz",
+        "projektname",
+        "heißt",
+        "ist ab sofort",
+        "wichtig:",
+        "fakten",
+        "ziel:",
     )
-    conn.commit()
-    conn.close()
+    if any(t in text_low for t in fact_triggers):
+        return "FACT"
+    return "CHAT"
+
+
+def save_to_elephant_memory(agent: str, user_input: str, response: str, force_fact: bool = False):
+    """Speichert jede Interaktion inkl. Typ (FACT/CHAT) dauerhaft in SQLite."""
+    entry_type = detect_entry_type(user_input, force_fact=force_fact)
+    try:
+        conn = _connect_db()
+        cursor = conn.cursor()
+        now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        cursor.execute(
+            """
+            INSERT INTO memory_logs (timestamp, agent, user_input, response, entry_type)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (now_str, agent, user_input, response, entry_type),
+        )
+        conn.commit()
+        cursor.execute("SELECT COUNT(*) FROM memory_logs")
+        total_count = cursor.fetchone()[0]
+        conn.close()
+        return True, f"Gespeichert als {entry_type} (Einträge gesamt: {total_count})"
+    except Exception as e:
+        return False, f"DB-Speicherfehler: {type(e).__name__}: {e}"
+
 
 def load_elephant_memory(limit: int = 25):
-    """Liest die letzten Einträge aus der Datenbank aus."""
-    conn = sqlite3.connect(DB_FILE)
+    """Lädt die letzten Einträge aus der Datenbank für die Sidebar-Anzeige."""
+    conn = _connect_db()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT timestamp, agent, user_input, response FROM memory_logs ORDER BY id DESC LIMIT ?",
+        """
+        SELECT timestamp, agent, user_input, response, entry_type
+        FROM memory_logs
+        ORDER BY id DESC
+        LIMIT ?
+        """,
         (limit,),
     )
     rows = cursor.fetchall()
     conn.close()
 
     memory_list = []
-    for ts, agent, u_in, resp in reversed(rows):
-        short_resp = resp.replace("\n", " ")[:100]
-        memory_list.append(f"[{ts}] {agent}: {u_in} -> {short_resp}...")
+    for ts, agent, u_in, resp, etype in reversed(rows):
+        short_resp = (resp or "").replace("\n", " ")[:100]
+        badge = "📌 FAKT" if etype == "FACT" else "💬 CHAT"
+        memory_list.append(f"[{badge}] [{ts}] {agent}: {u_in} → {short_resp}...")
     return memory_list
+
+
+def load_priority_facts(limit: int = 12):
+    """Lädt priorisierte Fakten & Regeln (FACT), damit sie immer im Kontext bleiben."""
+    conn = _connect_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT timestamp, agent, user_input, response
+        FROM memory_logs
+        WHERE entry_type = 'FACT'
+        ORDER BY id DESC
+        LIMIT ?
+        """,
+        (limit,),
+    )
+    rows = cursor.fetchall()
+    conn.close()
+
+    facts = []
+    for ts, agent, u_in, resp in reversed(rows):
+        short_resp = (resp or "").replace("\n", " ")[:140]
+        facts.append(f"[{ts}] {agent}: {u_in} -> {short_resp}")
+    return facts
+
+
+def search_elephant_memory(query: str, limit: int = 8):
+    """Sucht gezielt nach Stichwörtern aus dem Prompt in der Datenbank."""
+    words = re.findall(r"[A-Za-zÀ-ÿ0-9_-]{3,}", query.lower())
+    stopwords = {
+        "und",
+        "oder",
+        "aber",
+        "dass",
+        "eine",
+        "einer",
+        "einem",
+        "einen",
+        "fuer",
+        "für",
+        "mit",
+        "von",
+        "auf",
+        "aus",
+        "was",
+        "wie",
+        "wer",
+        "wann",
+        "woher",
+        "warum",
+        "sag",
+        "mir",
+        "bitte",
+        "doch",
+        "mal",
+        "jetzt",
+    }
+    keywords = [w for w in words if w not in stopwords][:6]
+    if not keywords:
+        return []
+
+    clauses = []
+    params = []
+    for kw in keywords:
+        clauses.append("(LOWER(user_input) LIKE ? OR LOWER(response) LIKE ?)")
+        like_val = f"%{kw}%"
+        params.extend([like_val, like_val])
+
+    sql = f"""
+        SELECT timestamp, agent, user_input, response
+        FROM memory_logs
+        WHERE {" OR ".join(clauses)}
+        ORDER BY id DESC
+        LIMIT ?
+    """
+    params.append(limit)
+
+    conn = _connect_db()
+    cursor = conn.cursor()
+    cursor.execute(sql, params)
+    rows = cursor.fetchall()
+    conn.close()
+
+    hits = []
+    for ts, agent, u_in, resp in reversed(rows):
+        short_resp = (resp or "").replace("\n", " ")[:140]
+        hits.append(f"[{ts}] {agent}: {u_in} -> {short_resp}")
+    return hits
+
+
+def load_recent_chats(limit: int = 10):
+    """Lädt die letzten normalen Chat-Einträge."""
+    conn = _connect_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT timestamp, agent, user_input, response
+        FROM memory_logs
+        ORDER BY id DESC
+        LIMIT ?
+        """,
+        (limit,),
+    )
+    rows = cursor.fetchall()
+    conn.close()
+
+    chats = []
+    for ts, agent, u_in, resp in reversed(rows):
+        short_resp = (resp or "").replace("\n", " ")[:140]
+        chats.append(f"[{ts}] {agent}: {u_in} -> {short_resp}")
+    return chats
+
 
 # Datenbank sofort beim Start initialisieren
 init_db()
@@ -230,6 +407,7 @@ def _detect_duration_from_purchase(purchase: dict):
         return "1_WOCHE", datetime.timedelta(days=7)
     return "1_MONAT", datetime.timedelta(days=30)
 
+
 def verify_orion_license(license_key: str):
     key = license_key.strip()
 
@@ -274,8 +452,9 @@ def verify_orion_license(license_key: str):
     except Exception as e:
         return False, None, None, f"Fehler bei der Verifizierung: {type(e).__name__}: {e}"
 
+
 # ---------------------------------------------------------
-# 6. DYNAMISCHE API-ERKENNUNG & LLM-CALLS
+# 6. DYNAMISCHE API-ERKENNUNG & LLM-CALLS MIT SMART MEMORY
 # ---------------------------------------------------------
 def _collect_secret_values(obj, prefix="", out=None):
     if out is None:
@@ -289,11 +468,13 @@ def _collect_secret_values(obj, prefix="", out=None):
                 out[full_key] = v.strip()
     return out
 
+
 def _normalize_base_url(url: str) -> str:
     clean = str(url).strip().rstrip("/")
     if clean.endswith("/chat/completions"):
         clean = clean[: -len("/chat/completions")].rstrip("/")
     return clean
+
 
 def _fetch_live_model(base_url: str, api_key: str, provider_hint: str, fallback_models: list) -> str:
     cache_key = f"{base_url}::{provider_hint}"
@@ -326,6 +507,7 @@ def _fetch_live_model(base_url: str, api_key: str, provider_hint: str, fallback_
     chosen = fallback_models[0] if fallback_models else "gpt-4o-mini"
     st.session_state.resolved_models[cache_key] = chosen
     return chosen
+
 
 def _build_api_targets(resolve_live: bool = False):
     all_secrets = _collect_secret_values(dict(st.secrets))
@@ -393,6 +575,24 @@ def _build_api_targets(resolve_live: bool = False):
         )
     return targets
 
+
+def _build_smart_memory_context(prompt: str) -> str:
+    """Kombiniert priorisierte Fakten, Stichwort-Treffer und aktuelle Chats."""
+    facts = load_priority_facts(limit=12)
+    hits = search_elephant_memory(prompt, limit=6)
+    recent_chats = load_recent_chats(limit=8)
+
+    facts_block = "\n".join(f"- {f}" for f in facts) if facts else "- Keine speziellen Fakten hinterlegt."
+    hits_block = "\n".join(f"- {h}" for h in hits) if hits else "- Keine direkten Stichwort-Treffer."
+    chats_block = "\n".join(f"- {c}" for c in recent_chats) if recent_chats else "- Noch keine Chat-Logs."
+
+    return (
+        f"PRIORISIERTE FAKTEN & GESETZE (IMMER BEACHTEN):\n{facts_block}\n\n"
+        f"GEZIELTE SUCHTREFFER ZUR ANFRAGE:\n{hits_block}\n\n"
+        f"LETZTE VERLAUFS-EINTRÄGE:\n{chats_block}"
+    )
+
+
 def call_llm_for_zord(zord_name: str, prompt: str) -> str:
     zord_info = ZORD_ROSTER[zord_name]
     targets = _build_api_targets(resolve_live=True)
@@ -400,19 +600,14 @@ def call_llm_for_zord(zord_name: str, prompt: str) -> str:
     if not targets:
         return f"[{zord_name} | Keine API-Keys in st.secrets gefunden]"
 
-    # Elephant Memory aus der SQLite-Datenbank ziehen!
-    memory_entries = load_elephant_memory(limit=15)
-    recent_memory = "\n".join(f"- {m}" for m in memory_entries)
+    smart_memory = _build_smart_memory_context(prompt)
 
     recent_chat = []
     for agent, user_msg, ai_msg in st.session_state.chat_history[-6:]:
         recent_chat.append({"role": "user", "content": f"({agent}) {user_msg}"})
         recent_chat.append({"role": "assistant", "content": ai_msg})
 
-    system_content = (
-        f"{zord_info['system']}\n\n"
-        f"Aktuelles Elephant Memory (Datenbank-Kontext & Historie):\n{recent_memory}"
-    )
+    system_content = f"{zord_info['system']}\n\n{smart_memory}"
 
     messages = [{"role": "system", "content": system_content}]
     messages.extend(recent_chat)
@@ -440,13 +635,16 @@ def call_llm_for_zord(zord_name: str, prompt: str) -> str:
 
     return f"[{zord_name} | Fehler] \n- " + "\n- ".join(errors)
 
+
 class ZordNetEngine:
     @staticmethod
-    def process_request(agent_name: str, prompt: str) -> str:
+    def process_request(agent_name: str, prompt: str, force_fact: bool = False) -> str:
         reply = call_llm_for_zord(agent_name, prompt)
-        # Sofort dauerhaft in SQLite speichern!
-        save_to_elephant_memory(agent_name, prompt, reply)
+        ok, db_msg = save_to_elephant_memory(agent_name, prompt, reply, force_fact=force_fact)
+        if not ok:
+            st.error(db_msg)
         return reply
+
 
 # ---------------------------------------------------------
 # 7. USER INTERFACE
@@ -515,7 +713,7 @@ else:
         <b>Status:</b> <span style="color:#00ff66;">ONLINE</span> |
         <b>Pass Tier:</b> {st.session_state.pass_tier} |
         <b>Gültig für:</b> {remaining_str} |
-        <b>DB Memory:</b> <span style="color:#00ff66;">SQLite Aktiv</span> |
+        <b>DB Memory:</b> <span style="color:#00ff66;">Smart SQLite Aktiv</span> |
         <b>Auth-X Master:</b> Michael Gautschi
     </div>
     """,
@@ -524,7 +722,18 @@ else:
 
     with st.sidebar:
         st.header("🐘 Elephant Memory (DB)")
-        st.caption("Dauerhaftes Protokoll aus SQLite")
+        st.caption("Fakten, Stichwort-Recall & Verlauf aus SQLite")
+
+        # Direkter Backup-Download der SQLite-Datenbank
+        if os.path.exists(DB_FILE):
+            with open(DB_FILE, "rb") as db_f:
+                st.download_button(
+                    label="💾 Backup: zordnet_memory.db laden",
+                    data=db_f.read(),
+                    file_name="zordnet_memory.db",
+                    mime="application/x-sqlite3",
+                )
+
         db_memory = load_elephant_memory(limit=25)
         for mem in db_memory:
             st.markdown(f"- {mem}")
@@ -558,11 +767,16 @@ else:
         placeholder="Schreib wie mit ChatGPT oder Gemini...",
         height=90,
     )
+    save_as_fact = st.checkbox("Als dauerhaften Fakt / Regel (FACT) markieren")
 
     if st.button("Befehl Ausführen ⚡"):
         if user_prompt.strip():
             with st.spinner(f"{selected_agent} denkt nach..."):
-                output = ZordNetEngine.process_request(selected_agent, user_prompt.strip())
+                output = ZordNetEngine.process_request(
+                    selected_agent,
+                    user_prompt.strip(),
+                    force_fact=save_as_fact,
+                )
             st.session_state.chat_history.append((selected_agent, user_prompt.strip(), output))
             st.rerun()
         else:
