@@ -3,6 +3,7 @@ from datetime import timezone
 import os
 import re
 import sqlite3
+import time
 import requests
 import streamlit as st
 
@@ -493,7 +494,7 @@ def _fetch_live_model(base_url: str, api_key: str, provider_hint: str, fallback_
             model_ids = [m.get("id") for m in raw_models if isinstance(m, dict) and m.get("id")]
 
             if model_ids:
-                preferred_prefixes = ("llama-3.3", "llama-3.1", "gpt-4o", "gemini-2.5", "gemini-2.0")
+                preferred_prefixes = ("llama-3.3", "llama-3.1", "gpt-4o", "gemini-2.5", "gemini-2.0", "qwen")
                 for pref in preferred_prefixes:
                     for mid in model_ids:
                         if pref in mid.lower():
@@ -515,7 +516,7 @@ def _build_api_targets(resolve_live: bool = False):
     for k, v in all_secrets.items():
         kl = k.lower()
         if any(word in kl for word in ("key", "token", "api")) and not any(
-            skip in kl for skip in ("url", "model", "endpoint", "base", "gumroad")
+            skip in kl for skip in ("url", "model", "endpoint", "base", "gumroad", "github", "auth")
         ):
             candidate_keys.append((k, v))
 
@@ -617,21 +618,27 @@ def call_llm_for_zord(zord_name: str, prompt: str) -> str:
     for target in targets:
         models_to_try = [target["model"]] + [m for m in target["fallbacks"] if m != target["model"]]
         for m in models_to_try:
-            try:
-                endpoint = f"{target['base_url']}/chat/completions"
-                resp = requests.post(
-                    endpoint,
-                    headers={"Authorization": f"Bearer {target['api_key']}", "Content-Type": "application/json"},
-                    json={"model": m, "messages": messages, "temperature": 0.7},
-                    timeout=35,
-                )
-                if resp.status_code == 200:
-                    st.session_state.resolved_models[f"{target['base_url']}::{target['provider_hint']}"] = m
-                    return resp.json()["choices"][0]["message"]["content"].strip()
-                else:
-                    errors.append(f"{target['name']} [{m}]: HTTP {resp.status_code}")
-            except Exception as e:
-                errors.append(f"{target['name']} [{m}]: {e}")
+            for attempt in range(2):
+                try:
+                    endpoint = f"{target['base_url']}/chat/completions"
+                    resp = requests.post(
+                        endpoint,
+                        headers={"Authorization": f"Bearer {target['api_key']}", "Content-Type": "application/json"},
+                        json={"model": m, "messages": messages, "temperature": 0.7},
+                        timeout=35,
+                    )
+                    if resp.status_code == 200:
+                        st.session_state.resolved_models[f"{target['base_url']}::{target['provider_hint']}"] = m
+                        return resp.json()["choices"][0]["message"]["content"].strip()
+                    elif resp.status_code == 429 and attempt == 0:
+                        time.sleep(2.5)
+                        continue
+                    else:
+                        errors.append(f"{target['name']} [{m}]: HTTP {resp.status_code}")
+                        break
+                except Exception as e:
+                    errors.append(f"{target['name']} [{m}]: {e}")
+                    break
 
     return f"[{zord_name} | Fehler] \n- " + "\n- ".join(errors)
 
