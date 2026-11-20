@@ -1,7 +1,7 @@
-import streamlit as st
-import requests
 import datetime
 from datetime import timezone
+import requests
+import streamlit as st
 
 # ---------------------------------------------------------
 # 1. PAGE CONFIGURATION & STYLING
@@ -10,10 +10,11 @@ st.set_page_config(
     page_title="Orion.Ai | 10 Götter ZordNet",
     page_icon="⚡",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
-st.markdown("""
+st.markdown(
+    """
 <style>
     .main { background-color: #0b0e14; color: #e6edf3; }
     .stButton>button {
@@ -45,7 +46,9 @@ st.markdown("""
         min-height: 92px;
     }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # ---------------------------------------------------------
 # 2. DIE 10 GÖTTER-ZORDS (ROLLEN & SYSTEM-PROMPTS)
@@ -147,17 +150,27 @@ if "elephant_memory" not in st.session_state:
     ]
 
 # ---------------------------------------------------------
-# 4. GUMROAD LICENSE VALIDATION SYSTEM
+# 4. GUMROAD LICENSE VALIDATION SYSTEM (OHNE PRODUCT-ID-ZWANG)
 # ---------------------------------------------------------
-GUMROAD_PRODUCT_IDS = {
-    "1_TAG": "PNXJZNc-Am0n3S5UXK2Iqw==",
-    "1_WOCHE":"qZkqQUIlwnUW51EqLZg8gw==",
-    "1_MONAT":"qftgaG4CJFmDLpp4u6T3fw==",
-}
+def _detect_duration_from_purchase(purchase: dict):
+    """Ermittelt Laufzeit & Tier automatisch ohne fest hinterlegte Product IDs."""
+    text_blob = " ".join(
+        str(purchase.get(k, ""))
+        for k in ("product_name", "recurrence", "variant", "variants")
+    ).lower()
+    price_cents = purchase.get("price")
+
+    if "day" in text_blob or "tag" in text_blob or "daily" in text_blob or price_cents == 500:
+        return "1_TAG", datetime.timedelta(days=1)
+    if "week" in text_blob or "woche" in text_blob or "weekly" in text_blob or price_cents == 2000:
+        return "1_WOCHE", datetime.timedelta(days=7)
+    return "1_MONAT", datetime.timedelta(days=30)
+
 
 def verify_orion_license(license_key: str):
     key = license_key.strip()
 
+    # Creator- / Test-Keys sofort durchlassen
     if key.upper().startswith("TEST-ORION") or key == "ORION-TEST-KEY-2026":
         expiry_date = datetime.datetime.now(timezone.utc) + datetime.timedelta(days=30)
         return True, "1_MONAT", expiry_date, "Test-Key erfolgreich aktiviert!"
@@ -174,24 +187,23 @@ def verify_orion_license(license_key: str):
             return False, None, None, f"Gumroad meldet: {data.get('message', 'Ungültiger Schlüssel')}"
 
         purchase = data.get("purchase", {})
+        if purchase.get("refunded") or purchase.get("chargebacked"):
+            return False, None, None, "Diese Lizenz wurde erstattet oder zurückgebucht."
+
         created_at_str = purchase.get("created_at")
         if created_at_str:
-            created_at = datetime.datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+            try:
+                created_at = datetime.datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+                if created_at.tzinfo is None:
+                    created_at = created_at.replace(tzinfo=timezone.utc)
+            except Exception:
+                created_at = datetime.datetime.now(timezone.utc)
         else:
             created_at = datetime.datetime.now(timezone.utc)
 
-        product_id = purchase.get("product_id")
-        pass_tier = "1_MONAT"
-        duration = datetime.timedelta(days=30)
-
-        if product_id == GUMROAD_PRODUCT_IDS.get("1_TAG"):
-            pass_tier = "1_TAG"
-            duration = datetime.timedelta(days=1)
-        elif product_id == GUMROAD_PRODUCT_IDS.get("1_WOCHE"):
-            pass_tier = "1_WOCHE"
-            duration = datetime.timedelta(days=7)
-
+        pass_tier, duration = _detect_duration_from_purchase(purchase)
         expires_at = created_at + duration
+
         if datetime.datetime.now(timezone.utc) > expires_at:
             return False, None, None, "Lizenzschlüssel ist abgelaufen."
 
@@ -200,35 +212,134 @@ def verify_orion_license(license_key: str):
     except Exception as e:
         return False, None, None, f"Fehler bei der Verifizierung: {type(e).__name__}: {e}"
 
+
 # ---------------------------------------------------------
-# 5. ECHTE LLM-API ABFRAGE FÜR ALLE 10 ZORDS
+# 5. AUTOMATISCHE API-ERKENNUNG & MULTI-API ABFRAGE FÜR ALLE 10 ZORDS
 # ---------------------------------------------------------
-def get_api_config():
-    """Liest API-Key, Endpoint und Modell aus st.secrets (mit sicheren Defaults)."""
-    api_key = st.secrets.get("OPENAI_API_KEY", "") or st.secrets.get("LLM_API_KEY", "")
-    base_url = st.secrets.get("LLM_BASE_URL", "https://api.openai.com/v1").rstrip("/")
-    model = st.secrets.get("LLM_MODEL", "gpt-4o-mini")
-    return api_key, base_url, model
+def _collect_secret_values(obj, prefix="", out=None):
+    """Sammelt alle Strings aus flachen und verschachtelten Secrets ein."""
+    if out is None:
+        out = {}
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            full_key = f"{prefix}.{k}" if prefix else str(k)
+            if isinstance(v, dict):
+                _collect_secret_values(v, full_key, out)
+            elif isinstance(v, str) and v.strip():
+                out[full_key] = v.strip()
+    return out
+
+
+def _build_api_targets():
+    """Baut aus allen hinterlegten API-Keys in st.secrets eine Liste nutzbarer API-Ziele."""
+    all_secrets = _collect_secret_values(dict(st.secrets))
+
+    # Alles einsammeln, was nach API-Key / Token / Secret aussieht
+    candidate_keys = []
+    for k, v in all_secrets.items():
+        kl = k.lower()
+        if any(word in kl for word in ("key", "token", "api")) and not any(
+            skip in kl for skip in ("url", "model", "endpoint", "base", "gumroad")
+        ):
+            candidate_keys.append((k, v))
+
+    # Bevorzugte Key-Namen nach vorne sortieren
+    priority = ("openai", "llm", "gemini", "google", "openrouter", "groq", "mistral", "deepseek")
+    candidate_keys.sort(
+        key=lambda item: next(
+            (i for i, p in enumerate(priority) if p in item[0].lower()),
+            len(priority),
+        )
+    )
+
+    default_base_url = (
+        all_secrets.get("LLM_BASE_URL")
+        or all_secrets.get("OPENAI_BASE_URL")
+        or all_secrets.get("BASE_URL")
+        or ""
+    )
+    default_model = (
+        all_secrets.get("LLM_MODEL")
+        or all_secrets.get("OPENAI_MODEL")
+        or all_secrets.get("MODEL")
+        or ""
+    )
+
+    targets = []
+    for key_name, api_key in candidate_keys:
+        kl = key_name.lower()
+        is_gemini = "gemini" in kl or "google" in kl or api_key.startswith("AIza")
+        is_openrouter = "openrouter" in kl or api_key.startswith("sk-or-")
+        is_groq = "groq" in kl or api_key.startswith("gsk_")
+
+        if default_base_url:
+            base_url = default_base_url
+        elif is_gemini:
+            base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
+        elif is_openrouter:
+            base_url = "https://openrouter.ai/api/v1"
+        elif is_groq:
+            base_url = "https://api.groq.com/openai/v1"
+        else:
+            base_url = "https://api.openai.com/v1"
+
+        if default_model:
+            model = default_model
+        elif is_gemini:
+            model = "gemini-2.5-flash"
+        elif is_openrouter:
+            model = "openai/gpt-4o-mini"
+        elif is_groq:
+            model = "llama-3.3-70b-versatile"
+        else:
+            model = "gpt-4o-mini"
+
+        targets.append(
+            {
+                "name": key_name,
+                "api_key": api_key,
+                "base_url": str(base_url).rstrip("/"),
+                "model": str(model),
+            }
+        )
+
+    return targets
+
+
+def _query_openai_compatible(target: dict, messages: list) -> str:
+    resp = requests.post(
+        f"{target['base_url']}/chat/completions",
+        headers={
+            "Authorization": f"Bearer {target['api_key']}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": target["model"],
+            "messages": messages,
+            "temperature": 0.7,
+        },
+        timeout=35,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    return data["choices"][0]["message"]["content"].strip()
+
 
 def call_llm_for_zord(zord_name: str, prompt: str) -> str:
-    api_key, base_url, model = get_api_config()
     zord_info = ZORD_ROSTER[zord_name]
+    targets = _build_api_targets()
 
-    # Letzte Memory-Einträge als Kontext mitgeben
+    if not targets:
+        return (
+            f"[{zord_name} | Keine API-Keys erkannt]\n"
+            f"Es wurden in `st.secrets` keine API-Keys gefunden. Trage z. B. `OPENAI_API_KEY` oder `GEMINI_API_KEY` ein."
+        )
+
     recent_memory = "\n".join(f"- {m}" for m in st.session_state.elephant_memory[-20:])
-
-    # Letzte Chat-Nachrichten als Gesprächsverlauf mitgeben
     recent_chat = []
     for agent, user_msg, ai_msg in st.session_state.chat_history[-6:]:
         recent_chat.append({"role": "user", "content": f"({agent}) {user_msg}"})
         recent_chat.append({"role": "assistant", "content": ai_msg})
-
-    if not api_key:
-        return (
-            f"[{zord_name} | Kein API-Key hinterlegt]\n"
-            f"Trage in Streamlit unter `secrets.toml` deinen Key ein (`OPENAI_API_KEY = \"...\"`, optional `LLM_BASE_URL` und `LLM_MODEL`), "
-            f"damit {zord_name} ({zord_info['role']}) frei und vollwertig auf '{prompt}' antwortet."
-        )
 
     system_content = (
         f"{zord_info['system']}\n\n"
@@ -239,25 +350,16 @@ def call_llm_for_zord(zord_name: str, prompt: str) -> str:
     messages.extend(recent_chat)
     messages.append({"role": "user", "content": prompt})
 
-    try:
-        resp = requests.post(
-            f"{base_url}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": model,
-                "messages": messages,
-                "temperature": 0.7,
-            },
-            timeout=30,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        return data["choices"][0]["message"]["content"].strip()
-    except Exception as e:
-        return f"[{zord_name} | API-Fehler] {type(e).__name__}: {e}"
+    errors = []
+    for target in targets:
+        try:
+            return _query_openai_compatible(target, messages)
+        except Exception as e:
+            errors.append(f"{target['name']} ({target['model']}): {type(e).__name__}: {e}")
+
+    joined_errors = "\n- ".join(errors)
+    return f"[{zord_name} | Alle API-Versuche fehlgeschlagen]\n- {joined_errors}"
+
 
 class ZordNetEngine:
     @staticmethod
@@ -267,10 +369,10 @@ class ZordNetEngine:
 
         reply = call_llm_for_zord(agent_name, prompt)
 
-        # Kurzfassung der Antwort ebenfalls ins Elephant Memory schreiben
         short_reply = reply.replace("\n", " ")[:180]
         st.session_state.elephant_memory.append(f"[{timestamp}] [{agent_name}] Antwort: {short_reply}")
         return reply
+
 
 # ---------------------------------------------------------
 # 6. USER INTERFACE (LOGIN & DASHBOARD)
@@ -301,10 +403,11 @@ if not st.session_state.authenticated:
             else:
                 st.warning("Bitte gib einen Lizenzschlüssel ein.")
 
-        st.info("💡 **Test-Hinweis:** Du kannst aktuell `ORION-TEST-KEY-2026` zum Testen nutzen.")
+        st.info("💡 **Test-Hinweis:** Du kannst aktuell `ORION-TEST-KEY-2026` oder deinen Gumroad-Lizenzschlüssel nutzen.")
 
     with col2:
-        st.markdown("""
+        st.markdown(
+            """
         <div class="status-card">
             <h4>Pässe & Zugang</h4>
             <ul>
@@ -314,7 +417,9 @@ if not st.session_state.authenticated:
             </ul>
             <p><small>Verifizierter Zugang via Gumroad & Auth-X Security System.</small></p>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
 else:
     st.title("⚡ ZordNet Terminal — 10 Götter")
@@ -327,18 +432,25 @@ else:
         hours = diff.seconds // 3600
         remaining_str = f"{days}d {hours}h"
 
-    api_key, _, model_name = get_api_config()
-    api_status = f"AKTIV ({model_name})" if api_key else "KEY FEHLT IN SECRETS"
+    targets = _build_api_targets()
+    if targets:
+        api_names = ", ".join(f"{t['name']} ({t['model']})" for t in targets)
+        api_status = f"AKTIV [{len(targets)} APIs: {api_names}]"
+    else:
+        api_status = "KEINE API GEFUNDEN"
 
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <div class="status-card">
         <b>Status:</b> <span style="color:#00ff66;">ONLINE</span> |
         <b>Pass Tier:</b> {st.session_state.pass_tier} |
         <b>Gültig für:</b> {remaining_str} |
-        <b>LLM API:</b> {api_status} |
+        <b>APIs:</b> {api_status} |
         <b>Auth-X Master:</b> Michael Gautschi
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     with st.sidebar:
         st.header("🐘 Elephant Memory")
@@ -356,7 +468,7 @@ else:
     zord_names = list(ZORD_ROSTER.keys())
     for row_start in range(0, len(zord_names), 5):
         cols = st.columns(5)
-        for idx, z_name in enumerate(zord_names[row_start:row_start + 5]):
+        for idx, z_name in enumerate(zord_names[row_start : row_start + 5]):
             icon, title = z_name.split(" ", 1)
             role = ZORD_ROSTER[z_name]["role"]
             with cols[idx]:
@@ -371,7 +483,11 @@ else:
     selected_agent = st.selectbox("Zord auswählen:", zord_names)
     st.caption(f"Aktive Rolle: **{ZORD_ROSTER[selected_agent]['role']}**")
 
-    user_prompt = st.text_area("Befehl / Anfrage an ZordNet senden:", placeholder="Schreib wie mit ChatGPT oder Gemini...", height=90)
+    user_prompt = st.text_area(
+        "Befehl / Anfrage an ZordNet senden:",
+        placeholder="Schreib wie mit ChatGPT oder Gemini...",
+        height=90,
+    )
 
     if st.button("Befehl Ausführen ⚡"):
         if user_prompt.strip():
