@@ -148,12 +148,13 @@ if "elephant_memory" not in st.session_state:
         "Asimov Gesetz 5: Nur Michael darf Code-Änderungen vornehmen.",
         "System-Standard: Elephant Memory aktiviert.",
     ]
+if "resolved_models" not in st.session_state:
+    st.session_state.resolved_models = {}
 
 # ---------------------------------------------------------
 # 4. GUMROAD LICENSE VALIDATION SYSTEM (OHNE PRODUCT-ID-ZWANG)
 # ---------------------------------------------------------
 def _detect_duration_from_purchase(purchase: dict):
-    """Ermittelt Laufzeit & Tier automatisch ohne fest hinterlegte Product IDs."""
     text_blob = " ".join(
         str(purchase.get(k, ""))
         for k in ("product_name", "recurrence", "variant", "variants")
@@ -170,7 +171,6 @@ def _detect_duration_from_purchase(purchase: dict):
 def verify_orion_license(license_key: str):
     key = license_key.strip()
 
-    # Creator- / Test-Keys sofort durchlassen
     if key.upper().startswith("TEST-ORION") or key == "ORION-TEST-KEY-2026":
         expiry_date = datetime.datetime.now(timezone.utc) + datetime.timedelta(days=30)
         return True, "1_MONAT", expiry_date, "Test-Key erfolgreich aktiviert!"
@@ -214,10 +214,9 @@ def verify_orion_license(license_key: str):
 
 
 # ---------------------------------------------------------
-# 5. AUTOMATISCHE API-ERKENNUNG & MULTI-API ABFRAGE FÜR ALLE 10 ZORDS
+# 5. DYNAMISCHE API- & MODELL-ERKENNUNG FÜR ALLE 10 ZORDS
 # ---------------------------------------------------------
 def _collect_secret_values(obj, prefix="", out=None):
-    """Sammelt alle Strings aus flachen und verschachtelten Secrets ein."""
     if out is None:
         out = {}
     if isinstance(obj, dict):
@@ -230,11 +229,67 @@ def _collect_secret_values(obj, prefix="", out=None):
     return out
 
 
-def _build_api_targets():
-    """Baut aus allen hinterlegten API-Keys in st.secrets eine Liste nutzbarer API-Ziele."""
+def _normalize_base_url(url: str) -> str:
+    clean = str(url).strip().rstrip("/")
+    if clean.endswith("/chat/completions"):
+        clean = clean[: -len("/chat/completions")].rstrip("/")
+    return clean
+
+
+def _fetch_live_model(base_url: str, api_key: str, provider_hint: str, fallback_models: list) -> str:
+    """Fragt /models ab, um garantiert ein aktives Modell des Anbieters zu erwischen."""
+    cache_key = f"{base_url}::{provider_hint}"
+    if cache_key in st.session_state.resolved_models:
+        return st.session_state.resolved_models[cache_key]
+
+    try:
+        resp = requests.get(
+            f"{base_url}/models",
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            payload = resp.json()
+            raw_models = payload.get("data", []) if isinstance(payload, dict) else []
+            model_ids = [
+                m.get("id") for m in raw_models if isinstance(m, dict) and m.get("id")
+            ]
+
+            if model_ids:
+                # Bevorzugte aktuelle Modell-Familien zuerst prüfen
+                preferred_prefixes = (
+                    "gpt-4.1",
+                    "gpt-4o",
+                    "o3",
+                    "o4",
+                    "gemini-2.5",
+                    "gemini-2.0",
+                    "llama-3.3",
+                    "llama-3.1",
+                    "deepseek",
+                    "qwen",
+                    "mistral",
+                    "gemma",
+                )
+                for pref in preferred_prefixes:
+                    for mid in model_ids:
+                        if pref in mid.lower():
+                            st.session_state.resolved_models[cache_key] = mid
+                            return mid
+
+                st.session_state.resolved_models[cache_key] = model_ids[0]
+                return model_ids[0]
+    except Exception:
+        pass
+
+    chosen = fallback_models[0] if fallback_models else "gpt-4o-mini"
+    st.session_state.resolved_models[cache_key] = chosen
+    return chosen
+
+
+def _build_api_targets(resolve_live: bool = False):
     all_secrets = _collect_secret_values(dict(st.secrets))
 
-    # Alles einsammeln, was nach API-Key / Token / Secret aussieht
     candidate_keys = []
     for k, v in all_secrets.items():
         kl = k.lower()
@@ -243,8 +298,7 @@ def _build_api_targets():
         ):
             candidate_keys.append((k, v))
 
-    # Bevorzugte Key-Namen nach vorne sortieren
-    priority = ("openai", "llm", "gemini", "google", "openrouter", "groq", "mistral", "deepseek")
+    priority = ("groq", "openai", "llm", "gemini", "google", "openrouter", "mistral", "deepseek")
     candidate_keys.sort(
         key=lambda item: next(
             (i for i, p in enumerate(priority) if p in item[0].lower()),
@@ -268,71 +322,88 @@ def _build_api_targets():
     targets = []
     for key_name, api_key in candidate_keys:
         kl = key_name.lower()
+        is_groq = "groq" in kl or api_key.startswith("gsk_")
         is_gemini = "gemini" in kl or "google" in kl or api_key.startswith("AIza")
         is_openrouter = "openrouter" in kl or api_key.startswith("sk-or-")
-        is_groq = "groq" in kl or api_key.startswith("gsk_")
 
         if default_base_url:
-            base_url = default_base_url
-        elif is_gemini:
-            base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
-        elif is_openrouter:
-            base_url = "https://openrouter.ai/api/v1"
+            base_url = _normalize_base_url(default_base_url)
+            provider_hint = "custom"
+            fallbacks = [default_model or "gpt-4o-mini"]
         elif is_groq:
             base_url = "https://api.groq.com/openai/v1"
+            provider_hint = "groq"
+            fallbacks = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "gemma2-9b-it"]
+        elif is_gemini:
+            base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
+            provider_hint = "gemini"
+            fallbacks = ["gemini-2.5-flash", "gemini-2.0-flash"]
+        elif is_openrouter:
+            base_url = "https://openrouter.ai/api/v1"
+            provider_hint = "openrouter"
+            fallbacks = ["openai/gpt-4o-mini", "meta-llama/llama-3.3-70b-instruct:free"]
         else:
             base_url = "https://api.openai.com/v1"
+            provider_hint = "openai"
+            fallbacks = ["gpt-4o-mini", "gpt-4.1-mini"]
 
         if default_model:
             model = default_model
-        elif is_gemini:
-            model = "gemini-2.5-flash"
-        elif is_openrouter:
-            model = "openai/gpt-4o-mini"
-        elif is_groq:
-            model = "llama-3.3-70b-versatile"
+        elif resolve_live:
+            model = _fetch_live_model(base_url, api_key, provider_hint, fallbacks)
         else:
-            model = "gpt-4o-mini"
+            cache_key = f"{base_url}::{provider_hint}"
+            model = st.session_state.resolved_models.get(cache_key, fallbacks[0])
 
         targets.append(
             {
                 "name": key_name,
                 "api_key": api_key,
-                "base_url": str(base_url).rstrip("/"),
-                "model": str(model),
+                "base_url": base_url,
+                "provider_hint": provider_hint,
+                "fallbacks": fallbacks,
+                "model": model,
             }
         )
 
     return targets
 
 
-def _query_openai_compatible(target: dict, messages: list) -> str:
+def _query_openai_compatible(base_url: str, api_key: str, model: str, messages: list) -> str:
+    endpoint = f"{base_url}/chat/completions"
     resp = requests.post(
-        f"{target['base_url']}/chat/completions",
+        endpoint,
         headers={
-            "Authorization": f"Bearer {target['api_key']}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         },
         json={
-            "model": target["model"],
+            "model": model,
             "messages": messages,
             "temperature": 0.7,
         },
         timeout=35,
     )
-    resp.raise_for_status()
+    if resp.status_code >= 400:
+        detail = ""
+        try:
+            detail = resp.json().get("error", {}).get("message", "") or resp.text[:200]
+        except Exception:
+            detail = resp.text[:200]
+        raise RuntimeError(f"HTTP {resp.status_code} ({endpoint}): {detail}")
+
     data = resp.json()
     return data["choices"][0]["message"]["content"].strip()
 
 
 def call_llm_for_zord(zord_name: str, prompt: str) -> str:
     zord_info = ZORD_ROSTER[zord_name]
-    targets = _build_api_targets()
+    targets = _build_api_targets(resolve_live=True)
 
     if not targets:
         return (
             f"[{zord_name} | Keine API-Keys erkannt]\n"
-            f"Es wurden in `st.secrets` keine API-Keys gefunden. Trage z. B. `OPENAI_API_KEY` oder `GEMINI_API_KEY` ein."
+            f"Es wurden in `st.secrets` keine API-Keys gefunden."
         )
 
     recent_memory = "\n".join(f"- {m}" for m in st.session_state.elephant_memory[-20:])
@@ -352,10 +423,13 @@ def call_llm_for_zord(zord_name: str, prompt: str) -> str:
 
     errors = []
     for target in targets:
-        try:
-            return _query_openai_compatible(target, messages)
-        except Exception as e:
-            errors.append(f"{target['name']} ({target['model']}): {type(e).__name__}: {e}")
+        models_to_try = [target["model"]] + [m for m in target["fallbacks"] if m != target["model"]]
+        for m in models_to_try:
+            try:
+                st.session_state.resolved_models[f"{target['base_url']}::{target['provider_hint']}"] = m
+                return _query_openai_compatible(target["base_url"], target["api_key"], m, messages)
+            except Exception as e:
+                errors.append(f"{target['name']} [{m}]: {e}")
 
     joined_errors = "\n- ".join(errors)
     return f"[{zord_name} | Alle API-Versuche fehlgeschlagen]\n- {joined_errors}"
@@ -432,7 +506,7 @@ else:
         hours = diff.seconds // 3600
         remaining_str = f"{days}d {hours}h"
 
-    targets = _build_api_targets()
+    targets = _build_api_targets(resolve_live=False)
     if targets:
         api_names = ", ".join(f"{t['name']} ({t['model']})" for t in targets)
         api_status = f"AKTIV [{len(targets)} APIs: {api_names}]"
@@ -463,7 +537,6 @@ else:
             st.session_state.authenticated = False
             st.rerun()
 
-    # Grid für alle 10 Götter-Zords (5 pro Reihe)
     st.subheader("⚡ Die 10 Götter-Zords")
     zord_names = list(ZORD_ROSTER.keys())
     for row_start in range(0, len(zord_names), 5):
