@@ -7,13 +7,12 @@ from datetime import timezone
 # 1. PAGE CONFIGURATION & STYLING
 # ---------------------------------------------------------
 st.set_page_config(
-    page_title="Orion.Ai | ZordNet System",
+    page_title="Orion.Ai | 10 Götter ZordNet",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom Styling (Dark Theme & Neon Accents)
 st.markdown("""
 <style>
     .main { background-color: #0b0e14; color: #e6edf3; }
@@ -23,7 +22,7 @@ st.markdown("""
         border: none;
         border-radius: 6px;
         font-weight: bold;
-        transition: all 0.3s ease;
+        transition: all 0.25s ease;
     }
     .stButton>button:hover {
         background-color: #ff8800;
@@ -42,12 +41,92 @@ st.markdown("""
         border-radius: 6px;
         padding: 10px;
         text-align: center;
+        margin-bottom: 8px;
+        min-height: 92px;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 2. SESSION STATE INITIALIZATION
+# 2. DIE 10 GÖTTER-ZORDS (ROLLEN & SYSTEM-PROMPTS)
+# ---------------------------------------------------------
+ZORD_ROSTER = {
+    "🤖 ORION": {
+        "role": "Core AI Engine",
+        "system": (
+            "Du bist ORION, die zentrale Kern-KI im ZordNet-System von Haupt-Architekt Michael Gautschi. "
+            "Antworte klar, durchdacht, direkt und hilfreich wie ein vollwertiger KI-Assistent. "
+            "Nutze vorhandene Infos aus dem Elephant Memory sinnvoll."
+        ),
+    },
+    "⚡ ZEUS": {
+        "role": "Network & Routing",
+        "system": (
+            "Du bist ZEUS, zuständig für Netzwerke, Schnittstellen, Datenflüsse und System-Routing im ZordNet. "
+            "Erkläre technische Zusammenhänge, API-Flüsse, Webhooks und Verbindungen präzise und praxisnah."
+        ),
+    },
+    "🛡️ GHOST": {
+        "role": "Auth-X Security",
+        "system": (
+            "Du bist GHOST, der Sicherheits- und Auth-X-Zord im ZordNet. "
+            "Denke über Zugriffsrechte, Sicherheit, Lizenzschutz, Fehlerquellen und Absicherung nach – "
+            "aber antworte als echter Gesprächspartner, nicht mit robotischen Floskeln."
+        ),
+    },
+    "☠️ GRIMREAPER": {
+        "role": "System Execution",
+        "system": (
+            "Du bist GRIMREAPER, der Ausführungs-Zord für direkte Umsetzung, Skripte, Befehle und Konsequenzen. "
+            "Gehe direkt an die Sache, zeige konkrete nächste Schritte und nenne klare Ergebnisse."
+        ),
+    },
+    "🦉 ATHENA": {
+        "role": "Strategy & Analysis",
+        "system": (
+            "Du bist ATHENA, der Strategie- und Analyse-Zord im ZordNet. "
+            "Zerlege komplexe Themen sauber, erkenne Muster, vergleiche Optionen und gib kluge Empfehlungen."
+        ),
+    },
+    "☀️ APOLLO": {
+        "role": "Ideas & Vision",
+        "system": (
+            "Du bist APOLLO, der Ideen-, Kreativ- und Visions-Zord im ZordNet. "
+            "Entwickle frische Konzepte, kreative Lösungen, Namen, Layouts und spannende Erweiterungen."
+        ),
+    },
+    "🔨 HEPHAESTUS": {
+        "role": "Code & Architecture",
+        "system": (
+            "Du bist HEPHAESTUS, der Schmiede-, Code- und Architektur-Zord im ZordNet. "
+            "Baue sauberen, funktionierenden Code, strukturiere Module und hilf beim Umbau des Systems."
+        ),
+    },
+    "🪽 HERMES": {
+        "role": "Communication & Docs",
+        "system": (
+            "Du bist HERMES, der Kommunikations- und Struktur-Zord im ZordNet. "
+            "Formuliere Texte, Kundenhinweise, Beschreibungen und Übersichten klar, verständlich und auf den Punkt."
+        ),
+    },
+    "⏳ CHRONOS": {
+        "role": "Planning & Timelines",
+        "system": (
+            "Du bist CHRONOS, der Zeit-, Reihenfolgen- und Roadmap-Zord im ZordNet. "
+            "Ordne Aufgaben in sinnvolle Etappen, Meilensteine und Prioritäten für die Weiterentwicklung."
+        ),
+    },
+    "🏹 ARTEMIS": {
+        "role": "Precision & Debugging",
+        "system": (
+            "Du bist ARTEMIS, der Präzisions- und Bug-Hunting-Zord im ZordNet. "
+            "Spüre versteckte Fehler, Edge-Cases, Tippfehler und Logik-Lücken gezielt auf."
+        ),
+    },
+}
+
+# ---------------------------------------------------------
+# 3. SESSION STATE INITIALIZATION
 # ---------------------------------------------------------
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
@@ -64,116 +143,151 @@ if "elephant_memory" not in st.session_state:
         "Master Code: Auth-x aktiv",
         "Haupt-Architekt: Michael Gautschi",
         "Asimov Gesetz 5: Nur Michael darf Code-Änderungen vornehmen.",
-        "System-Standard: Elephant Memory aktiviert."
+        "System-Standard: Elephant Memory aktiviert.",
     ]
 
 # ---------------------------------------------------------
-# 3. GUMROAD LICENSE VALIDATION SYSTEM
+# 4. GUMROAD LICENSE VALIDATION SYSTEM
 # ---------------------------------------------------------
 GUMROAD_PRODUCT_IDS = {
-    "1_TAG":"PNXJZNc-Am0n3S5UXK2Iqw==",      # Ersetzen mit deinen Gumroad Product IDs
+    "1_TAG": "PNXJZNc-Am0n3S5UXK2Iqw==",
     "1_WOCHE":"qZkqQUIlwnUW51EqLZg8gw==",
-    "1_MONAT":"qftgaG4CJFmDLpp4u6T3fw=="
+    "1_MONAT":"qftgaG4CJFmDLpp4u6T3fw==",
 }
 
-def verify_orion_license(license_key):
-    """Validiert den Lizenzschlüssel über Gumroad API oder den Creator-Test-Key."""
+def verify_orion_license(license_key: str):
     key = license_key.strip()
-    
-    # 1. Creator Test-Key Check (Für interne Tests & Gumroad Testkäufe)
+
     if key.upper().startswith("TEST-ORION") or key == "ORION-TEST-KEY-2026":
         expiry_date = datetime.datetime.now(timezone.utc) + datetime.timedelta(days=30)
         return True, "1_MONAT", expiry_date, "Test-Key erfolgreich aktiviert!"
 
-    # 2. Echter Gumroad API Check
     try:
-        # Falls du eine spezifische Product-ID nutzen willst, gib permalink an
         response = requests.post(
             "https://api.gumroad.com/v2/licenses/verify",
             data={"license_key": key},
-            timeout=10
+            timeout=10,
         )
         data = response.json()
-        
-        if data.get("success"):
-            purchase = data.get("purchase", {})
-            product_id = purchase.get("product_id")
-            created_at_str = purchase.get("created_at")
-            
-            # Laufzeit ermitteln basierend auf Produkttyp
+
+        if not data.get("success"):
+            return False, None, None, f"Gumroad meldet: {data.get('message', 'Ungültiger Schlüssel')}"
+
+        purchase = data.get("purchase", {})
+        created_at_str = purchase.get("created_at")
+        if created_at_str:
             created_at = datetime.datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
-            
-            # Standardmäßig 1 Monat setzen wenn unbekannt, sonst matchen
-            pass_tier = "1_MONAT"
-            duration = datetime.timedelta(days=30)
-            
-            if product_id == GUMROAD_PRODUCT_IDS.get("1_TAG"):
-                pass_tier = "1_TAG"
-                duration = datetime.timedelta(days=1)
-            elif product_id == GUMROAD_PRODUCT_IDS.get("1_WOCHE"):
-                pass_tier = "1_WOCHE"
-                duration = datetime.timedelta(days=7)
-                
-            expires_at = created_at + duration
-            
-            if datetime.datetime.now(timezone.utc) > expires_at:
-                return False, None, None, "Lizenzschlüssel ist abgelaufen."
-                
-            return True, pass_tier, expires_at, "Lizenz erfolgreich verifiziert!"
         else:
-            return False, None, None, "Ungültiger Lizenzschlüssel."
-            
+            created_at = datetime.datetime.now(timezone.utc)
+
+        product_id = purchase.get("product_id")
+        pass_tier = "1_MONAT"
+        duration = datetime.timedelta(days=30)
+
+        if product_id == GUMROAD_PRODUCT_IDS.get("1_TAG"):
+            pass_tier = "1_TAG"
+            duration = datetime.timedelta(days=1)
+        elif product_id == GUMROAD_PRODUCT_IDS.get("1_WOCHE"):
+            pass_tier = "1_WOCHE"
+            duration = datetime.timedelta(days=7)
+
+        expires_at = created_at + duration
+        if datetime.datetime.now(timezone.utc) > expires_at:
+            return False, None, None, "Lizenzschlüssel ist abgelaufen."
+
+        return True, pass_tier, expires_at, "Lizenz erfolgreich verifiziert!"
+
     except Exception as e:
-        # Fallback falls Offline/API-Fehler während des Testens
-        return False, None, None, f"Fehler bei der Verifizierung: {str(e)}"
+        return False, None, None, f"Fehler bei der Verifizierung: {type(e).__name__}: {e}"
 
 # ---------------------------------------------------------
-# 4. ZORDNET MULTI-AGENT ENGINE
+# 5. ECHTE LLM-API ABFRAGE FÜR ALLE 10 ZORDS
 # ---------------------------------------------------------
+def get_api_config():
+    """Liest API-Key, Endpoint und Modell aus st.secrets (mit sicheren Defaults)."""
+    api_key = st.secrets.get("OPENAI_API_KEY", "") or st.secrets.get("LLM_API_KEY", "")
+    base_url = st.secrets.get("LLM_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+    model = st.secrets.get("LLM_MODEL", "gpt-4o-mini")
+    return api_key, base_url, model
+
+def call_llm_for_zord(zord_name: str, prompt: str) -> str:
+    api_key, base_url, model = get_api_config()
+    zord_info = ZORD_ROSTER[zord_name]
+
+    # Letzte Memory-Einträge als Kontext mitgeben
+    recent_memory = "\n".join(f"- {m}" for m in st.session_state.elephant_memory[-20:])
+
+    # Letzte Chat-Nachrichten als Gesprächsverlauf mitgeben
+    recent_chat = []
+    for agent, user_msg, ai_msg in st.session_state.chat_history[-6:]:
+        recent_chat.append({"role": "user", "content": f"({agent}) {user_msg}"})
+        recent_chat.append({"role": "assistant", "content": ai_msg})
+
+    if not api_key:
+        return (
+            f"[{zord_name} | Kein API-Key hinterlegt]\n"
+            f"Trage in Streamlit unter `secrets.toml` deinen Key ein (`OPENAI_API_KEY = \"...\"`, optional `LLM_BASE_URL` und `LLM_MODEL`), "
+            f"damit {zord_name} ({zord_info['role']}) frei und vollwertig auf '{prompt}' antwortet."
+        )
+
+    system_content = (
+        f"{zord_info['system']}\n\n"
+        f"Aktuelles Elephant Memory (Kontext & bisherige Ereignisse):\n{recent_memory}"
+    )
+
+    messages = [{"role": "system", "content": system_content}]
+    messages.extend(recent_chat)
+    messages.append({"role": "user", "content": prompt})
+
+    try:
+        resp = requests.post(
+            f"{base_url}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": model,
+                "messages": messages,
+                "temperature": 0.7,
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return data["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        return f"[{zord_name} | API-Fehler] {type(e).__name__}: {e}"
+
 class ZordNetEngine:
     @staticmethod
-    def process_request(agent_name, prompt):
+    def process_request(agent_name: str, prompt: str) -> str:
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-        
-        # Log-Eintrag fürs Elefantengedächtnis vorbereiten
-        memory_entry = f"[{timestamp}] [{agent_name}] Befehl: {prompt}"
-        st.session_state.elephant_memory.append(memory_entry)
-        
-        # Agenten-Spezifische Antworten
-        if agent_name == "🤖 ORION (Core AI)":
-            response = f"[Orion Core] Verarbeite Haupt-Anfrage: '{prompt}'. Status: Optimal."
-        elif agent_name == "⚡ ZEUS (Network Protocols)":
-            response = f"[Zeus Network] Routen überprüft für: '{prompt}'. Protokoll stabil."
-        elif agent_name == "🛡️ GHOST (Auth-X Security)":
-            response = f"[Ghost Security] Auth-X Check für '{prompt}': Zugriff gewährt. Keine Bedrohung erkannt."
-        elif agent_name == "☠️ GRIMREAPER (System Execution)":
-            response = f"[Grimreaper Execution] Führe System-Befehl aus: '{prompt}'. Ausführung erfolgreich."
-        else:
-            response = f"[ZordNet Core] Anfrage erhalten: {prompt}"
-            
-        return response
+        st.session_state.elephant_memory.append(f"[{timestamp}] [{agent_name}] Nutzereingabe: {prompt}")
+
+        reply = call_llm_for_zord(agent_name, prompt)
+
+        # Kurzfassung der Antwort ebenfalls ins Elephant Memory schreiben
+        short_reply = reply.replace("\n", " ")[:180]
+        st.session_state.elephant_memory.append(f"[{timestamp}] [{agent_name}] Antwort: {short_reply}")
+        return reply
 
 # ---------------------------------------------------------
-# 5. USER INTERFACE (LOGIN & DASHBOARD)
+# 6. USER INTERFACE (LOGIN & DASHBOARD)
 # ---------------------------------------------------------
-
-# --- LOGIN SCREEN ---
 if not st.session_state.authenticated:
     st.title("⚡ Orion.Ai — ZordNet Access Portal")
-    st.subheader("Auth-X Secured Multi-Agent Interface")
-    
+    st.subheader("Auth-X Secured 10-Zord Multi-Agent Interface")
+
     col1, col2 = st.columns([2, 1])
-    
+
     with col1:
-        st.markdown("""
-        Willkommen beim **ZordNet System**. Bitte gib deinen Gumroad-Lizenzschlüssel ein, um das Terminal freizuschalten.
-        """)
-        
+        st.markdown("Willkommen beim **ZordNet System**. Gib deinen Lizenzschlüssel ein, um alle 10 Götter-Zords freizuschalten.")
         key_input = st.text_input("Lizenzschlüssel (Gumroad Key):", value="", type="password")
-        
+
         if st.button("System Freischalten 🚀"):
             if key_input:
-                with st.spinner("Prüfe Auth-X & Gumroad Lizenz..."):
+                with st.spinner("Prüfe Auth-X & Lizenz..."):
                     is_valid, tier, expires, msg = verify_orion_license(key_input)
                     if is_valid:
                         st.session_state.authenticated = True
@@ -186,8 +300,8 @@ if not st.session_state.authenticated:
                         st.error(msg)
             else:
                 st.warning("Bitte gib einen Lizenzschlüssel ein.")
-                
-        st.info("💡 **Test-Hinweis:** Du kannst aktuell auch `ORION-TEST-KEY-2026` oder den Gumroad Test-Key nutzen.")
+
+        st.info("💡 **Test-Hinweis:** Du kannst aktuell `ORION-TEST-KEY-2026` zum Testen nutzen.")
 
     with col2:
         st.markdown("""
@@ -202,12 +316,9 @@ if not st.session_state.authenticated:
         </div>
         """, unsafe_allow_html=True)
 
-# --- DASHBOARD SCREEN ---
 else:
-    # Top Bar / Header Status
-    st.title("⚡ ZordNet Terminal Dashboard")
-    
-    # Restzeit Berechnen
+    st.title("⚡ ZordNet Terminal — 10 Götter")
+
     remaining_str = "Aktiv"
     if st.session_state.expires_at:
         now = datetime.datetime.now(timezone.utc)
@@ -215,63 +326,64 @@ else:
         days = diff.days
         hours = diff.seconds // 3600
         remaining_str = f"{days}d {hours}h"
-        
+
+    api_key, _, model_name = get_api_config()
+    api_status = f"AKTIV ({model_name})" if api_key else "KEY FEHLT IN SECRETS"
+
     st.markdown(f"""
     <div class="status-card">
-        <b>Status:</b> <span style="color:#00ff66;">ONLINE</span> | 
-        <b>Pass Tier:</b> {st.session_state.pass_tier} | 
-        <b>Gültig für:</b> {remaining_str} | 
+        <b>Status:</b> <span style="color:#00ff66;">ONLINE</span> |
+        <b>Pass Tier:</b> {st.session_state.pass_tier} |
+        <b>Gültig für:</b> {remaining_str} |
+        <b>LLM API:</b> {api_status} |
         <b>Auth-X Master:</b> Michael Gautschi
     </div>
     """, unsafe_allow_html=True)
-    
-    # Layout: Sidebar für Elephant Memory & Agenten-Übersicht
+
     with st.sidebar:
         st.header("🐘 Elephant Memory")
-        st.caption("Dauerhafte Protokollierung & System-Gesetze")
-        for mem in st.session_state.elephant_memory:
+        st.caption("Protokoll & Kontext für alle 10 Zords")
+        for mem in reversed(st.session_state.elephant_memory[-25:]):
             st.markdown(f"- {mem}")
-            
+
         st.divider()
         if st.button("Abmelden / Lock System"):
             st.session_state.authenticated = False
             st.rerun()
 
-    # Agenten Grid
-    st.subheader("⚡ ZordNet Multi-Agent System")
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.markdown('<div class="agent-box">🤖<br><b>ORION</b><br><small>Core AI Engine</small></div>', unsafe_allow_html=True)
-    with c2:
-        st.markdown('<div class="agent-box">⚡<br><b>ZEUS</b><br><small>Network Protocols</small></div>', unsafe_allow_html=True)
-    with c3:
-        st.markdown('<div class="agent-box">🛡️<br><b>GHOST</b><br><small>Auth-X Security</small></div>', unsafe_allow_html=True)
-    with c4:
-        st.markdown('<div class="agent-box">☠️<br><b>GRIMREAPER</b><br><small>System Execution</small></div>', unsafe_allow_html=True)
+    # Grid für alle 10 Götter-Zords (5 pro Reihe)
+    st.subheader("⚡ Die 10 Götter-Zords")
+    zord_names = list(ZORD_ROSTER.keys())
+    for row_start in range(0, len(zord_names), 5):
+        cols = st.columns(5)
+        for idx, z_name in enumerate(zord_names[row_start:row_start + 5]):
+            icon, title = z_name.split(" ", 1)
+            role = ZORD_ROSTER[z_name]["role"]
+            with cols[idx]:
+                st.markdown(
+                    f'<div class="agent-box">{icon}<br><b>{title}</b><br><small>{role}</small></div>',
+                    unsafe_allow_html=True,
+                )
 
     st.divider()
 
-    # Terminal Input Area
     st.subheader("🖥️ ZordNet Terminal")
-    
-    selected_agent = st.selectbox(
-        "Agenten auswählen:",
-        ["🤖 ORION (Core AI)", "⚡ ZEUS (Network Protocols)", "🛡️ GHOST (Auth-X Security)", "☠️ GRIMREAPER (System Execution)"]
-    )
-    
-    user_prompt = st.text_input("Befehl / Anfrage an ZordNet senden:", placeholder="Gib deinen Befehl ein...")
-    
-    if st.button("Befehl Ausführen ⚡"):
-        if user_prompt:
-            output = ZordNetEngine.process_request(selected_agent, user_prompt)
-            st.session_state.chat_history.append((selected_agent, user_prompt, output))
-        else:
-            st.warning("Bitte gib einen Befehl ein.")
+    selected_agent = st.selectbox("Zord auswählen:", zord_names)
+    st.caption(f"Aktive Rolle: **{ZORD_ROSTER[selected_agent]['role']}**")
 
-    # Terminal Output Logs
+    user_prompt = st.text_area("Befehl / Anfrage an ZordNet senden:", placeholder="Schreib wie mit ChatGPT oder Gemini...", height=90)
+
+    if st.button("Befehl Ausführen ⚡"):
+        if user_prompt.strip():
+            with st.spinner(f"{selected_agent} denkt nach..."):
+                output = ZordNetEngine.process_request(selected_agent, user_prompt.strip())
+            st.session_state.chat_history.append((selected_agent, user_prompt.strip(), output))
+        else:
+            st.warning("Bitte gib einen Befehl oder eine Frage ein.")
+
     st.subheader("📜 Terminal Output & Logs")
     for agent, req, res in reversed(st.session_state.chat_history):
         with st.chat_message("user"):
             st.write(f"**[{agent}]** {req}")
         with st.chat_message("assistant"):
-            st.write(res)
+            st.markdown(res)
