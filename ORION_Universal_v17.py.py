@@ -71,9 +71,9 @@ if "elephant_memory" not in st.session_state:
 # 3. GUMROAD LICENSE VALIDATION SYSTEM
 # ---------------------------------------------------------
 GUMROAD_PRODUCT_IDS = {
-    "1_TAG": "PNXJZNc-Am0n3S5UXK2Iqw==",      # Ersetzen mit deinen Gumroad Product IDs
-    "1_WOCHE": "qZkqQUIlwnUW51EqLZg8gw==",
-    "1_MONAT": "qftgaG4CJFmDLpp4u6T3fw=="
+    "1_TAG":"PNXJZNc-Am0n3S5UXK2Iqw==",      # Ersetzen mit deinen Gumroad Product IDs
+    "1_WOCHE":"qZkqQUIlwnUW51EqLZg8gw==",
+    "1_MONAT":"qftgaG4CJFmDLpp4u6T3fw=="
 }
 
 def verify_orion_license(license_key):
