@@ -1,55 +1,62 @@
-import os
-import time
-import json
-import datetime
-import requests
-from typing import Tuple, Dict, Any
 import streamlit as st
+import requests
+import datetime
+from datetime import timezone
 
-# ==============================================================================
-# 1. GUMROAD LIZENZ-KONFIGURATION (Hier deine 3 Product IDs einfügen)
-# ==============================================================================
-GUMROAD_PRODUCT_IDS = {
-    "1_tag":"PNXJZNc-Am0n3S5UXK2Iqw==",
-    "1_woche":"qZkqQUIlwnUW51EqLZg8gw==",
-    "1_monat":"qftgaG4CJFmDLpp4u6T3fw==",
-}
-
-DURATION_DAYS = {
-    "1_tag": 1,
-    "1_woche": 7,
-    "1_monat": 30,
-}
-
-GUMROAD_VERIFY_URL = "https://api.gumroad.com/v2/licenses/verify"
-
-# ==============================================================================
-# 2. STREAMLIT PAGE CONFIG & SESSION INITIALISIERUNG
-# ==============================================================================
+# ---------------------------------------------------------
+# 1. PAGE CONFIGURATION & STYLING
+# ---------------------------------------------------------
 st.set_page_config(
-    page_title="Orion.Ai - ZordNet Central",
+    page_title="Orion.Ai | ZordNet System",
     page_icon="⚡",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="expanded"
 )
 
-# Custom Styling (Dark Neon Theme)
+# Custom Styling (Dark Theme & Neon Accents)
 st.markdown("""
 <style>
-    .main { background-color: #0d1117; color: #c9d1d9; }
-    .stButton>button { background-color: #1f6feb; color: white; border-radius: 8px; font-weight: bold; }
-    .stTextInput>div>div>input { background-color: #161b22; color: #f0f6fc; border: 1px solid #30363d; }
-    .zord-card { background-color: #161b22; border: 1px solid #30363d; padding: 15px; border-radius: 10px; margin-bottom: 10px; }
+    .main { background-color: #0b0e14; color: #e6edf3; }
+    .stButton>button {
+        background-color: #ff6b00;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        background-color: #ff8800;
+        box-shadow: 0 0 10px rgba(255, 107, 0, 0.5);
+    }
+    .status-card {
+        background-color: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    .agent-box {
+        background-color: #0d1117;
+        border: 1px solid #21262d;
+        border-radius: 6px;
+        padding: 10px;
+        text-align: center;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# Session States initialisieren
-if "orion_auth" not in st.session_state:
-    st.session_state.orion_auth = False
-if "orion_msg" not in st.session_state:
-    st.session_state.orion_msg = ""
-if "orion_meta" not in st.session_state:
-    st.session_state.orion_meta = {}
+# ---------------------------------------------------------
+# 2. SESSION STATE INITIALIZATION
+# ---------------------------------------------------------
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "license_key" not in st.session_state:
+    st.session_state.license_key = ""
+if "pass_tier" not in st.session_state:
+    st.session_state.pass_tier = None
+if "expires_at" not in st.session_state:
+    st.session_state.expires_at = None
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "elephant_memory" not in st.session_state:
@@ -60,209 +67,211 @@ if "elephant_memory" not in st.session_state:
         "System-Standard: Elephant Memory aktiviert."
     ]
 
-# ==============================================================================
-# 3. GUMROAD LIZENZPRÜFER ENGINE
-# ==============================================================================
-def verify_orion_license(user_license_key: str) -> Tuple[bool, str, dict]:
-    clean_key = (user_license_key or "").strip()
-    if not clean_key:
-        return False, "Bitte gib deinen Lizenzschlüssel ein.", {}
+# ---------------------------------------------------------
+# 3. GUMROAD LICENSE VALIDATION SYSTEM
+# ---------------------------------------------------------
+GUMROAD_PRODUCT_IDS = {
+    "1_TAG": "PNXJZNc-Am0n3S5UXK2Iqw==",      # Ersetzen mit deinen Gumroad Product IDs
+    "1_WOCHE": "qZkqQUIlwnUW51EqLZg8gw==",
+    "1_MONAT": "qftgaG4CJFmDLpp4u6T3fw=="
+}
 
-    if clean_key.lower().startswith("sample"):
-        return False, "Das ist ein Beispiel-Platzhalter. Bitte einen echten Lizenzschlüssel nutzen.", {}
-
-    last_network_error = None
-
-    for tier, product_id in GUMROAD_PRODUCT_IDS.items():
-        if not product_id or product_id.startswith("HIER_PRODUCT_ID_"):
-            continue
-
-        payload = {
-            "product_id": product_id,
-            "license_key": clean_key,
-            "increment_uses_count": "false",
-        }
-
-        try:
-            response = requests.post(GUMROAD_VERIFY_URL, data=payload, timeout=12)
-            data = response.json()
-        except Exception as exc:
-            last_network_error = str(exc)
-            continue
-
-        if not data.get("success"):
-            continue
-
-        purchase = data.get("purchase") or {}
-
-        if (purchase.get("refunded") or 
-            purchase.get("chargebacked") or 
-            data.get("subscription_cancelled_at") or 
-            data.get("subscription_ended_at")):
-            return False, "Diese Lizenz wurde storniert oder zurückerstattet.", {}
-
-        created_at_str = purchase.get("created_at")
-        if not created_at_str:
-            return True, f"Zugriff gewährt ({tier.upper()} Pass).", {"tier": tier, "key": clean_key}
-
-        try:
-            purchase_dt = datetime.datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
-            if purchase_dt.tzinfo is None:
-                purchase_dt = purchase_dt.replace(tzinfo=datetime.timezone.utc)
-        except ValueError:
-            return False, "Kaufdatum konnte nicht verarbeitet werden.", {}
-
-        now_utc = datetime.datetime.now(datetime.timezone.utc)
-        expiration_dt = purchase_dt + datetime.timedelta(days=DURATION_DAYS[tier])
-
-        if now_utc >= expiration_dt:
-            return False, f"Lizenz abgelaufen ({tier.upper()} Pass).", {}
-
-        remaining = expiration_dt - now_utc
-        total_hours = int(remaining.total_seconds() // 3600)
-        days_part = total_hours // 24
-        hours_part = total_hours % 24
-        time_label = f"{days_part}d {hours_part}h" if days_part > 0 else f"{hours_part}h"
-
-        meta = {
-            "tier": tier,
-            "key": clean_key,
-            "expires_at": expiration_dt.isoformat(),
-            "remaining_label": time_label
-        }
-        return True, f"Zugriff aktiv ({tier.upper()} Pass) - Verbleibend: ~{time_label}", meta
-
-    if last_network_error:
-        return False, f"Verbindungsfehler zur Gumroad-API: {last_network_error}", {}
-
-    return False, "Ungültiger Lizenzschlüssel oder falsche Produkt-Zuordnung.", {}
-
-# ==============================================================================
-# 4. ZORDNET AGENTEN ENGINE (Orion, Zeus, Ghost, Grimreaper)
-# ==============================================================================
-class ZordNetSystem:
-    @staticmethod
-    def process_agent_request(agent_name: str, prompt: str) -> str:
-        prompt_lower = prompt.lower()
-        
-        if agent_name == "Orion (Core AI)":
-            if "status" in prompt_lower:
-                return "ORION v9.5 Core: Alle Subsysteme laufen optimal. Elephant Memory geladen."
-            return f"ORION Antwort: Verarbeite Befehl '{prompt}' unter Berücksichtigung von Asimovs Gesetzen."
-            
-        elif agent_name == "Zeus (Network & Protocol)":
-            return f"ZEUS Knoten: Verteilungsprotokoll für '{prompt}' an Server-Sockets etabliert. Latenz 1ms."
-            
-        elif agent_name == "Ghost (Security & Auth-X)":
-            if "auth" in prompt_lower or "pass" in prompt_lower:
-                return "GHOST Shield: Auth-X Mastercode bestätigt. Zugriff auf ZordNet verifiziert."
-            return f"GHOST Shield: Überwache Datenstrom für prompt '{prompt}'. Keine Anomalien festgestellt."
-            
-        elif agent_name == "Grimreaper (Execution & Control)":
-            return f"GRIMREAPER Control: Task '{prompt}' in Ausführungsschleife eingereiht. Status: OK."
-            
-        return "ZordNet: Unbekannter Agent."
-
-# ==============================================================================
-# 5. UI: LOGIN SCREEN
-# ==============================================================================
-def render_login_screen():
-    st.markdown("<h1 style='text-align: center; color: #ff7b00;'>⚡ Orion.Ai / ZordNet Access</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center;'>Bitte gib deinen 1-Tag, 1-Woche oder 1-Monat Pass ein.</p>", unsafe_allow_html=True)
-
-    unconfigured = [k for k, v in GUMROAD_PRODUCT_IDS.items() if not v or v.startswith("HIER_PRODUCT_ID_")]
-    if unconfigured:
-        st.warning(f"⚠️ Hinweis: Product IDs fehlen noch für: {', '.join(unconfigured)}")
-
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        with st.form("login_form"):
-            license_key = st.text_input("Gumroad Lizenzschlüssel", type="password", placeholder="XXXXX-XXXXX-XXXXX-XXXXX")
-            submit = st.form_submit_button("System freischalten")
-
-        if submit:
-            with st.spinner("Prüfe Lizenz via Gumroad..."):
-                ok, msg, meta = verify_orion_license(license_key)
-                st.session_state.orion_msg = msg
-                if ok:
-                    st.session_state.orion_auth = True
-                    st.session_state.orion_meta = meta
-                    st.rerun()
-                else:
-                    st.error(msg)
-
-# ==============================================================================
-# 6. UI: MAIN SYSTEM INTERFACE (ZORDNET DASHBOARD)
-# ==============================================================================
-def render_orion_app():
-    meta = st.session_state.orion_meta
-
-    # Live Expiration Check
-    exp_str = meta.get("expires_at")
-    if exp_str:
-        exp_dt = datetime.datetime.fromisoformat(exp_str)
-        if datetime.datetime.now(datetime.timezone.utc) >= exp_dt:
-            st.session_state.orion_auth = False
-            st.session_state.orion_meta = {}
-            st.warning("Dein Lizenzpass ist abgelaufen.")
-            st.rerun()
-
-    # --- SIDEBAR ---
-    with st.sidebar:
-        st.markdown("## ⚡ ZordNet Status")
-        st.success(f"**Pass Tier:** {meta.get('tier', 'aktiv').upper()}")
-        if "remaining_label" in meta:
-            st.info(f"**Gültig für:** {meta['remaining_label']}")
-        
-        st.markdown("---")
-        st.markdown("### 🐘 Elephant Memory")
-        for mem in st.session_state.elephant_memory:
-            st.caption(f"• {mem}")
-
-        st.markdown("---")
-        if st.button("Abmelden"):
-            st.session_state.orion_auth = False
-            st.session_state.orion_meta = {}
-            st.rerun()
-
-    # --- MAIN INTERFACE ---
-    st.title("⚡ ZordNet Multi-Agent System")
-    st.caption("Orion.Ai Core Architecture | Auth-X Secured")
-
-    # Agenten Übersicht Cards
-    col1, col2, col3, col4 = st.columns(4)
-    col1.markdown("<div class='zord-card'><b>🤖 ORION</b><br><small>Core AI Engine</small></div>", unsafe_allow_html=True)
-    col2.markdown("<div class='zord-card'><b>⚡ ZEUS</b><br><small>Network Protocols</small></div>", unsafe_allow_html=True)
-    col3.markdown("<div class='zord-card'><b>🛡️ GHOST</b><br><small>Auth-X Security</small></div>", unsafe_allow_html=True)
-    col4.markdown("<div class='zord-card'><b>☠️ GRIMREAPER</b><br><small>System Execution</small></div>", unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    # Command Execution Center
-    st.subheader("ZordNet Terminal")
+def verify_orion_license(license_key):
+    """Validiert den Lizenzschlüssel über Gumroad API oder den Creator-Test-Key."""
+    key = license_key.strip()
     
-    agent_choice = st.selectbox("Agenten auswählen:", ["Orion (Core AI)", "Zeus (Network & Protocol)", "Ghost (Security & Auth-X)", "Grimreaper (Execution & Control)"])
-    user_prompt = st.text_input("Befehl / Anfrage an ZordNet senden:")
+    # 1. Creator Test-Key Check (Für interne Tests & Gumroad Testkäufe)
+    if key.upper().startswith("TEST-ORION") or key == "ORION-TEST-KEY-2026":
+        expiry_date = datetime.datetime.now(timezone.utc) + datetime.timedelta(days=30)
+        return True, "1_MONAT", expiry_date, "Test-Key erfolgreich aktiviert!"
 
-    if st.button("Befehl ausführen"):
+    # 2. Echter Gumroad API Check
+    try:
+        # Falls du eine spezifische Product-ID nutzen willst, gib permalink an
+        response = requests.post(
+            "https://api.gumroad.com/v2/licenses/verify",
+            data={"license_key": key},
+            timeout=10
+        )
+        data = response.json()
+        
+        if data.get("success"):
+            purchase = data.get("purchase", {})
+            product_id = purchase.get("product_id")
+            created_at_str = purchase.get("created_at")
+            
+            # Laufzeit ermitteln basierend auf Produkttyp
+            created_at = datetime.datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+            
+            # Standardmäßig 1 Monat setzen wenn unbekannt, sonst matchen
+            pass_tier = "1_MONAT"
+            duration = datetime.timedelta(days=30)
+            
+            if product_id == GUMROAD_PRODUCT_IDS.get("1_TAG"):
+                pass_tier = "1_TAG"
+                duration = datetime.timedelta(days=1)
+            elif product_id == GUMROAD_PRODUCT_IDS.get("1_WOCHE"):
+                pass_tier = "1_WOCHE"
+                duration = datetime.timedelta(days=7)
+                
+            expires_at = created_at + duration
+            
+            if datetime.datetime.now(timezone.utc) > expires_at:
+                return False, None, None, "Lizenzschlüssel ist abgelaufen."
+                
+            return True, pass_tier, expires_at, "Lizenz erfolgreich verifiziert!"
+        else:
+            return False, None, None, "Ungültiger Lizenzschlüssel."
+            
+    except Exception as e:
+        # Fallback falls Offline/API-Fehler während des Testens
+        return False, None, None, f"Fehler bei der Verifizierung: {str(e)}"
+
+# ---------------------------------------------------------
+# 4. ZORDNET MULTI-AGENT ENGINE
+# ---------------------------------------------------------
+class ZordNetEngine:
+    @staticmethod
+    def process_request(agent_name, prompt):
+        timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+        
+        # Log-Eintrag fürs Elefantengedächtnis vorbereiten
+        memory_entry = f"[{timestamp}] [{agent_name}] Befehl: {prompt}"
+        st.session_state.elephant_memory.append(memory_entry)
+        
+        # Agenten-Spezifische Antworten
+        if agent_name == "🤖 ORION (Core AI)":
+            response = f"[Orion Core] Verarbeite Haupt-Anfrage: '{prompt}'. Status: Optimal."
+        elif agent_name == "⚡ ZEUS (Network Protocols)":
+            response = f"[Zeus Network] Routen überprüft für: '{prompt}'. Protokoll stabil."
+        elif agent_name == "🛡️ GHOST (Auth-X Security)":
+            response = f"[Ghost Security] Auth-X Check für '{prompt}': Zugriff gewährt. Keine Bedrohung erkannt."
+        elif agent_name == "☠️ GRIMREAPER (System Execution)":
+            response = f"[Grimreaper Execution] Führe System-Befehl aus: '{prompt}'. Ausführung erfolgreich."
+        else:
+            response = f"[ZordNet Core] Anfrage erhalten: {prompt}"
+            
+        return response
+
+# ---------------------------------------------------------
+# 5. USER INTERFACE (LOGIN & DASHBOARD)
+# ---------------------------------------------------------
+
+# --- LOGIN SCREEN ---
+if not st.session_state.authenticated:
+    st.title("⚡ Orion.Ai — ZordNet Access Portal")
+    st.subheader("Auth-X Secured Multi-Agent Interface")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.markdown("""
+        Willkommen beim **ZordNet System**. Bitte gib deinen Gumroad-Lizenzschlüssel ein, um das Terminal freizuschalten.
+        """)
+        
+        key_input = st.text_input("Lizenzschlüssel (Gumroad Key):", value="", type="password")
+        
+        if st.button("System Freischalten 🚀"):
+            if key_input:
+                with st.spinner("Prüfe Auth-X & Gumroad Lizenz..."):
+                    is_valid, tier, expires, msg = verify_orion_license(key_input)
+                    if is_valid:
+                        st.session_state.authenticated = True
+                        st.session_state.license_key = key_input
+                        st.session_state.pass_tier = tier
+                        st.session_state.expires_at = expires
+                        st.success(msg)
+                        st.rerun()
+                    else:
+                        st.error(msg)
+            else:
+                st.warning("Bitte gib einen Lizenzschlüssel ein.")
+                
+        st.info("💡 **Test-Hinweis:** Du kannst aktuell auch `ORION-TEST-KEY-2026` oder den Gumroad Test-Key nutzen.")
+
+    with col2:
+        st.markdown("""
+        <div class="status-card">
+            <h4>Pässe & Zugang</h4>
+            <ul>
+                <li><b>1 Tag:</b> CHF 5.00</li>
+                <li><b>1 Woche:</b> CHF 20.00</li>
+                <li><b>1 Monat:</b> CHF 45.00</li>
+            </ul>
+            <p><small>Verifizierter Zugang via Gumroad & Auth-X Security System.</small></p>
+        </div>
+        """, unsafe_allow_html=True)
+
+# --- DASHBOARD SCREEN ---
+else:
+    # Top Bar / Header Status
+    st.title("⚡ ZordNet Terminal Dashboard")
+    
+    # Restzeit Berechnen
+    remaining_str = "Aktiv"
+    if st.session_state.expires_at:
+        now = datetime.datetime.now(timezone.utc)
+        diff = st.session_state.expires_at - now
+        days = diff.days
+        hours = diff.seconds // 3600
+        remaining_str = f"{days}d {hours}h"
+        
+    st.markdown(f"""
+    <div class="status-card">
+        <b>Status:</b> <span style="color:#00ff66;">ONLINE</span> | 
+        <b>Pass Tier:</b> {st.session_state.pass_tier} | 
+        <b>Gültig für:</b> {remaining_str} | 
+        <b>Auth-X Master:</b> Michael Gautschi
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Layout: Sidebar für Elephant Memory & Agenten-Übersicht
+    with st.sidebar:
+        st.header("🐘 Elephant Memory")
+        st.caption("Dauerhafte Protokollierung & System-Gesetze")
+        for mem in st.session_state.elephant_memory:
+            st.markdown(f"- {mem}")
+            
+        st.divider()
+        if st.button("Abmelden / Lock System"):
+            st.session_state.authenticated = False
+            st.rerun()
+
+    # Agenten Grid
+    st.subheader("⚡ ZordNet Multi-Agent System")
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.markdown('<div class="agent-box">🤖<br><b>ORION</b><br><small>Core AI Engine</small></div>', unsafe_allow_html=True)
+    with c2:
+        st.markdown('<div class="agent-box">⚡<br><b>ZEUS</b><br><small>Network Protocols</small></div>', unsafe_allow_html=True)
+    with c3:
+        st.markdown('<div class="agent-box">🛡️<br><b>GHOST</b><br><small>Auth-X Security</small></div>', unsafe_allow_html=True)
+    with c4:
+        st.markdown('<div class="agent-box">☠️<br><b>GRIMREAPER</b><br><small>System Execution</small></div>', unsafe_allow_html=True)
+
+    st.divider()
+
+    # Terminal Input Area
+    st.subheader("🖥️ ZordNet Terminal")
+    
+    selected_agent = st.selectbox(
+        "Agenten auswählen:",
+        ["🤖 ORION (Core AI)", "⚡ ZEUS (Network Protocols)", "🛡️ GHOST (Auth-X Security)", "☠️ GRIMREAPER (System Execution)"]
+    )
+    
+    user_prompt = st.text_input("Befehl / Anfrage an ZordNet senden:", placeholder="Gib deinen Befehl ein...")
+    
+    if st.button("Befehl Ausführen ⚡"):
         if user_prompt:
-            response = ZordNetSystem.process_agent_request(agent_choice, user_prompt)
-            st.session_state.chat_history.append((agent_choice, user_prompt, response))
+            output = ZordNetEngine.process_request(selected_agent, user_prompt)
+            st.session_state.chat_history.append((selected_agent, user_prompt, output))
         else:
             st.warning("Bitte gib einen Befehl ein.")
 
-    # Chat Log / Terminal Output
-    if st.session_state.chat_history:
-        st.markdown("### Terminal Log")
-        for agent, req, res in reversed(st.session_state.chat_history):
-            with st.expander(f"[{agent}] - {req[:40]}..."):
-                st.write(f"**Anfrage:** {req}")
-                st.write(f"**Antwort:** {res}")
-
-# ==============================================================================
-# 7. ROUTING
-# ==============================================================================
-if not st.session_state.orion_auth:
-    render_login_screen()
-else:
-    render_orion_app()
+    # Terminal Output Logs
+    st.subheader("📜 Terminal Output & Logs")
+    for agent, req, res in reversed(st.session_state.chat_history):
+        with st.chat_message("user"):
+            st.write(f"**[{agent}]** {req}")
+        with st.chat_message("assistant"):
+            st.write(res)
