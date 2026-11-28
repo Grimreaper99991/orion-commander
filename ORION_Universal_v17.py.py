@@ -8,13 +8,19 @@ import requests
 import streamlit as st
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION & STYLING
+# 1. PAGE CONFIGURATION, SEO & STYLING
 # ---------------------------------------------------------
 st.set_page_config(
-    page_title="Orion.Ai | 10 Götter ZordNet",
+    page_title="Orion.Ai | 10 Götter ZordNet — Multi-Agent AI Terminal",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded",
+)
+
+# Google Search Console Verification Meta-Tag
+st.markdown(
+    '<meta name="google-site-verification" content="bFFOdHf3jXLfU2U98l6QgL4PA2CDs__-g0ITUJLSii8" />',
+    unsafe_allow_html=True,
 )
 
 st.markdown(
